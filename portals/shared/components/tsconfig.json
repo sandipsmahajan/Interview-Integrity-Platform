@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@shared-ui": ["../ui/src"],
+      "@shared-utils": ["../utils/src"]
+    }
+  },
+  "include": ["src"]
+}

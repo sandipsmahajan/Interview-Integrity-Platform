@@ -1,12 +1,14 @@
 {
-  "name": "@interview-integrity/recruiter",
+  "name": "@interview-integrity/ui",
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --host 0.0.0.0",
+    "build": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
@@ -16,15 +18,9 @@
   "dependencies": {
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
-    "@interview-integrity/components": "0.1.0",
-    "@interview-integrity/ui": "0.1.0",
-    "@interview-integrity/utils": "0.1.0",
     "@mui/material": "9.2.0",
-    "@tanstack/react-query": "5.101.4",
-    "@tanstack/react-table": "8.21.3",
     "lucide-react": "1.27.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "react-router-dom": "7.18.2"
+    "react-dom": "19.2.8"
   }
 }
