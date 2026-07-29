@@ -1,0 +1,10 @@
+[package]
+name = "security"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+ring.workspace = true
+serde.workspace = true

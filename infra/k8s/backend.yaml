@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: integrity-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: integrity-backend
+  template:
+    metadata:
+      labels:
+        app: integrity-backend
+    spec:
+      containers:
+        - name: backend
+          image: interview-integrity/backend:0.1.0
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: integrity-secrets
+                  key: database-url
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: integrity-backend
+spec:
+  selector:
+    app: integrity-backend
+  ports:
+    - port: 80
+      targetPort: 8080

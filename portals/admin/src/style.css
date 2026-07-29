@@ -1,0 +1,8 @@
+body { margin: 0; background: #f5f7f8; }
+.shell { min-height: 100vh; padding: 24px; }
+.topbar { margin-bottom: 18px; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
+.tile { border-radius: 8px; padding: 16px; display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: center; }
+.tile strong { grid-column: 2; font-size: 28px; }
+.panel { border-radius: 8px; padding: 18px; display: grid; gap: 8px; }
+@media (max-width: 760px) { .shell { padding: 14px; } .grid { grid-template-columns: 1fr; } }

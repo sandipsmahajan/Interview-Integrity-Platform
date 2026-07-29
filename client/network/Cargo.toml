@@ -1,0 +1,11 @@
+[package]
+name = "network"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+telemetry = { path = "../telemetry" }

@@ -1,0 +1,41 @@
+classDiagram
+  class TelemetryCollector {
+    <<interface>>
+    +name() str
+    +collect(sessionId) TelemetryEvent[]
+  }
+  class CollectorRegistry {
+    +collectAll(sessionId)
+  }
+  class PolicyEngine {
+    +evaluate(event) LocalViolation[]
+  }
+  class ApiClient {
+    +sendTelemetry(token, event)
+  }
+  class LocalStore {
+    +enqueue(event)
+  }
+  class MonitoringAgent {
+    +run()
+  }
+  class TelemetryCommandService {
+    <<interface>>
+    +ingest(request)
+  }
+  class PolicyEvaluationService {
+    <<interface>>
+    +evaluate(request)
+  }
+  class ReportService {
+    <<interface>>
+    +buildSessionReport(sessionId)
+  }
+  TelemetryCollector <|.. SystemSummaryCollector
+  CollectorRegistry --> TelemetryCollector
+  MonitoringAgent --> CollectorRegistry
+  MonitoringAgent --> PolicyEngine
+  MonitoringAgent --> ApiClient
+  MonitoringAgent --> LocalStore
+  TelemetryCommandService --> PolicyEvaluationService
+  ReportService --> Violation

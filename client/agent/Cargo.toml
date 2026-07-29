@@ -1,0 +1,15 @@
+[package]
+name = "agent"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+network = { path = "../network" }
+policy = { path = "../policy" }
+storage = { path = "../storage" }
+telemetry = { path = "../telemetry" }
+tokio.workspace = true
+tracing.workspace = true
+uuid.workspace = true

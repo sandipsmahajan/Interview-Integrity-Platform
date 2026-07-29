@@ -1,0 +1,9 @@
+[package]
+name = "ipc"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+tokio.workspace = true

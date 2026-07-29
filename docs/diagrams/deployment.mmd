@@ -1,0 +1,17 @@
+flowchart TB
+  subgraph Kubernetes
+    Ingress["NGINX Ingress"]
+    Backend["Backend Deployment x3"]
+    Recruiter["Recruiter Portal"]
+    Candidate["Candidate Portal"]
+    Admin["Admin Portal"]
+  end
+  Ingress --> Backend
+  Ingress --> Recruiter
+  Ingress --> Candidate
+  Ingress --> Admin
+  Backend --> Postgres[(PostgreSQL)]
+  Backend --> Redis[(Redis)]
+  Backend --> Kafka[(Kafka)]
+  Backend --> MinIO[(MinIO)]
+  Backend --> Observability["Prometheus, Grafana, OpenTelemetry, Jaeger, ELK"]

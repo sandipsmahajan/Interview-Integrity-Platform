@@ -1,0 +1,8 @@
+[package]
+name = "logger"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+tracing.workspace = true

@@ -1,0 +1,12 @@
+backend:
+  image: interview-integrity/backend:0.1.0
+  replicas: 3
+  port: 8080
+ingress:
+  enabled: true
+  host: api.interview-integrity.local
+postgres:
+  databaseUrlSecretName: integrity-secrets
+  databaseUrlSecretKey: database-url
+kafka:
+  bootstrapServers: kafka:9092

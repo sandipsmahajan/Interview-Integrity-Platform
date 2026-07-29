@@ -1,0 +1,18 @@
+flowchart LR
+  Candidate["Candidate"] --> Portal["Candidate Portal"]
+  Portal --> Client["Rust Desktop Client"]
+  Client --> Browser["Embedded Chromium Browser"]
+  Client --> Agent["Monitoring Agent"]
+  Agent --> API["Spring Boot API Gateway"]
+  API --> Telemetry["Telemetry Service"]
+  API --> Interview["Interview Service"]
+  API --> Identity["Identity Service"]
+  Telemetry --> Policy["Policy Engine"]
+  Policy --> Kafka["Kafka"]
+  API --> Postgres["PostgreSQL"]
+  API --> Redis["Redis"]
+  API --> MinIO["MinIO"]
+  Kafka --> Recruiter["Recruiter Dashboard"]
+  API --> Admin["Admin Portal"]
+  Policy --> Report["Report Engine"]
+  Report --> Recruiter

@@ -1,0 +1,14 @@
+{
+  "name": "interview-integrity-portals",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "recruiter",
+    "candidate",
+    "admin"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces --if-present"
+  }
+}

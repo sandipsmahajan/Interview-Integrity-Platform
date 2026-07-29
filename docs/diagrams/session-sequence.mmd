@@ -1,0 +1,18 @@
+sequenceDiagram
+  participant C as Candidate
+  participant P as Candidate Portal
+  participant D as Desktop Client
+  participant B as Backend
+  participant R as Recruiter Dashboard
+  C->>P: Open interview link
+  P->>D: Launch authorized client
+  D->>B: Authenticate and register device
+  B-->>D: JWT, session and policy
+  D->>D: Start embedded browser
+  loop Every 5 seconds
+    D->>B: Send consented telemetry heartbeat
+    B->>B: Persist and evaluate policy
+    B-->>R: Stream status and violations
+  end
+  R->>B: Request final report
+  B-->>R: Integrity score and timeline

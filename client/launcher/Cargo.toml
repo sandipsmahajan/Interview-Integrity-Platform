@@ -1,0 +1,17 @@
+[package]
+name = "launcher"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+agent = { path = "../agent" }
+anyhow.workspace = true
+browser = { path = "../browser" }
+network = { path = "../network" }
+policy = { path = "../policy" }
+storage = { path = "../storage" }
+system = { path = "../system" }
+telemetry = { path = "../telemetry" }
+tokio.workspace = true
+uuid.workspace = true

@@ -1,0 +1,6 @@
+body { margin: 0; background: #f7f8fb; }
+.shell { min-height: 100vh; padding: 24px; max-width: 860px; margin: 0 auto; }
+.topbar { margin-bottom: 18px; }
+.panel { border-radius: 8px; padding: 18px; }
+.check { display: grid; grid-template-columns: 28px minmax(140px, 1fr) 2fr; gap: 12px; align-items: center; padding: 14px 0; border-bottom: 1px solid #e5e7eb; }
+@media (max-width: 640px) { .shell { padding: 14px; } .check { grid-template-columns: 28px 1fr; } .check .MuiLinearProgress-root { grid-column: 1 / -1; } }
