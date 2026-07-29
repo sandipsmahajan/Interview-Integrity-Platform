@@ -1,2 +1,2 @@
 # Interview-Integrity-Platform
-Enterprise-grade interview integrity platform with a secure Rust desktop client, embedded browser, real-time telemetry, policy engine, and recruiter dashboard.
+Interview Integrity Platform is an enterprise-grade solution that enables organizations to conduct secure, transparent, and scalable remote interviews through a trusted desktop client, real-time telemetry, configurable integrity policies, and comprehensive recruiter insights.
