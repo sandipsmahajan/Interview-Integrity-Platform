@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: discovery-service
+  security:
+    user:
+      name: discovery
+      password: discovery
+
+server:
+  port: 8761
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: discovery-service
+
+logging:
+  level:
+    root: INFO
+    com.interviewintegrity: INFO
