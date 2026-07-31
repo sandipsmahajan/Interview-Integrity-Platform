@@ -6,3 +6,4 @@
 /.idea
 /client/target
 /build
+/backend/build
