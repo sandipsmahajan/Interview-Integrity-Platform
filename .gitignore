@@ -7,3 +7,13 @@
 /client/target
 /build
 /backend/build
+/libs/api-contract/build
+/libs/common/build
+/libs/config/build
+/libs/dto/build
+/libs/event/build
+/libs/exception/build
+/libs/logging/build
+/libs/security/build/classes/java/main/com/interviewintegrity
+/libs/security/build
+/libs/validation/build
