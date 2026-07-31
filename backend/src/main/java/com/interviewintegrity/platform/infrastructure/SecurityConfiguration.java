@@ -17,18 +17,24 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 public class SecurityConfiguration {
   @Bean
   SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-    return http
-        .csrf(ServerHttpSecurity.CsrfSpec::disable)
-        .authorizeExchange(exchanges -> exchanges
-            .pathMatchers("/actuator/health", "/api/v1/auth/**").permitAll()
-            .anyExchange().authenticated())
+    return http.csrf(ServerHttpSecurity.CsrfSpec::disable)
+        .authorizeExchange(
+            exchanges ->
+                exchanges
+                    .pathMatchers("/actuator/health", "/api/v1/auth/**")
+                    .permitAll()
+                    .anyExchange()
+                    .authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
         .build();
   }
 
   @Bean
-  ReactiveJwtDecoder jwtDecoder(@Value("${security.jwt.hmac-secret:local-development-change-me-32-bytes-minimum}") String secret) {
-    SecretKey key = new SecretKeySpec(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256");
+  ReactiveJwtDecoder jwtDecoder(
+      @Value("${security.jwt.hmac-secret:local-development-change-me-32-bytes-minimum}")
+          String secret) {
+    SecretKey key =
+        new SecretKeySpec(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256");
     return NimbusReactiveJwtDecoder.withSecretKey(key).build();
   }
 }

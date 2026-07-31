@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+  <!-- Spring Data R2DBC and JSON serialization read entity fields reflectively. -->
+  <Match>
+    <BugCode name="UrF" />
+  </Match>
+  <!-- Java records expose their components through accessors; EI/EI2 are not applicable. -->
+  <Match>
+    <BugCode name="EI" />
+  </Match>
+  <Match>
+    <BugCode name="EI2" />
+  </Match>
+</FindBugsFilter>

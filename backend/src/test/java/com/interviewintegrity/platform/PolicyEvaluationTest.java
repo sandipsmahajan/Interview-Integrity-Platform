@@ -1,7 +1,5 @@
 package com.interviewintegrity.platform;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.interviewintegrity.platform.api.ApiDtos.TelemetryIngestRequest;
 import com.interviewintegrity.platform.application.PlatformServices.DefaultPolicyEvaluationService;
 import com.interviewintegrity.platform.domain.DomainModel.TelemetryType;
@@ -16,11 +14,15 @@ class PolicyEvaluationTest {
 
   @Test
   void flagsStaleHeartbeat() {
-    var request = new TelemetryIngestRequest(UUID.randomUUID(), TelemetryType.HEARTBEAT,
-        Instant.now(), Map.of("secondsSincePreviousHeartbeat", 15));
+    var request =
+        new TelemetryIngestRequest(
+            UUID.randomUUID(),
+            TelemetryType.HEARTBEAT,
+            Instant.now(),
+            Map.of("secondsSincePreviousHeartbeat", 15));
 
     StepVerifier.create(service.evaluate(request))
-        .assertNext(violation -> assertThat(violation.ruleCode).isEqualTo("HEARTBEAT_STALE"))
+        .expectNextMatches(violation -> "HEARTBEAT_STALE".equals(violation.ruleCode))
         .verifyComplete();
   }
 }

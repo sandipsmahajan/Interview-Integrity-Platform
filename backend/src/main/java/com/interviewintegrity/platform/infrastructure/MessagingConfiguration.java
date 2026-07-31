@@ -17,12 +17,18 @@ public class MessagingConfiguration {
   @Bean
   SenderOptions<String, String> kafkaSenderOptions(
       @Value("${spring.kafka.bootstrap-servers}") String bootstrapServers) {
-    return SenderOptions.create(Map.of(
-        ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers,
-        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
-        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
-        ProducerConfig.ACKS_CONFIG, "all",
-        ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true));
+    return SenderOptions.create(
+        Map.of(
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
+            bootstrapServers,
+            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+            StringSerializer.class,
+            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+            StringSerializer.class,
+            ProducerConfig.ACKS_CONFIG,
+            "all",
+            ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG,
+            true));
   }
 
   @Bean
@@ -32,8 +38,7 @@ public class MessagingConfiguration {
 
   @Bean
   ReactiveEventPublisher reactiveEventPublisher(KafkaSender<String, String> sender) {
-    return (topic, key, payload) -> sender
-        .send(Mono.just(SenderRecord.create(topic, null, null, key, payload, null)))
-        .then();
+    return (topic, key, payload) ->
+        sender.send(Mono.just(SenderRecord.create(topic, null, null, key, payload, null))).then();
   }
 }

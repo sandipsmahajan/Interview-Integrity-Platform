@@ -13,9 +13,10 @@ public class WebSocketConfiguration {
   @Bean
   WebSocketHandler recruiterTelemetrySocketHandler() {
     return session -> {
-      Flux<String> stream = Flux.interval(Duration.ofSeconds(5))
-          .onBackpressureLatest()
-          .map(sequence -> "{\"type\":\"heartbeat\",\"sequence\":" + sequence + "}");
+      Flux<String> stream =
+          Flux.interval(Duration.ofSeconds(5))
+              .onBackpressureLatest()
+              .map(sequence -> "{\"type\":\"heartbeat\",\"sequence\":" + sequence + "}");
       return session.send(stream.map(session::textMessage));
     };
   }

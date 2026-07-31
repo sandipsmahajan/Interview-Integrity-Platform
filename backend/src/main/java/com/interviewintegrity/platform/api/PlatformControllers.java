@@ -9,8 +9,8 @@ import com.interviewintegrity.platform.api.ApiDtos.SessionStartRequest;
 import com.interviewintegrity.platform.api.ApiDtos.TelemetryIngestRequest;
 import com.interviewintegrity.platform.api.ApiDtos.ViolationResponse;
 import com.interviewintegrity.platform.application.PlatformServices.ReportService;
-import com.interviewintegrity.platform.application.PlatformServices.TokenIssuer;
 import com.interviewintegrity.platform.application.PlatformServices.TelemetryCommandService;
+import com.interviewintegrity.platform.application.PlatformServices.TokenIssuer;
 import com.interviewintegrity.platform.domain.DomainModel.Interview;
 import com.interviewintegrity.platform.domain.DomainModel.InterviewSession;
 import com.interviewintegrity.platform.domain.DomainModel.InterviewStatus;
@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+@SuppressWarnings("PMD.MissingStaticMethodInNonInstantiatableClass")
 public final class PlatformControllers {
   private PlatformControllers() {}
 
@@ -112,7 +113,8 @@ public final class PlatformControllers {
     }
 
     @PostMapping
-    public Mono<java.util.List<ViolationResponse>> ingest(@Valid @RequestBody TelemetryIngestRequest request) {
+    public Mono<java.util.List<ViolationResponse>> ingest(
+        @Valid @RequestBody TelemetryIngestRequest request) {
       return telemetry.ingest(request);
     }
   }

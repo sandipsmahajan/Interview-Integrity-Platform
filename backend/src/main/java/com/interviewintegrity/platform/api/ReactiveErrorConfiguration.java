@@ -29,10 +29,17 @@ public class ReactiveErrorConfiguration {
     HttpStatus status = statusFor(exception);
     exchange.getResponse().setStatusCode(status);
     exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-    byte[] payload = serialize(objectMapper, Map.of(
-        "error", status == HttpStatus.BAD_REQUEST ? "bad_request" : "internal_server_error",
-        "message", status == HttpStatus.BAD_REQUEST ? exception.getMessage() : "Request could not be processed"));
-    return exchange.getResponse()
+    byte[] payload =
+        serialize(
+            objectMapper,
+            Map.of(
+                "error", status == HttpStatus.BAD_REQUEST ? "bad_request" : "internal_server_error",
+                "message",
+                    status == HttpStatus.BAD_REQUEST
+                        ? exception.getMessage()
+                        : "Request could not be processed"));
+    return exchange
+        .getResponse()
         .writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(payload)));
   }
 
@@ -46,7 +53,8 @@ public class ReactiveErrorConfiguration {
     try {
       return objectMapper.writeValueAsBytes(body);
     } catch (JsonProcessingException exception) {
-      return "{\"error\":\"internal_server_error\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+      return "{\"error\":\"internal_server_error\"}"
+          .getBytes(java.nio.charset.StandardCharsets.UTF_8);
     }
   }
 }

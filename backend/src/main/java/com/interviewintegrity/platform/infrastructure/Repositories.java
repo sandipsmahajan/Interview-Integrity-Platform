@@ -11,24 +11,33 @@ import java.util.UUID;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import reactor.core.publisher.Flux;
 
+@SuppressWarnings("PMD.MissingStaticMethodInNonInstantiatableClass")
 public final class Repositories {
   private Repositories() {}
 
   public interface CompanyRepository extends ReactiveCrudRepository<Company, UUID> {}
+
   public interface UserRepository extends ReactiveCrudRepository<User, UUID> {}
+
   public interface InterviewRepository extends ReactiveCrudRepository<Interview, UUID> {
     Flux<Interview> findByRecruiterId(UUID recruiterId);
+
     Flux<Interview> findByCandidateId(UUID candidateId);
   }
-  public interface InterviewSessionRepository extends ReactiveCrudRepository<InterviewSession, UUID> {
+
+  public interface InterviewSessionRepository
+      extends ReactiveCrudRepository<InterviewSession, UUID> {
     Flux<InterviewSession> findByInterviewId(UUID interviewId);
   }
+
   public interface TelemetryEventRepository extends ReactiveCrudRepository<TelemetryEvent, UUID> {
     Flux<TelemetryEvent> findTop100BySessionIdOrderByOccurredAtDesc(UUID sessionId);
   }
+
   public interface PolicyRepository extends ReactiveCrudRepository<Policy, UUID> {
     Flux<Policy> findByCompanyIdAndEnabledTrue(UUID companyId);
   }
+
   public interface ViolationRepository extends ReactiveCrudRepository<Violation, UUID> {
     Flux<Violation> findBySessionIdOrderByOccurredAtAsc(UUID sessionId);
   }

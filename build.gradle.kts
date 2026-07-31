@@ -74,6 +74,7 @@ subprojects {
         toolVersion.set(spotbugsVersion)
         effort.set(com.github.spotbugs.snom.Effort.MAX)
         reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)
+        excludeFilter.set(rootProject.layout.projectDirectory.file("config/spotbugs/exclude.xml"))
     }
 
     tasks.test {

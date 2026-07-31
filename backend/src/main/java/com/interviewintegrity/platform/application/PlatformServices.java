@@ -61,21 +61,41 @@ public final class PlatformServices {
 
     @Override
     public Mono<AuthResponse> issue(String subject, String deviceId) {
-      return Mono.fromSupplier(() -> {
-        Instant expiresAt = Instant.now().plusSeconds(900);
-        String accessToken = sign(Map.of("sub", subject, "deviceId", deviceId, "exp", expiresAt.getEpochSecond()));
-        String refreshToken = sign(Map.of("sub", subject, "deviceId", deviceId, "type", "refresh", "iat", Instant.now().getEpochSecond()));
-        return new AuthResponse(accessToken, refreshToken, expiresAt);
-      });
+      return Mono.fromSupplier(
+          () -> {
+            Instant expiresAt = Instant.now().plusSeconds(900);
+            String accessToken =
+                sign(
+                    Map.of(
+                        "sub", subject, "deviceId", deviceId, "exp", expiresAt.getEpochSecond()));
+            String refreshToken =
+                sign(
+                    Map.of(
+                        "sub",
+                        subject,
+                        "deviceId",
+                        deviceId,
+                        "type",
+                        "refresh",
+                        "iat",
+                        Instant.now().getEpochSecond()));
+            return new AuthResponse(accessToken, refreshToken, expiresAt);
+          });
     }
 
     private String sign(Map<String, Object> claims) {
       try {
-        String header = base64Url("{\"alg\":\"HS256\",\"typ\":\"JWT\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        String header =
+            base64Url(
+                "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"
+                    .getBytes(java.nio.charset.StandardCharsets.UTF_8));
         String payload = base64Url(objectMapper.writeValueAsBytes(claims));
         Mac mac = Mac.getInstance("HmacSHA256");
         mac.init(new SecretKeySpec(secret, "HmacSHA256"));
-        String signature = base64Url(mac.doFinal((header + "." + payload).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        String signature =
+            base64Url(
+                mac.doFinal(
+                    (header + "." + payload).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
         return header + "." + payload + "." + signature;
       } catch (Exception e) {
         throw new IllegalStateException("Unable to issue token", e);
@@ -92,23 +112,37 @@ public final class PlatformServices {
     public Flux<Violation> evaluate(TelemetryIngestRequest request) {
       if (request.type() == TelemetryType.HEARTBEAT) {
         Object interval = request.payload().get("secondsSincePreviousHeartbeat");
-        if (interval instanceof Number number && number.longValue() > Duration.ofSeconds(10).toSeconds()) {
-          return Flux.just(violation(request.sessionId(), "HEARTBEAT_STALE", ViolationSeverity.HIGH,
-              "Heartbeat exceeded the configured 5 second cadence."));
+        if (interval instanceof Number number
+            && number.longValue() > Duration.ofSeconds(10).toSeconds()) {
+          return Flux.just(
+              violation(
+                  request.sessionId(),
+                  "HEARTBEAT_STALE",
+                  ViolationSeverity.HIGH,
+                  "Heartbeat exceeded the configured 5 second cadence."));
         }
       }
       if (Boolean.TRUE.equals(request.payload().get("virtualMachineDetected"))) {
-        return Flux.just(violation(request.sessionId(), "VM_DETECTED", ViolationSeverity.CRITICAL,
-            "A virtual machine indicator was reported by the consented system check."));
+        return Flux.just(
+            violation(
+                request.sessionId(),
+                "VM_DETECTED",
+                ViolationSeverity.CRITICAL,
+                "A virtual machine indicator was reported by the consented system check."));
       }
       if (Boolean.TRUE.equals(request.payload().get("browserOutOfFocus"))) {
-        return Flux.just(violation(request.sessionId(), "BROWSER_FOCUS_LOST", ViolationSeverity.MEDIUM,
-            "The secured interview browser lost focus."));
+        return Flux.just(
+            violation(
+                request.sessionId(),
+                "BROWSER_FOCUS_LOST",
+                ViolationSeverity.MEDIUM,
+                "The secured interview browser lost focus."));
       }
       return Flux.empty();
     }
 
-    private static Violation violation(UUID sessionId, String code, ViolationSeverity severity, String message) {
+    private static Violation violation(
+        UUID sessionId, String code, ViolationSeverity severity, String message) {
       Violation violation = new Violation();
       violation.id = UUID.randomUUID();
       violation.sessionId = sessionId;
@@ -148,14 +182,23 @@ public final class PlatformServices {
       event.occurredAt = request.occurredAt() == null ? Instant.now() : request.occurredAt();
       event.payloadJson = toJson(request.payload());
 
-      return events.save(event)
+      return events
+          .save(event)
           .thenMany(violations.saveAll(policy.evaluate(request)))
-          .flatMap(violation -> publisher.publish("policy.violations", request.sessionId().toString(), violation.ruleCode)
-              .thenReturn(violation))
+          .flatMap(
+              violation ->
+                  publisher
+                      .publish(
+                          "policy.violations", request.sessionId().toString(), violation.ruleCode)
+                      .thenReturn(violation))
           .map(PlatformServices::toResponse)
           .collectList()
-          .flatMap(detected -> publisher.publish("telemetry.events", request.sessionId().toString(), event.payloadJson)
-              .thenReturn(detected));
+          .flatMap(
+              detected ->
+                  publisher
+                      .publish(
+                          "telemetry.events", request.sessionId().toString(), event.payloadJson)
+                      .thenReturn(detected));
     }
 
     private String toJson(Map<String, Object> payload) {
@@ -176,23 +219,38 @@ public final class PlatformServices {
 
     @Override
     public Mono<ReportResponse> buildSessionReport(UUID sessionId) {
-      return violations.findBySessionIdOrderByOccurredAtAsc(sessionId)
+      return violations
+          .findBySessionIdOrderByOccurredAtAsc(sessionId)
           .map(PlatformServices::toResponse)
           .collectList()
-          .map(items -> {
-            int score = Math.max(0, 100 - items.stream().mapToInt(v -> switch (v.severity()) {
-              case INFO, LOW -> 3;
-              case MEDIUM -> 8;
-              case HIGH -> 18;
-              case CRITICAL -> 35;
-            }).sum());
-            return new ReportResponse(sessionId, score, items, Map.of());
-          });
+          .map(
+              items -> {
+                int score =
+                    Math.max(
+                        0,
+                        100
+                            - items.stream()
+                                .mapToInt(
+                                    v ->
+                                        switch (v.severity()) {
+                                          case INFO, LOW -> 3;
+                                          case MEDIUM -> 8;
+                                          case HIGH -> 18;
+                                          case CRITICAL -> 35;
+                                        })
+                                .sum());
+                return new ReportResponse(sessionId, score, items, Map.of());
+              });
     }
   }
 
   public static ViolationResponse toResponse(Violation violation) {
-    return new ViolationResponse(violation.id, violation.sessionId, violation.ruleCode,
-        violation.severity, violation.message, violation.occurredAt);
+    return new ViolationResponse(
+        violation.id,
+        violation.sessionId,
+        violation.ruleCode,
+        violation.severity,
+        violation.message,
+        violation.occurredAt);
   }
 }
