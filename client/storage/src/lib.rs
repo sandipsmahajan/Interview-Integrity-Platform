@@ -2,10 +2,11 @@ use anyhow::Result;
 use config::ClientSettings;
 use rusqlite::{params, Connection};
 use security::ConsentRecord;
+use std::sync::Mutex;
 use telemetry::TelemetryEvent;
 
 pub struct LocalStore {
-    conn: Connection,
+    conn: Mutex<Connection>,
 }
 
 impl LocalStore {
@@ -31,30 +32,35 @@ impl LocalStore {
                payload TEXT NOT NULL
              );",
         )?;
-        Ok(Self { conn })
+        Ok(Self {
+            conn: Mutex::new(conn),
+        })
     }
 
     pub fn enqueue(&self, event: &TelemetryEvent) -> Result<()> {
         let payload = serde_json::to_string(event)?;
         self.conn
+            .lock()
+            .unwrap()
             .execute("INSERT INTO outbound_events(payload) VALUES (?1)", params![payload])?;
         Ok(())
     }
 
     pub fn pending_events(&self) -> Result<Vec<TelemetryEvent>> {
-        let mut stmt = self.conn.prepare("SELECT payload FROM outbound_events ORDER BY id ASC")?;
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT payload FROM outbound_events ORDER BY id ASC")?;
         let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
         rows.map(|row| Ok(serde_json::from_str(&row?)?)).collect()
     }
 
     pub fn clear_pending(&self) -> Result<()> {
-        self.conn.execute("DELETE FROM outbound_events", [])?;
+        self.conn.lock().unwrap().execute("DELETE FROM outbound_events", [])?;
         Ok(())
     }
 
     pub fn save_settings(&self, settings: &ClientSettings) -> Result<()> {
         let payload = serde_json::to_string(settings)?;
-        self.conn.execute(
+        self.conn.lock().unwrap().execute(
             "INSERT INTO settings(key, value) VALUES ('client', ?1)
              ON CONFLICT(key) DO UPDATE SET value = excluded.value",
             params![payload],
@@ -63,7 +69,8 @@ impl LocalStore {
     }
 
     pub fn load_settings(&self) -> Result<ClientSettings> {
-        let mut stmt = self.conn.prepare("SELECT value FROM settings WHERE key = 'client'")?;
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT value FROM settings WHERE key = 'client'")?;
         let mut rows = stmt.query(params![])?;
         if let Some(row) = rows.next()? {
             Ok(serde_json::from_str(&row.get::<_, String>(0)?)?)
@@ -74,7 +81,7 @@ impl LocalStore {
 
     pub fn save_consent(&self, record: &ConsentRecord) -> Result<()> {
         let payload = serde_json::to_string(record)?;
-        self.conn.execute(
+        self.conn.lock().unwrap().execute(
             "INSERT INTO consent(session_id, payload) VALUES (?1, ?2)
              ON CONFLICT(session_id) DO UPDATE SET payload = excluded.payload",
             params![record.session_id.to_string(), payload],
@@ -83,7 +90,7 @@ impl LocalStore {
     }
 
     pub fn save_auth_token(&self, token: &str) -> Result<()> {
-        self.conn.execute(
+        self.conn.lock().unwrap().execute(
             "INSERT INTO auth_tokens(id, payload) VALUES (1, ?1)
              ON CONFLICT(id) DO UPDATE SET payload = excluded.payload",
             params![token],
@@ -92,7 +99,8 @@ impl LocalStore {
     }
 
     pub fn load_auth_token(&self) -> Result<Option<String>> {
-        let mut stmt = self.conn.prepare("SELECT payload FROM auth_tokens WHERE id = 1")?;
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT payload FROM auth_tokens WHERE id = 1")?;
         let mut rows = stmt.query(params![])?;
         if let Some(row) = rows.next()? {
             Ok(Some(row.get(0)?))
