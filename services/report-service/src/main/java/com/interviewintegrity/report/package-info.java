@@ -1,4 +1,2 @@
-/**
- * report service (report generation, scheduling) package.
- */
+/** report service (report generation, scheduling) package. */
 package com.interviewintegrity.report;

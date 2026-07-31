@@ -1,4 +1,2 @@
-/**
- * organization service (tenant root, departments, teams) package.
- */
+/** organization service (tenant root, departments, teams) package. */
 package com.interviewintegrity.organization;

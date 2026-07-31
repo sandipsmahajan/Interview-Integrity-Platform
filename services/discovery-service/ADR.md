@@ -2,7 +2,8 @@
 
 ## ADR-0001: Service ownership
 
-The service registry placeholder (Eureka upgrade path) owns the domain described by its schema. All mutations go through
+The service registry placeholder (Eureka upgrade path) owns the domain described by its schema. All
+mutations go through
 this service; consumers read via its REST API or subscribe to its Kafka events.
 
 ## ADR-0002: Data isolation

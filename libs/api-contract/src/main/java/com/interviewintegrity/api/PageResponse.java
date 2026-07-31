@@ -11,4 +11,5 @@ import java.util.List;
  * @param totalElements total number of matching results
  * @param totalPages total number of pages
  */
-public record PageResponse<T>(List<T> items, int page, int size, long totalElements, int totalPages) {}
+public record PageResponse<T>(
+    List<T> items, int page, int size, long totalElements, int totalPages) {}

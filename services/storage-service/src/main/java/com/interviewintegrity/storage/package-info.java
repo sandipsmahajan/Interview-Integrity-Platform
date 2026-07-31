@@ -1,4 +1,2 @@
-/**
- * storage service (object metadata, signed URLs) package.
- */
+/** storage service (object metadata, signed URLs) package. */
 package com.interviewintegrity.storage;

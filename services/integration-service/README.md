@@ -17,11 +17,11 @@ OpenAPI: http://localhost:8096/swagger-ui.html
 
 ## Configuration
 
-| Key | Default | Description |
-|-----|---------|-------------|
-| `server.port` | 8096 | HTTP port |
-| `spring.r2dbc.url` | r2dbc:postgresql://localhost:5432/integration_db | Database connection |
-| `spring.kafka.bootstrap-servers` | localhost:9092 | Event bus |
+| Key                              | Default                                          | Description         |
+|----------------------------------|--------------------------------------------------|---------------------|
+| `server.port`                    | 8096                                             | HTTP port           |
+| `spring.r2dbc.url`               | r2dbc:postgresql://localhost:5432/integration_db | Database connection |
+| `spring.kafka.bootstrap-servers` | localhost:9092                                   | Event bus           |
 
 ## Database
 

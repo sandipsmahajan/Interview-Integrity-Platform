@@ -1,4 +1,2 @@
-/**
- * notification service (channels, templates, deliveries) package.
- */
+/** notification service (channels, templates, deliveries) package. */
 package com.interviewintegrity.notification;

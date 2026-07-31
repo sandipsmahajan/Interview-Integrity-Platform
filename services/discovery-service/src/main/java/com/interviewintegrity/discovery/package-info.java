@@ -1,4 +1,2 @@
-/**
- * service registry placeholder (Eureka upgrade path) package.
- */
+/** service registry placeholder (Eureka upgrade path) package. */
 package com.interviewintegrity.discovery;

@@ -1,4 +1,2 @@
-/**
- * scheduler service (jobs, executions, distributed locks) package.
- */
+/** scheduler service (jobs, executions, distributed locks) package. */
 package com.interviewintegrity.scheduler;

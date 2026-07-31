@@ -1,4 +1,2 @@
-/**
- * analytics service (daily summaries, rollups) package.
- */
+/** analytics service (daily summaries, rollups) package. */
 package com.interviewintegrity.analytics;

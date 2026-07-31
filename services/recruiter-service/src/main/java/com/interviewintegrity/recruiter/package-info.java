@@ -1,4 +1,2 @@
-/**
- * recruiter service (pipelines, requisitions) package.
- */
+/** recruiter service (pipelines, requisitions) package. */
 package com.interviewintegrity.recruiter;

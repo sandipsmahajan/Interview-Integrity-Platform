@@ -1,4 +1,2 @@
-/**
- * integration service (providers, credentials, webhooks) package.
- */
+/** integration service (providers, credentials, webhooks) package. */
 package com.interviewintegrity.integration;

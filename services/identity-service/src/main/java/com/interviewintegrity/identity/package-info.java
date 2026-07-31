@@ -1,4 +1,2 @@
-/**
- * identity service (users, roles, sessions) package.
- */
+/** identity service (users, roles, sessions) package. */
 package com.interviewintegrity.identity;

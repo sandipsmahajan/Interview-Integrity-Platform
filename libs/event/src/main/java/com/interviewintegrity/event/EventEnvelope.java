@@ -12,4 +12,5 @@ import java.util.UUID;
  * @param occurredAt instant at which the event occurred
  * @param payload JSON encoded event payload
  */
-public record EventEnvelope(UUID eventId, String type, String service, Instant occurredAt, String payload) {}
+public record EventEnvelope(
+    UUID eventId, String type, String service, Instant occurredAt, String payload) {}

@@ -1,4 +1,2 @@
-/**
- * Structured logging conventions shared by every service.
- */
+/** Structured logging conventions shared by every service. */
 package com.interviewintegrity.logging;
