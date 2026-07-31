@@ -34,7 +34,7 @@ struct StateInner {
     remote_config: RemoteConfig,
     consent_granted: bool,
     browser: BrowserController,
-    monitoring_handle: Option<tokio::task::JoinHandle<()>>,
+    monitoring_handle: Option<tauri::async_runtime::JoinHandle<()>>,
     panel_tx: Option<mpsc::UnboundedSender<TelemetryPanelEvent>>,
     settings: ClientSettings,
     client_version: String,
@@ -164,9 +164,8 @@ impl AppState {
                 expires_at: response.expires_at,
                 device_id: device_id.clone(),
             });
-            if let Ok(encoded) = security::obfuscate(&response.access_token, &device_id) {
-                let _ = state.store.save_auth_token(&encoded);
-            }
+            let encoded = security::obfuscate(&response.access_token, &device_id);
+            let _ = state.store.save_auth_token(&encoded);
             Ok(response)
         })
     }
@@ -275,7 +274,9 @@ impl AppState {
 
         self.with_inner(|state| {
             state.session_id = Some(session.id);
-            state.browser.navigate(&interview.meeting_url)?;
+            state.browser
+                .navigate(&interview.meeting_url)
+                .map_err(|e| anyhow!(e))?;
             let panel_tx = state
                 .panel_tx
                 .clone()
