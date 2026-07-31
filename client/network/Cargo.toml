@@ -1,11 +1,8 @@
-[package]
-name = "network"
-edition.workspace = true
-version.workspace = true
-license.workspace = true
-
-[dependencies]
 anyhow.workspace = true
+chrono.workspace = true
+config = { path = "../config" }
 reqwest.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 telemetry = { path = "../telemetry" }
+uuid.workspace = true

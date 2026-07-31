@@ -1,8 +1,1 @@
-[package]
-name = "browser"
-edition.workspace = true
-version.workspace = true
-license.workspace = true
-
-[dependencies]
 serde.workspace = true

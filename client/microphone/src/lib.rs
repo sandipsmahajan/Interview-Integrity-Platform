@@ -7,9 +7,19 @@ pub struct MicrophoneConsentCollector;
 
 #[async_trait]
 impl TelemetryCollector for MicrophoneConsentCollector {
-    fn name(&self) -> &'static str { "microphone" }
+    fn name(&self) -> &'static str {
+        "microphone"
+    }
 
     async fn collect(&self, session_id: Uuid) -> Result<Vec<TelemetryEvent>, TelemetryError> {
-        Ok(vec![TelemetryEvent { session_id, kind: TelemetryKind::Audio, payload: json!({"microphoneEnabled": true}) }])
+        Ok(vec![TelemetryEvent {
+            session_id,
+            kind: TelemetryKind::Audio,
+            payload: json!({
+                "microphoneAvailable": true,
+                "activeDevice": "Primary Microphone",
+                "summary": "Primary microphone selected"
+            }),
+        }])
     }
 }

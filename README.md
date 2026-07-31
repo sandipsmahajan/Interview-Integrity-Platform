@@ -37,6 +37,19 @@ cd client
 cargo test --workspace
 ```
 
+Run the WebView2 desktop app on Windows:
+
+```bash
+cd client
+cargo run -p desktop-app
+```
+
+The `launcher` crate is a console smoke runner. The `desktop-app` crate is the Tauri 2 application that opens a native desktop window backed by WebView2 on Windows. Use the MSVC Rust toolchain plus Visual Studio C++ Build Tools for the smoothest Tauri/WebView2 setup:
+
+```bash
+rustup default stable-x86_64-pc-windows-msvc
+```
+
 Build portals:
 
 ```bash

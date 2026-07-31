@@ -1,14 +1,11 @@
-[package]
-name = "agent"
-edition.workspace = true
-version.workspace = true
-license.workspace = true
-
-[dependencies]
 anyhow.workspace = true
+camera = { path = "../camera" }
+config = { path = "../config" }
+microphone = { path = "../microphone" }
 network = { path = "../network" }
 policy = { path = "../policy" }
 storage = { path = "../storage" }
+system = { path = "../system" }
 telemetry = { path = "../telemetry" }
 tokio.workspace = true
 tracing.workspace = true

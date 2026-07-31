@@ -2,3 +2,6 @@
 /portals/candidate/node_modules
 /portals/admin/node_modules
 /portals/recruiter/node_modules
+/.gradle
+/.idea
+/client/target

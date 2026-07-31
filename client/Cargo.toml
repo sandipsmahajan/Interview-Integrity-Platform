@@ -4,6 +4,8 @@ members = [
   "agent",
   "browser",
   "camera",
+  "config",
+  "desktop-app",
   "ipc",
   "launcher",
   "logger",
@@ -27,6 +29,8 @@ license = "Proprietary"
 [workspace.dependencies]
 anyhow = "1"
 async-trait = "0.1"
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde", "std"] }
+dirs = "5"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 ring = "0.17"
 rusqlite = { version = "0.32", features = ["bundled"] }

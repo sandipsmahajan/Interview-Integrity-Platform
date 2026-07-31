@@ -1,0 +1,29 @@
+[package]
+name = "desktop-app"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+logger = { path = "../logger" }
+agent = { path = "../agent" }
+anyhow.workspace = true
+browser = { path = "../browser" }
+chrono.workspace = true
+config = { path = "../config" }
+dirs.workspace = true
+network = { path = "../network" }
+policy = { path = "../policy" }
+security = { path = "../security" }
+storage = { path = "../storage" }
+system = { path = "../system" }
+telemetry = { path = "../telemetry" }
+serde.workspace = true
+serde_json.workspace = true
+tauri = { version = "2", features = [] }
+tokio.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
