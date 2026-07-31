@@ -1,3 +1,5 @@
+import com.diffplug.gradle.spotless.SpotlessExtension
+import com.github.spotbugs.snom.SpotBugsExtension
 import org.gradle.testing.jacoco.tasks.JacocoReport
 
 plugins {
@@ -16,6 +18,11 @@ allprojects {
     group = "com.interviewintegrity"
     version = "0.1.0"
 }
+
+val checkstyleVersion = libs.versions.checkstyle.get()
+val pmdVersion = libs.versions.pmd.get()
+val spotbugsVersion = libs.versions.spotbugs.tool.get()
+val jacocoVersion = libs.versions.jacoco.get()
 
 subprojects {
     apply(plugin = "java")
@@ -43,7 +50,7 @@ subprojects {
         isReproducibleFileOrder = true
     }
 
-    spotless {
+    extensions.configure<SpotlessExtension> {
         java {
             googleJavaFormat()
             removeUnusedImports()
@@ -53,18 +60,18 @@ subprojects {
     }
 
     checkstyle {
-        toolVersion = libs.versions.checkstyle.get()
+        toolVersion = checkstyleVersion
         configFile = rootProject.file("config/checkstyle/checkstyle.xml")
     }
 
     pmd {
-        toolVersion = libs.versions.pmd.get()
+        toolVersion = pmdVersion
         ruleSetFiles = files(rootProject.file("config/pmd/ruleset.xml"))
         ruleSets = emptyList()
     }
 
-    spotbugs {
-        toolVersion = libs.versions.spotbugs.get()
+    extensions.configure<SpotBugsExtension> {
+        toolVersion.set(spotbugsVersion)
         effort.set(com.github.spotbugs.snom.Effort.MAX)
         reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)
     }
@@ -75,7 +82,7 @@ subprojects {
     }
 
     jacoco {
-        toolVersion = libs.versions.jacoco.get()
+        toolVersion = jacocoVersion
     }
 
     tasks.named<JacocoReport>("jacocoTestReport") {
