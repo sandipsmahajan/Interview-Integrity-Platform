@@ -1,3 +1,10 @@
+[package]
+name = "storage"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
 anyhow.workspace = true
 config = { path = "../config" }
 rusqlite.workspace = true
