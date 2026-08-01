@@ -15,7 +15,6 @@
 /libs/exception/build
 /libs/logging/build
 /libs/security/build
-/libs/security/build
 /libs/validation/build
 /libs/validation/build
 /libs/observability/build
