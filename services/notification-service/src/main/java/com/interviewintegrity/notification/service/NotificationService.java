@@ -1,0 +1,166 @@
+package com.interviewintegrity.notification.service;
+
+import com.interviewintegrity.exception.NotFoundException;
+import com.interviewintegrity.notification.domain.Notification;
+import com.interviewintegrity.notification.domain.NotificationChannel;
+import com.interviewintegrity.notification.domain.NotificationDelivery;
+import com.interviewintegrity.notification.domain.NotificationPriority;
+import com.interviewintegrity.notification.domain.NotificationStatus;
+import com.interviewintegrity.notification.repository.NotificationDeliveryRepository;
+import com.interviewintegrity.notification.repository.NotificationRepository;
+import java.time.Instant;
+import java.util.UUID;
+import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+/** Manages notifications and their delivery lifecycle. */
+public class NotificationService {
+
+  private final NotificationRepository notificationRepository;
+  private final NotificationDeliveryRepository deliveryRepository;
+
+  /** Wires the service with its repositories. */
+  public NotificationService(
+      NotificationRepository notificationRepository,
+      NotificationDeliveryRepository deliveryRepository) {
+    this.notificationRepository = notificationRepository;
+    this.deliveryRepository = deliveryRepository;
+  }
+
+  /** Creates a pending notification for a user. */
+  @Transactional
+  public Mono<Notification> createNotification(
+      UUID organizationId,
+      UUID userId,
+      String notificationType,
+      NotificationChannel channel,
+      String subject,
+      String body,
+      NotificationPriority priority,
+      Instant scheduledAt,
+      UUID createdBy) {
+    return notificationRepository.save(
+        new Notification(
+            organizationId,
+            userId,
+            notificationType,
+            channel,
+            subject,
+            body,
+            priority,
+            scheduledAt,
+            createdBy));
+  }
+
+  /** Returns a single notification within the organization. */
+  @Transactional(readOnly = true)
+  public Mono<Notification> getNotification(UUID notificationId, UUID organizationId) {
+    return notificationRepository
+        .findByIdAndOrganization(notificationId, organizationId)
+        .switchIfEmpty(Mono.error(new NotFoundException("Notification not found")));
+  }
+
+  /** Lists the notifications of a user within the organization. */
+  @Transactional(readOnly = true)
+  public Flux<Notification> listByUser(UUID userId, UUID organizationId) {
+    return notificationRepository.listByUserAndOrganization(userId, organizationId);
+  }
+
+  /** Lists the pending notifications of the organization for dispatch. */
+  @Transactional(readOnly = true)
+  public Flux<Notification> listPending(UUID organizationId) {
+    return notificationRepository.listByOrganizationAndStatus(
+        organizationId, NotificationStatus.PENDING);
+  }
+
+  /** Marks a notification as dispatched and records the delivery attempt. */
+  @Transactional
+  public Mono<Notification> markSent(
+      UUID notificationId, UUID organizationId, String provider, String providerMessageId) {
+    return getNotification(notificationId, organizationId)
+        .flatMap(
+            notification -> {
+              notification.markSent();
+              return notificationRepository
+                  .save(notification)
+                  .flatMap(
+                      saved ->
+                          recordDelivery(
+                                  saved, NotificationStatus.SENT, provider, providerMessageId, null)
+                              .thenReturn(saved));
+            });
+  }
+
+  /** Marks a notification as delivered and records the delivery attempt. */
+  @Transactional
+  public Mono<Notification> markDelivered(
+      UUID notificationId, UUID organizationId, String provider, String providerMessageId) {
+    return getNotification(notificationId, organizationId)
+        .flatMap(
+            notification -> {
+              notification.markDelivered();
+              return notificationRepository
+                  .save(notification)
+                  .flatMap(
+                      saved ->
+                          recordDelivery(
+                                  saved,
+                                  NotificationStatus.DELIVERED,
+                                  provider,
+                                  providerMessageId,
+                                  null)
+                              .thenReturn(saved));
+            });
+  }
+
+  /** Marks a notification as failed and records the failed delivery attempt. */
+  @Transactional
+  public Mono<Notification> markFailed(
+      UUID notificationId, UUID organizationId, String provider, String errorMessage) {
+    return getNotification(notificationId, organizationId)
+        .flatMap(
+            notification -> {
+              notification.markFailed();
+              return notificationRepository
+                  .save(notification)
+                  .flatMap(
+                      saved ->
+                          recordDelivery(
+                                  saved, NotificationStatus.FAILED, provider, null, errorMessage)
+                              .thenReturn(saved));
+            });
+  }
+
+  /** Marks a notification as read by the recipient. */
+  @Transactional
+  public Mono<Notification> markRead(UUID notificationId, UUID organizationId) {
+    return getNotification(notificationId, organizationId)
+        .map(
+            notification -> {
+              notification.markRead();
+              return notification;
+            })
+        .flatMap(notificationRepository::save);
+  }
+
+  /** Lists the delivery attempts of a notification. */
+  @Transactional(readOnly = true)
+  public Flux<NotificationDelivery> listDeliveries(UUID notificationId, UUID organizationId) {
+    return getNotification(notificationId, organizationId)
+        .flatMapMany(notification -> deliveryRepository.listByNotification(notificationId));
+  }
+
+  private Mono<NotificationDelivery> recordDelivery(
+      Notification notification,
+      NotificationStatus status,
+      String provider,
+      String providerMessageId,
+      String errorMessage) {
+    NotificationDelivery delivery =
+        new NotificationDelivery(notification.getId(), notification.getChannel(), provider, status);
+    delivery.attachProviderMessageId(providerMessageId);
+    delivery.noteError(errorMessage);
+    return deliveryRepository.save(delivery);
+  }
+}

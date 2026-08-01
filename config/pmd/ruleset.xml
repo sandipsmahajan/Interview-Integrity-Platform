@@ -6,4 +6,9 @@
   <description>Baseline production rules for backend services.</description>
   <rule ref="category/java/bestpractices.xml"/>
   <rule ref="category/java/errorprone.xml"/>
+  <rule ref="category/java/bestpractices.xml/UnitTestContainsTooManyAsserts">
+    <properties>
+      <property name="maximumAsserts" value="10"/>
+    </properties>
+  </rule>
 </ruleset>

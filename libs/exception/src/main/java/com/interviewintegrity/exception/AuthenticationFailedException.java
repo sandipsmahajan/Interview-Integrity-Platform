@@ -7,4 +7,9 @@ public class AuthenticationFailedException extends DomainException {
   public AuthenticationFailedException(String message) {
     super("UNAUTHENTICATED", message);
   }
+
+  /** Creates an authentication failure wrapping the underlying cause. */
+  public AuthenticationFailedException(String message, Throwable cause) {
+    super("UNAUTHENTICATED", message, cause);
+  }
 }

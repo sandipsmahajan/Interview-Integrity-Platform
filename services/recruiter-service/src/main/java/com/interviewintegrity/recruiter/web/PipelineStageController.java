@@ -1,0 +1,123 @@
+package com.interviewintegrity.recruiter.web;
+
+import com.interviewintegrity.recruiter.domain.PipelineStage;
+import com.interviewintegrity.recruiter.service.PipelineService;
+import com.interviewintegrity.recruiter.web.dto.CandidatePipelineResponse;
+import com.interviewintegrity.recruiter.web.dto.CreatePipelineStageRequest;
+import com.interviewintegrity.recruiter.web.dto.PipelineStageResponse;
+import com.interviewintegrity.recruiter.web.dto.UpdatePipelineStageRequest;
+import com.interviewintegrity.security.SecurityPrincipals;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+/** Pipeline stage management endpoints, scoped to the caller's organization. */
+@RestController
+@RequestMapping("/api/v1/stages")
+@Tag(name = "Pipeline Stages", description = "Manage hiring pipeline stages")
+public final class PipelineStageController {
+
+  private final PipelineService pipelineService;
+
+  /** Creates the controller bound to the pipeline service. */
+  public PipelineStageController(PipelineService pipelineService) {
+    this.pipelineService = pipelineService;
+  }
+
+  /** Creates a pipeline stage. */
+  @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(summary = "Create a pipeline stage")
+  public Mono<PipelineStageResponse> create(
+      Authentication authentication, @Valid @RequestBody CreatePipelineStageRequest request) {
+    return pipelineService
+        .createStage(
+            SecurityPrincipals.organizationId(authentication),
+            request.code().trim(),
+            request.name().trim(),
+            request.orderIndex(),
+            SecurityPrincipals.userId(authentication))
+        .map(this::toResponse);
+  }
+
+  /** Lists the stages of the organization. */
+  @GetMapping
+  @Operation(summary = "List pipeline stages")
+  public Flux<PipelineStageResponse> list(Authentication authentication) {
+    return pipelineService
+        .listStages(SecurityPrincipals.organizationId(authentication))
+        .map(this::toResponse);
+  }
+
+  /** Updates a stage. */
+  @PatchMapping("/{stageId}")
+  @Operation(summary = "Update a pipeline stage")
+  public Mono<PipelineStageResponse> update(
+      Authentication authentication,
+      @PathVariable UUID stageId,
+      @Valid @RequestBody UpdatePipelineStageRequest request) {
+    return pipelineService
+        .updateStage(
+            stageId,
+            SecurityPrincipals.organizationId(authentication),
+            request.name().trim(),
+            request.orderIndex(),
+            SecurityPrincipals.userId(authentication))
+        .map(this::toResponse);
+  }
+
+  /** Soft deletes a stage. */
+  @DeleteMapping("/{stageId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(summary = "Delete a pipeline stage")
+  public Mono<Void> delete(Authentication authentication, @PathVariable UUID stageId) {
+    return pipelineService.deleteStage(
+        stageId,
+        SecurityPrincipals.organizationId(authentication),
+        SecurityPrincipals.userId(authentication));
+  }
+
+  /** Lists the candidates currently in a stage. */
+  @GetMapping("/{stageId}/candidates")
+  @Operation(summary = "List candidates in a stage")
+  public Flux<CandidatePipelineResponse> candidates(
+      Authentication authentication, @PathVariable UUID stageId) {
+    return pipelineService
+        .listStageCandidates(SecurityPrincipals.organizationId(authentication), stageId)
+        .map(
+            entry ->
+                new CandidatePipelineResponse(
+                    entry.getId(),
+                    entry.getCandidateId(),
+                    entry.getRecruiterId(),
+                    entry.getStageId(),
+                    entry.getPosition(),
+                    entry.getStatus(),
+                    entry.getEnteredAt(),
+                    entry.getExitedAt()));
+  }
+
+  private PipelineStageResponse toResponse(PipelineStage stage) {
+    return new PipelineStageResponse(
+        stage.getId(),
+        stage.getOrganizationId(),
+        stage.getCode(),
+        stage.getName(),
+        stage.getOrderIndex(),
+        stage.getCreatedAt());
+  }
+}

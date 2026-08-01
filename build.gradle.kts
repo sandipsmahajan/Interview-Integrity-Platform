@@ -25,6 +25,7 @@ val jacocoVersion = libs.versions.jacoco.get()
 
 subprojects {
     apply(plugin = "java")
+    apply(plugin = "io.spring.dependency-management")
     apply(plugin = "checkstyle")
     apply(plugin = "pmd")
     apply(plugin = "jacoco")
@@ -69,6 +70,11 @@ subprojects {
         ruleSets = emptyList()
     }
 
+    tasks.named<org.gradle.api.plugins.quality.Pmd>("pmdTest") {
+        ruleSetFiles = files(rootProject.file("config/pmd/ruleset-test.xml"))
+        ruleSets = emptyList()
+    }
+
     extensions.configure<SpotBugsExtension> {
         toolVersion.set(spotbugsVersion)
         effort.set(com.github.spotbugs.snom.Effort.MAX)
@@ -76,9 +82,17 @@ subprojects {
         excludeFilter.set(rootProject.layout.projectDirectory.file("config/spotbugs/exclude.xml"))
     }
 
+    tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
+        maxHeapSize.set("2g")
+    }
+
     tasks.test {
         useJUnitPlatform()
         finalizedBy(tasks.named<JacocoReport>("jacocoTestReport"))
+    }
+
+    dependencies {
+        testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     }
 
     jacoco {

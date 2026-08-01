@@ -6,6 +6,7 @@ public final class KafkaTopics {
 
   public static final String IDENTITY_USER_REGISTERED = "identity.user-registered.v1";
   public static final String IDENTITY_USER_UPDATED = "identity.user-updated.v1";
+  public static final String ORGANIZATION_REGISTERED = "organization.registered.v1";
   public static final String INTERVIEW_CREATED = "interview.created.v1";
   public static final String INTERVIEW_SCHEDULED = "interview.scheduled.v1";
   public static final String INTERVIEW_STARTED = "interview.started.v1";

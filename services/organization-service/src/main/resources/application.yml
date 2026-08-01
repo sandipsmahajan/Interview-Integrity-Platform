@@ -16,6 +16,23 @@ spring:
     locations: classpath:db/migration
   kafka:
     bootstrap-servers: localhost:9092
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:local-development-change-me-32-bytes-minimum}
+    issuer: interview-integrity
+    audience: interview-integrity-api
+    accessTokenTtl: 15m
+    permitAll:
+      - /actuator/health
+      - /actuator/info
+    corsAllowedOrigins:
+      - http://localhost:5173
+      - http://localhost:3000
 
 server:
   port: 8082

@@ -11,4 +11,8 @@
   <Match>
     <BugCode name="EI2" />
   </Match>
+  <!-- Read-only reference entities are populated by SQL reference data via R2DBC reflection. -->
+  <Match>
+    <BugCode name="UwF" />
+  </Match>
 </FindBugsFilter>
