@@ -16,7 +16,6 @@
 /libs/logging/build
 /libs/security/build
 /libs/validation/build
-/libs/validation/build
 /libs/observability/build
 /libs/build
 /services/api-gateway/build
