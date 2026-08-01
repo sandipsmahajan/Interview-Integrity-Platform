@@ -7,8 +7,11 @@ manifests.
 
 ## Repository Layout
 
-- `backend/` - Java 21 Spring Boot 4.1 reactive backend with API, application, domain and
-  infrastructure boundaries.
+- `libs/` - Shared Java 21 libraries (event contracts, security, common web components).
+- `services/` - 19 Java 21 Spring Boot 4.1 reactive microservices (gateway, identity,
+  organization, recruiter, candidate, interview, telemetry, policy, report, notification,
+  analytics, audit, storage, feature-flag, scheduler, integration, configuration, desktop-client,
+  discovery).
 - `client/` - Rust workspace for launcher, agent, browser, policy, IPC, network, updater, storage,
   telemetry, security, screenshare, camera, microphone, system, logger and plugins.
 - `portals/` - Recruiter and admin React/Vite applications.
@@ -23,11 +26,20 @@ Start platform dependencies:
 docker compose -f infra/docker/docker-compose.yml up -d
 ```
 
-Run backend checks:
+Run all checks:
 
 ```bash
-gradle :backend:check
+./gradlew check --no-configuration-cache
 ```
+
+Run a single service check (for example the identity service):
+
+```bash
+./gradlew :services:identity-service:check --no-configuration-cache
+```
+
+For running the full stack locally in IntelliJ, see
+`docs/local-development-intellij.md`.
 
 Write Gradle dependency locks after intentional dependency updates:
 
