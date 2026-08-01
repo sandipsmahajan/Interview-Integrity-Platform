@@ -14,9 +14,12 @@
 /libs/event/build
 /libs/exception/build
 /libs/logging/build
-/libs/security/build/classes/java/main/com/interviewintegrity
+/libs/security/build
 /libs/security/build
 /libs/validation/build
+/libs/validation/build
+/libs/observability/build
+/libs/build
 /services/api-gateway/build
 /services/identity-service/build
 /services/organization-service/build
@@ -36,3 +39,4 @@
 /services/integration-service/build
 /services/configuration-service/build
 /services/discovery-service/build/
+/services/build/
