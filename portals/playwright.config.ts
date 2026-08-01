@@ -5,6 +5,7 @@ export default defineConfig({
   fullyParallel: true,
   reporter: 'list',
   use: {
+    baseURL: 'http://localhost:5173',
     trace: 'on-first-retry'
   },
   projects: [
@@ -12,5 +13,11 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] }
     }
-  ]
+  ],
+  webServer: {
+    command: 'npm run dev --workspace @interview-integrity/recruiter -- --port 5173',
+    url: 'http://localhost:5173',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000
+  }
 });
