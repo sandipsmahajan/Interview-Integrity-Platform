@@ -2,6 +2,7 @@ package com.interviewintegrity.identity.web;
 
 import com.interviewintegrity.identity.service.AuthService;
 import com.interviewintegrity.identity.web.dto.LoginRequest;
+import com.interviewintegrity.identity.web.dto.LoginResult;
 import com.interviewintegrity.identity.web.dto.LogoutRequest;
 import com.interviewintegrity.identity.web.dto.PasswordResetResponse;
 import com.interviewintegrity.identity.web.dto.RefreshRequest;
@@ -43,13 +44,19 @@ public final class AuthController {
     return authService.register(request);
   }
 
-  /** Authenticates a user and issues a token pair. */
+  /** Authenticates a user and issues tokens, or returns an MFA challenge. */
   @PostMapping("/login")
-  @Operation(summary = "Authenticate and receive tokens")
-  public Mono<TokenResponse> login(
+  @Operation(summary = "Authenticate and receive tokens or an MFA challenge")
+  public Mono<Object> login(
       @Valid @RequestBody LoginRequest request,
       @RequestHeader(value = "X-Forwarded-For", required = false) String forwardedFor) {
-    return authService.login(request, resolveIp(forwardedFor));
+    return authService
+        .login(request, resolveIp(forwardedFor))
+        .map(
+            result ->
+                result instanceof LoginResult.Authenticated authenticated
+                    ? authenticated.tokens()
+                    : ((LoginResult.MfaRequired) result).challenge());
   }
 
   /** Rotates the refresh token and issues a fresh token pair. */

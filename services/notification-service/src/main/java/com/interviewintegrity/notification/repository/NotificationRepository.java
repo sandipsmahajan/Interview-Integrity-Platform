@@ -2,6 +2,7 @@ package com.interviewintegrity.notification.repository;
 
 import com.interviewintegrity.notification.domain.Notification;
 import com.interviewintegrity.notification.domain.NotificationStatus;
+import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
@@ -26,4 +27,11 @@ public interface NotificationRepository extends ReactiveCrudRepository<Notificat
       "SELECT * FROM notifications WHERE organization_id = :organizationId "
           + "AND status = :status ORDER BY created_at")
   Flux<Notification> listByOrganizationAndStatus(UUID organizationId, NotificationStatus status);
+
+  /** Lists the pending email notifications that are ready for (re)dispatch. */
+  @Query(
+      "SELECT * FROM notifications WHERE channel = 'EMAIL' AND status = 'PENDING' "
+          + "AND (scheduled_at IS NULL OR scheduled_at <= :now) "
+          + "ORDER BY created_at LIMIT :limit")
+  Flux<Notification> listPendingEmailDue(Instant now, int limit);
 }

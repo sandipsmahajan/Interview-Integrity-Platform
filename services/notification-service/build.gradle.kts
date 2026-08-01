@@ -19,6 +19,7 @@ dependencies {
     implementation(project(":libs:security"))
     implementation(libs.spring.boot.starter.data.r2dbc)
     implementation(libs.spring.boot.starter.flyway)
+    implementation(libs.spring.boot.starter.mail)
     implementation(libs.spring.boot.starter.webflux)
     implementation(libs.r2dbc.postgresql)
     implementation(libs.postgresql)

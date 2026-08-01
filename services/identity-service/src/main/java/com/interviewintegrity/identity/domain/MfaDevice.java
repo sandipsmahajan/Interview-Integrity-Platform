@@ -69,6 +69,19 @@ public class MfaDevice {
     this.updatedAt = Instant.now();
   }
 
+  /** Marks the device as used for a successful challenge. */
+  public void markUsed() {
+    this.lastUsedAt = Instant.now();
+    this.updatedAt = Instant.now();
+  }
+
+  /** Marks the device as soft deleted. */
+  public void delete(UUID byUser) {
+    this.deletedBy = byUser;
+    this.deletedAt = Instant.now();
+    this.updatedAt = Instant.now();
+  }
+
   public UUID getId() {
     return id;
   }

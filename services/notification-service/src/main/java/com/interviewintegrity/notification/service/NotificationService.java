@@ -53,6 +53,64 @@ public class NotificationService {
             createdBy));
   }
 
+  /** Creates a pending email notification carrying the recipient address. */
+  @Transactional
+  public Mono<Notification> createEmailNotification(
+      UUID organizationId,
+      UUID userId,
+      String recipient,
+      String notificationType,
+      String subject,
+      String body,
+      NotificationPriority priority,
+      UUID createdBy) {
+    Notification notification =
+        new Notification(
+            organizationId,
+            userId,
+            notificationType,
+            NotificationChannel.EMAIL,
+            subject,
+            body,
+            priority,
+            Instant.now(),
+            createdBy);
+    notification.setRecipient(recipient);
+    return notificationRepository.save(notification);
+  }
+
+  /** Returns the pending email notifications that are ready for dispatch. */
+  @Transactional(readOnly = true)
+  public Flux<Notification> listPendingEmailDue(Instant now, int limit) {
+    return notificationRepository.listPendingEmailDue(now, limit);
+  }
+
+  /** Records a failed dispatch attempt while leaving the notification pending for retry. */
+  @Transactional
+  public Mono<NotificationDelivery> recordFailedAttempt(
+      UUID notificationId, UUID organizationId, String provider, String errorMessage) {
+    return getNotification(notificationId, organizationId)
+        .flatMap(
+            notification ->
+                recordDelivery(
+                    notification, NotificationStatus.FAILED, provider, null, errorMessage));
+  }
+
+  /** Returns the number of dispatch attempts of a notification. */
+  @Transactional(readOnly = true)
+  public Mono<Long> countAttempts(UUID notificationId) {
+    return deliveryRepository.countByNotification(notificationId);
+  }
+
+  /** Returns the timestamp of the most recent dispatch attempt, if any. */
+  @Transactional(readOnly = true)
+  public Mono<Instant> latestAttemptAt(UUID notificationId) {
+    return deliveryRepository
+        .listByNotification(notificationId)
+        .next()
+        .map(NotificationDelivery::getCreatedAt);
+  }
+
   /** Returns a single notification within the organization. */
   @Transactional(readOnly = true)
   public Mono<Notification> getNotification(UUID notificationId, UUID organizationId) {

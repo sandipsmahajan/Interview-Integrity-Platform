@@ -11,6 +11,8 @@ import type {
   FeatureResponse,
   InterviewResponse,
   LoginRequest,
+  LoginResponse,
+  MfaVerifyRequest,
   NotificationResponse,
   OrganizationResponse,
   PageResponse,
@@ -99,12 +101,31 @@ function toApiError(error: unknown): ApiError {
 
 export const api = {
   // ---- Auth ----
-  async login(payload: LoginRequest): Promise<TokenResponse> {
+  async login(payload: LoginRequest): Promise<LoginResponse> {
     try {
-      const { data } = await http.post<TokenResponse>('/v1/auth/login', payload);
+      const { data } = await http.post<LoginResponse>('/v1/auth/login', payload);
+      if ('accessToken' in data) {
+        setTokens(data.accessToken, data.refreshToken, Boolean(payload.deviceId));
+        persistUser(data.user);
+      }
+      return data;
+    } catch (e) {
+      throw toApiError(e);
+    }
+  },
+  async mfaVerify(payload: MfaVerifyRequest): Promise<TokenResponse> {
+    try {
+      const { data } = await http.post<TokenResponse>('/v1/auth/mfa/verify', payload);
       setTokens(data.accessToken, data.refreshToken, Boolean(payload.deviceId));
       persistUser(data.user);
       return data;
+    } catch (e) {
+      throw toApiError(e);
+    }
+  },
+  async mfaEmailOtp(challengeId: string): Promise<void> {
+    try {
+      await http.post('/v1/auth/mfa/email-otp', { challengeId });
     } catch (e) {
       throw toApiError(e);
     }

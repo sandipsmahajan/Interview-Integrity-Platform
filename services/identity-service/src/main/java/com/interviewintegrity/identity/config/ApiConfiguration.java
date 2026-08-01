@@ -1,11 +1,16 @@
 package com.interviewintegrity.identity.config;
 
+import com.interviewintegrity.identity.repository.UserRepository;
 import com.interviewintegrity.identity.service.AuthService;
+import com.interviewintegrity.identity.service.MfaService;
+import com.interviewintegrity.identity.service.OtpService;
 import com.interviewintegrity.identity.service.PermissionService;
 import com.interviewintegrity.identity.service.RoleService;
 import com.interviewintegrity.identity.service.SessionService;
 import com.interviewintegrity.identity.service.UserService;
 import com.interviewintegrity.identity.web.AuthController;
+import com.interviewintegrity.identity.web.MfaController;
+import com.interviewintegrity.identity.web.OtpController;
 import com.interviewintegrity.identity.web.PermissionController;
 import com.interviewintegrity.identity.web.RoleController;
 import com.interviewintegrity.identity.web.SessionController;
@@ -50,6 +55,18 @@ public class ApiConfiguration {
   @Bean
   public SessionController sessionController(SessionService sessionService) {
     return new SessionController(sessionService);
+  }
+
+  /** Exposes the email OTP controller. */
+  @Bean
+  public OtpController otpController(OtpService otpService, UserRepository userRepository) {
+    return new OtpController(otpService, userRepository);
+  }
+
+  /** Exposes the multi-factor authentication controller. */
+  @Bean
+  public MfaController mfaController(MfaService mfaService, UserRepository userRepository) {
+    return new MfaController(mfaService, userRepository);
   }
 
   /** Describes the OpenAPI document for the identity service. */

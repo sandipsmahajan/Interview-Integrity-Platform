@@ -5,6 +5,7 @@ import com.interviewintegrity.exception.ConflictException;
 import com.interviewintegrity.exception.DomainException;
 import com.interviewintegrity.exception.ForbiddenException;
 import com.interviewintegrity.exception.NotFoundException;
+import com.interviewintegrity.exception.RateLimitException;
 import com.interviewintegrity.exception.ValidationFailedException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -32,6 +33,9 @@ public final class ApiErrorMappings {
     }
     if (throwable instanceof ConflictException) {
       return HttpStatus.CONFLICT;
+    }
+    if (throwable instanceof RateLimitException) {
+      return HttpStatus.TOO_MANY_REQUESTS;
     }
     if (throwable instanceof ValidationFailedException) {
       return HttpStatus.BAD_REQUEST;

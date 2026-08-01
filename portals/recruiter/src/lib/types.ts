@@ -18,6 +18,24 @@ export interface TokenResponse {
   user: UserResponse;
 }
 
+/** Returned by login when the account requires a second factor. */
+export interface MfaChallengeResponse {
+  mfaRequired: boolean;
+  challengeId: string;
+  expiresInSeconds: number;
+  channels: string[];
+}
+
+export type LoginResponse = TokenResponse | MfaChallengeResponse;
+
+export interface MfaVerifyRequest {
+  challengeId: string;
+  code: string;
+  trustDevice: boolean;
+  deviceId?: string | null;
+  deviceName?: string | null;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;

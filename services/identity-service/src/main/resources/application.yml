@@ -34,6 +34,13 @@ security:
       - http://localhost:5173
       - http://localhost:3000
 
+app:
+  auth:
+    app-name: ${APP_NAME:Integrity Pro}
+    frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+    mfa-challenge-ttl: PT5M
+    mfa-email-purpose: mfa-login
+
 server:
   port: 8081
   shutdown: graceful

@@ -25,6 +25,9 @@ public class Notification {
 
   private NotificationChannel channel;
 
+  /** Recipient address for email dispatch; null for non-email channels. */
+  private String recipient;
+
   private String subject;
 
   private String body;
@@ -140,6 +143,15 @@ public class Notification {
 
   public NotificationChannel getChannel() {
     return channel;
+  }
+
+  public String getRecipient() {
+    return recipient;
+  }
+
+  /** Sets the recipient address (used for email dispatch). */
+  public void setRecipient(String recipient) {
+    this.recipient = recipient;
   }
 
   public String getSubject() {

@@ -7,8 +7,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.interviewintegrity.event.IdentityEmailEvent;
 import com.interviewintegrity.exception.AuthenticationFailedException;
 import com.interviewintegrity.exception.ConflictException;
+import com.interviewintegrity.identity.config.AuthProperties;
 import com.interviewintegrity.identity.domain.PasswordHistory;
 import com.interviewintegrity.identity.domain.Permission;
 import com.interviewintegrity.identity.domain.Role;
@@ -23,15 +25,17 @@ import com.interviewintegrity.identity.repository.UserRepository;
 import com.interviewintegrity.identity.repository.UserRoleRepository;
 import com.interviewintegrity.identity.repository.UserSessionRepository;
 import com.interviewintegrity.identity.web.dto.LoginRequest;
+import com.interviewintegrity.identity.web.dto.LoginResult;
 import com.interviewintegrity.identity.web.dto.PasswordResetResponse;
 import com.interviewintegrity.identity.web.dto.RefreshRequest;
 import com.interviewintegrity.identity.web.dto.RegisterOrganizationRequest;
 import com.interviewintegrity.identity.web.dto.RequestPasswordResetRequest;
 import com.interviewintegrity.identity.web.dto.ResetPasswordRequest;
 import com.interviewintegrity.identity.web.dto.TokenResponse;
-import com.interviewintegrity.security.JwtProperties;
+import com.interviewintegrity.identity.web.dto.UserResponse;
 import com.interviewintegrity.security.JwtTokenService;
 import com.interviewintegrity.security.RefreshTokens;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -60,14 +64,19 @@ class AuthServiceTest {
   @Mock private PasswordHistoryRepository passwordHistoryRepository;
   @Mock private PasswordEncoder passwordEncoder;
   @Mock private JwtTokenService jwtTokenService;
-  @Mock private AuthorityResolver authorityResolver;
   @Mock private UserEventPublisher eventPublisher;
+  @Mock private EmailEventPublisher emailEventPublisher;
+  @Mock private TokenIssuer tokenIssuer;
+  @Mock private MfaService mfaService;
 
   private AuthService authService;
+  private AuthProperties authProperties;
 
   @BeforeEach
   void setUp() {
-    JwtProperties jwtProperties = new JwtProperties();
+    authProperties =
+        new AuthProperties(
+            "Integrity Pro", "http://localhost:5173", Duration.ofMinutes(5), "mfa-login");
     authService =
         new AuthService(
             userRepository,
@@ -79,9 +88,11 @@ class AuthServiceTest {
             passwordHistoryRepository,
             passwordEncoder,
             jwtTokenService,
-            jwtProperties,
-            authorityResolver,
-            eventPublisher);
+            eventPublisher,
+            emailEventPublisher,
+            tokenIssuer,
+            mfaService,
+            authProperties);
   }
 
   @Test
@@ -114,11 +125,13 @@ class AuthServiceTest {
     when(permissionRepository.findAllOrdered()).thenReturn(Flux.just(permission));
     when(rolePermissionRepository.grant(any(), any(), any())).thenReturn(Mono.empty());
     when(userRoleRepository.assign(any(), any(), any())).thenReturn(Mono.empty());
-    when(authorityResolver.resolve(adminId))
-        .thenReturn(Mono.just(List.of("ROLE_ORG_ADMIN", "organization:manage")));
-    when(jwtTokenService.issueAccessToken(any())).thenReturn("signed-access-token");
-    when(sessionRepository.save(any(UserSession.class)))
-        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+    when(jwtTokenService.issuePurposeToken(eq("email-verify"), eq(adminId), any()))
+        .thenReturn("verify-token");
+    when(emailEventPublisher.publish(any(IdentityEmailEvent.class))).thenReturn(Mono.empty());
+    when(tokenIssuer.issue(any(), any(), any(), any()))
+        .thenReturn(
+            Mono.just(
+                tokenResponse("signed-access-token", "admin@example.com", "ORG_ADMIN", adminId)));
     when(eventPublisher.publishUserRegistered(any(User.class))).thenReturn(Mono.empty());
 
     TokenResponse response = authService.register(request).block();
@@ -131,6 +144,8 @@ class AuthServiceTest {
     verify(passwordEncoder).encode(PASSWORD);
     verify(userRoleRepository).assign(adminId, roleId, adminId);
     verify(rolePermissionRepository).grant(roleId, permissionId, adminId);
+    verify(emailEventPublisher, org.mockito.Mockito.times(2))
+        .publish(any(IdentityEmailEvent.class));
   }
 
   @Test
@@ -154,18 +169,71 @@ class AuthServiceTest {
 
     when(userRepository.findLiveByEmail("alice@example.com")).thenReturn(Flux.just(user));
     when(passwordEncoder.matches(PASSWORD, "hash")).thenReturn(true);
+    when(mfaService.hasVerifiedDevice(userId)).thenReturn(Mono.just(false));
     when(userRepository.save(any(User.class))).thenReturn(Mono.just(user));
-    when(authorityResolver.resolve(userId)).thenReturn(Mono.just(List.of("ROLE_RECRUITER")));
-    when(jwtTokenService.issueAccessToken(any())).thenReturn("signed-access-token");
-    when(sessionRepository.save(any(UserSession.class)))
-        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+    when(tokenIssuer.issue(any(), any(), any(), any()))
+        .thenReturn(
+            Mono.just(
+                tokenResponse("signed-access-token", "alice@example.com", "RECRUITER", userId)));
 
-    TokenResponse response = authService.login(request, "127.0.0.1").block();
+    LoginResult result = authService.login(request, "127.0.0.1").block();
 
-    assertThat(response).isNotNull();
+    assertThat(result).isInstanceOf(LoginResult.Authenticated.class);
+    TokenResponse response = ((LoginResult.Authenticated) result).tokens();
     assertThat(response.accessToken()).isEqualTo("signed-access-token");
     assertThat(response.user().roles()).containsExactly("RECRUITER");
     assertThat(user.getLastLoginAt()).isNotNull();
+  }
+
+  @Test
+  void loginReturnsChallengeWhenMfaRequiredAndDeviceUnknown() {
+    UUID userId = UUID.randomUUID();
+    UUID organizationId = UUID.randomUUID();
+    User user = new User(organizationId, "alice@example.com", "hash", "Alice");
+    user.activate();
+    user.setId(userId);
+    LoginRequest request = new LoginRequest("alice@example.com", PASSWORD, null, "dev", "agent");
+
+    when(userRepository.findLiveByEmail("alice@example.com")).thenReturn(Flux.just(user));
+    when(passwordEncoder.matches(PASSWORD, "hash")).thenReturn(true);
+    when(mfaService.hasVerifiedDevice(userId)).thenReturn(Mono.just(true));
+    when(mfaService.isTrustedDevice(userId, "dev")).thenReturn(Mono.just(false));
+    when(mfaService.generateChallenge(user))
+        .thenReturn(
+            Mono.just(
+                new com.interviewintegrity.identity.web.dto.MfaChallengeResponse(
+                    true, "challenge-id", 300, List.of("TOTP", "EMAIL", "RECOVERY"))));
+
+    LoginResult result = authService.login(request, "127.0.0.1").block();
+
+    assertThat(result).isInstanceOf(LoginResult.MfaRequired.class);
+    assertThat(((LoginResult.MfaRequired) result).challenge().challengeId())
+        .isEqualTo("challenge-id");
+  }
+
+  @Test
+  void loginSkipsChallengeForTrustedDevice() {
+    UUID userId = UUID.randomUUID();
+    UUID organizationId = UUID.randomUUID();
+    User user = new User(organizationId, "alice@example.com", "hash", "Alice");
+    user.activate();
+    user.setId(userId);
+    LoginRequest request = new LoginRequest("alice@example.com", PASSWORD, null, "dev", "agent");
+
+    when(userRepository.findLiveByEmail("alice@example.com")).thenReturn(Flux.just(user));
+    when(passwordEncoder.matches(PASSWORD, "hash")).thenReturn(true);
+    when(mfaService.hasVerifiedDevice(userId)).thenReturn(Mono.just(true));
+    when(mfaService.isTrustedDevice(userId, "dev")).thenReturn(Mono.just(true));
+    when(userRepository.save(any(User.class))).thenReturn(Mono.just(user));
+    when(tokenIssuer.issue(any(), any(), any(), any()))
+        .thenReturn(
+            Mono.just(
+                tokenResponse("signed-access-token", "alice@example.com", "RECRUITER", userId)));
+
+    LoginResult result = authService.login(request, "127.0.0.1").block();
+
+    assertThat(result).isInstanceOf(LoginResult.Authenticated.class);
+    verify(tokenIssuer).issue(any(), any(), any(), any());
   }
 
   @Test
@@ -233,8 +301,10 @@ class AuthServiceTest {
     when(sessionRepository.save(any(UserSession.class)))
         .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
     when(userRepository.findLiveById(userId)).thenReturn(Mono.just(user));
-    when(authorityResolver.resolve(userId)).thenReturn(Mono.just(List.of("ROLE_RECRUITER")));
-    when(jwtTokenService.issueAccessToken(any())).thenReturn("rotated-access-token");
+    when(tokenIssuer.issue(any(), any(), any(), any()))
+        .thenReturn(
+            Mono.just(
+                tokenResponse("rotated-access-token", "alice@example.com", "RECRUITER", userId)));
 
     TokenResponse response = authService.refresh(new RefreshRequest(rawToken)).block();
 
@@ -259,6 +329,7 @@ class AuthServiceTest {
     when(userRepository.findLiveByEmail("alice@example.com")).thenReturn(Flux.just(user));
     when(jwtTokenService.issuePurposeToken(eq("password-reset"), eq(userId), any()))
         .thenReturn("reset-token");
+    when(emailEventPublisher.publish(any(IdentityEmailEvent.class))).thenReturn(Mono.empty());
 
     PasswordResetResponse response =
         authService
@@ -268,6 +339,7 @@ class AuthServiceTest {
     assertThat(response).isNotNull();
     assertThat(response.resetToken()).isEqualTo("reset-token");
     assertThat(response.expiresInSeconds()).isEqualTo(900);
+    verify(emailEventPublisher).publish(any(IdentityEmailEvent.class));
   }
 
   @Test
@@ -307,5 +379,21 @@ class AuthServiceTest {
     assertThat(user.getPasswordHash()).isEqualTo("new-hash");
     assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE);
     verify(sessionRepository).revokeAllActiveByUser(eq(userId), any(Instant.class));
+  }
+
+  private static TokenResponse tokenResponse(
+      String accessToken, String email, String role, UUID userId) {
+    UserResponse userResponse =
+        new UserResponse(
+            userId,
+            UUID.randomUUID(),
+            email,
+            "Alice",
+            "ACTIVE",
+            Instant.now(),
+            Instant.now(),
+            Instant.now(),
+            List.of(role));
+    return new TokenResponse(accessToken, "refresh-token", 900, "Bearer", userResponse);
   }
 }

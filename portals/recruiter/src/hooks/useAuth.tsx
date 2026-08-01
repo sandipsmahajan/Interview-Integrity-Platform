@@ -9,13 +9,21 @@ import {
 } from 'react';
 import { api } from '../lib/api';
 import { clearTokens, getRefreshToken, readStoredUser, writeRememberMePreference } from '../lib/session';
-import type { LoginRequest, RegisterOrganizationRequest, UserResponse } from '../lib/types';
+import type {
+  LoginRequest,
+  LoginResponse,
+  MfaVerifyRequest,
+  RegisterOrganizationRequest,
+  UserResponse
+} from '../lib/types';
 
 interface AuthContextValue {
   user: UserResponse | null;
   loading: boolean;
   isAuthenticated: boolean;
-  login: (payload: LoginRequest, rememberMe: boolean) => Promise<UserResponse>;
+  login: (payload: LoginRequest, rememberMe: boolean) => Promise<LoginResponse>;
+  mfaVerify: (payload: MfaVerifyRequest) => Promise<UserResponse>;
+  mfaEmailOtp: (challengeId: string) => Promise<void>;
   register: (payload: RegisterOrganizationRequest) => Promise<UserResponse>;
   logout: () => Promise<void>;
 }
@@ -34,9 +42,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (payload: LoginRequest, rememberMe: boolean) => {
     writeRememberMePreference(rememberMe);
-    const tokens = await api.login({ ...payload, deviceId: payload.deviceId ?? 'web-portal' });
+    const response = await api.login({ ...payload, deviceId: payload.deviceId ?? 'web-portal' });
+    if ('accessToken' in response) {
+      setUser(response.user);
+    }
+    return response;
+  }, []);
+
+  const mfaVerify = useCallback(async (payload: MfaVerifyRequest) => {
+    const tokens = await api.mfaVerify({ ...payload, deviceId: payload.deviceId ?? 'web-portal' });
     setUser(tokens.user);
     return tokens.user;
+  }, []);
+
+  const mfaEmailOtp = useCallback(async (challengeId: string) => {
+    await api.mfaEmailOtp(challengeId);
   }, []);
 
   const register = useCallback(async (payload: RegisterOrganizationRequest) => {
@@ -53,8 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, loading, isAuthenticated: Boolean(user), login, register, logout }),
-    [user, loading, login, register, logout]
+    () => ({ user, loading, isAuthenticated: Boolean(user), login, mfaVerify, mfaEmailOtp, register, logout }),
+    [user, loading, login, mfaVerify, mfaEmailOtp, register, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
