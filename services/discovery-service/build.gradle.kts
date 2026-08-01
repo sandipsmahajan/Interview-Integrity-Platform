@@ -18,6 +18,7 @@ dependencies {
     implementation(project(":libs:observability"))
     implementation(project(":libs:security"))
     implementation(libs.spring.boot.starter.webflux)
+    implementation(libs.springdoc.openapi.starter.webflux.ui)
 
     errorprone(libs.errorprone.core)
 

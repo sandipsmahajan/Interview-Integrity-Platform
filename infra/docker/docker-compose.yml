@@ -1,3 +1,16 @@
+# Interview Integrity platform — local development stack.
+#
+# Infrastructure (postgres, redis, kafka, minio) runs on the default bridge
+# network with host port mappings. Every microservice uses `network_mode: host`
+# so the api-gateway route table (which targets http://localhost:<port>) and the
+# default application.yml connection strings (localhost:<port>) resolve directly.
+# This mirrors running every service locally with `./gradlew bootRun`.
+#
+# Dockerfiles live next to each service (services/<name>/Dockerfile) and build a
+# fat bootJar in a multi-stage build.
+
+name: interview-integrity
+
 services:
   postgres:
     image: postgres:16
@@ -6,13 +19,21 @@ services:
       POSTGRES_USER: integrity
       POSTGRES_PASSWORD: integrity
     ports: ["5432:5432"]
-    volumes: ["postgres-data:/var/lib/postgresql/data"]
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U integrity"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   redis:
     image: redis:7
     ports: ["6379:6379"]
+
   kafka:
     image: apache/kafka:3.9.1
-    container_name: kafka
     ports:
       - "9092:9092"
     environment:
@@ -27,6 +48,7 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
   minio:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
@@ -34,7 +56,188 @@ services:
       MINIO_ROOT_USER: integrity
       MINIO_ROOT_PASSWORD: integrity-secret
     ports: ["9000:9000", "9001:9001"]
-    volumes: ["minio-data:/data"]
+    volumes:
+      - minio-data:/data
+
+  api-gateway:
+    build: { context: ../.., dockerfile: services/api-gateway/Dockerfile }
+    network_mode: host
+    depends_on: [postgres, redis, kafka]
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  discovery-service:
+    build: { context: ../.., dockerfile: services/discovery-service/Dockerfile }
+    network_mode: host
+    depends_on: [postgres]
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  desktop-client-service:
+    build: { context: ../.., dockerfile: services/desktop-client-service/Dockerfile }
+    network_mode: host
+    depends_on: [kafka]
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  identity-service:
+    build: { context: ../.., dockerfile: services/identity-service/Dockerfile }
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  organization-service:
+    build: { context: ../.., dockerfile: services/organization-service/Dockerfile }
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  recruiter-service:
+    build: { context: ../.., dockerfile: services/recruiter-service/Dockerfile }
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  candidate-service:
+    build: { context: ../.., dockerfile: services/candidate-service/Dockerfile }
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  interview-service:
+    build: { context: ../.., dockerfile: services/interview-service/Dockerfile }
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  telemetry-service:
+    build: { context: ../.., dockerfile: services/telemetry-service/Dockerfile }
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  policy-engine-service:
+    build: { context: ../.., dockerfile: services/policy-engine-service/Dockerfile }
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  report-service:
+    build: { context: ../.., dockerfile: services/report-service/Dockerfile }
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  notification-service:
+    build: { context: ../.., dockerfile: services/notification-service/Dockerfile }
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  analytics-service:
+    build: { context: ../.., dockerfile: services/analytics-service/Dockerfile }
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  audit-service:
+    build: { context: ../.., dockerfile: services/audit-service/Dockerfile }
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  storage-service:
+    build: { context: ../.., dockerfile: services/storage-service/Dockerfile }
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  feature-flag-service:
+    build: { context: ../.., dockerfile: services/feature-flag-service/Dockerfile }
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  scheduler-service:
+    build: { context: ../.., dockerfile: services/scheduler-service/Dockerfile }
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  integration-service:
+    build: { context: ../.., dockerfile: services/integration-service/Dockerfile }
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
+  configuration-service:
+    build: { context: ../.., dockerfile: services/configuration-service/Dockerfile }
+    network_mode: host
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      JWT_SECRET: local-development-change-me-32-bytes-minimum
+
 volumes:
   postgres-data:
   minio-data:

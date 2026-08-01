@@ -3,15 +3,6 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-      routes:
-        - id: identity
-          uri: lb://identity-service
-          predicates:
-            - Path=/api/v1/auth/**,/api/v1/users/**
-        - id: interview
-          uri: lb://interview-service
-          predicates:
-            - Path=/api/v1/interviews/**
       discovery:
         locator:
           enabled: false
@@ -19,11 +10,25 @@ spring:
     redis:
       host: localhost
       port: 6379
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://localhost:8080/realms/interview-integrity
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:local-development-change-me-32-bytes-minimum}
+    issuer: interview-integrity
+    audience: interview-integrity-api
+    accessTokenTtl: 15m
+    permitAll:
+      - /actuator/health
+      - /actuator/info
+    corsAllowedOrigins:
+      - http://localhost:5173
+      - http://localhost:3000
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
 
 server:
   port: 8080

@@ -1,10 +1,22 @@
 spring:
   application:
     name: discovery-service
-  security:
-    user:
-      name: discovery
-      password: discovery
+
+discovery:
+  heartbeat-timeout-seconds: 60
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:local-development-change-me-32-bytes-minimum}
+    issuer: interview-integrity
+    audience: interview-integrity-api
+    accessTokenTtl: 15m
+    permitAll:
+      - /actuator/health
+      - /actuator/info
+    corsAllowedOrigins:
+      - http://localhost:5173
+      - http://localhost:3000
 
 server:
   port: 8761
@@ -22,6 +34,12 @@ management:
   metrics:
     tags:
       application: discovery-service
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
 
 logging:
   level:

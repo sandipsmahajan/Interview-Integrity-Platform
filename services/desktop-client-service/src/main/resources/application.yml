@@ -3,6 +3,29 @@ spring:
     name: desktop-client-service
   kafka:
     bootstrap-servers: localhost:9092
+    consumer:
+      group-id: desktop-client-relay
+
+desktop:
+  relay-topics:
+    - telemetry.received.v1
+    - policy.violation.v1
+    - interview.started.v1
+    - interview.completed.v1
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:local-development-change-me-32-bytes-minimum}
+    issuer: interview-integrity
+    audience: interview-integrity-api
+    accessTokenTtl: 15m
+    permitAll:
+      - /actuator/health
+      - /actuator/info
+      - /ws/**
+    corsAllowedOrigins:
+      - http://localhost:5173
+      - http://localhost:3000
 
 server:
   port: 8086
