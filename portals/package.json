@@ -9,7 +9,6 @@
   },
   "workspaces": [
     "recruiter",
-    "candidate",
     "admin",
     "shared/ui",
     "shared/components",
