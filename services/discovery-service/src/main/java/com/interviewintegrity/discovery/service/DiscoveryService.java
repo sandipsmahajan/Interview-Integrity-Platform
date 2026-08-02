@@ -88,7 +88,7 @@ public class DiscoveryService {
 
   private boolean evictionDeadlinePassed(String instanceId, Instant now) {
     Instant deadline = evictionAt.get(instanceId);
-    return deadline != null && deadline.isBefore(now);
+    return deadline != null && !deadline.isAfter(now);
   }
 
   private Instant heartbeatDeadline() {
