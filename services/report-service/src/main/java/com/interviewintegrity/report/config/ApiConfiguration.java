@@ -1,5 +1,6 @@
 package com.interviewintegrity.report.config;
 
+import com.interviewintegrity.report.service.ReportMapper;
 import com.interviewintegrity.report.service.ReportRequestService;
 import com.interviewintegrity.report.service.ReportScheduleService;
 import com.interviewintegrity.report.service.ReportSectionService;
@@ -22,26 +23,29 @@ public class ApiConfiguration {
 
   /** Exposes the report controller. */
   @Bean
-  public ReportController reportController(ReportService reportService) {
-    return new ReportController(reportService);
+  public ReportController reportController(ReportService reportService, ReportMapper mapper) {
+    return new ReportController(reportService, mapper);
   }
 
   /** Exposes the report section controller. */
   @Bean
-  public ReportSectionController reportSectionController(ReportSectionService sectionService) {
-    return new ReportSectionController(sectionService);
+  public ReportSectionController reportSectionController(
+      ReportSectionService sectionService, ReportMapper mapper) {
+    return new ReportSectionController(sectionService, mapper);
   }
 
   /** Exposes the report request controller. */
   @Bean
-  public ReportRequestController reportRequestController(ReportRequestService requestService) {
-    return new ReportRequestController(requestService);
+  public ReportRequestController reportRequestController(
+      ReportRequestService requestService, ReportMapper mapper) {
+    return new ReportRequestController(requestService, mapper);
   }
 
   /** Exposes the report schedule controller. */
   @Bean
-  public ReportScheduleController reportScheduleController(ReportScheduleService scheduleService) {
-    return new ReportScheduleController(scheduleService);
+  public ReportScheduleController reportScheduleController(
+      ReportScheduleService scheduleService, ReportMapper mapper) {
+    return new ReportScheduleController(scheduleService, mapper);
   }
 
   /** Describes the OpenAPI document for the report service. */

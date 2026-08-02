@@ -1,6 +1,6 @@
 package com.interviewintegrity.report.web;
 
-import com.interviewintegrity.report.domain.ReportSection;
+import com.interviewintegrity.report.service.ReportMapper;
 import com.interviewintegrity.report.service.ReportSectionService;
 import com.interviewintegrity.report.web.dto.CreateReportSectionRequest;
 import com.interviewintegrity.report.web.dto.ReportSectionResponse;
@@ -31,10 +31,12 @@ import reactor.core.publisher.Mono;
 public final class ReportSectionController {
 
   private final ReportSectionService sectionService;
+  private final ReportMapper mapper;
 
-  /** Creates the controller bound to the report section service. */
-  public ReportSectionController(ReportSectionService sectionService) {
+  /** Creates the controller bound to the report section service and mapper. */
+  public ReportSectionController(ReportSectionService sectionService, ReportMapper mapper) {
     this.sectionService = sectionService;
+    this.mapper = mapper;
   }
 
   /** Adds a section to a report. */
@@ -53,7 +55,7 @@ public final class ReportSectionController {
             request.title(),
             request.content(),
             request.orderIndex())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the sections of a report in display order. */
@@ -63,7 +65,7 @@ public final class ReportSectionController {
       Authentication authentication, @PathVariable UUID reportId) {
     return sectionService
         .listSections(reportId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single section. */
@@ -73,7 +75,7 @@ public final class ReportSectionController {
       Authentication authentication, @PathVariable UUID sectionId) {
     return sectionService
         .getSection(sectionId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates a section. */
@@ -90,7 +92,7 @@ public final class ReportSectionController {
             request.title(),
             request.content(),
             request.orderIndex())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Removes a section from a report. */
@@ -100,17 +102,5 @@ public final class ReportSectionController {
   public Mono<Void> remove(Authentication authentication, @PathVariable UUID sectionId) {
     return sectionService.removeSection(
         sectionId, SecurityPrincipals.organizationId(authentication));
-  }
-
-  private ReportSectionResponse toResponse(ReportSection section) {
-    return new ReportSectionResponse(
-        section.getId(),
-        section.getOrganizationId(),
-        section.getReportId(),
-        section.getSectionType(),
-        section.getTitle(),
-        section.getContent(),
-        section.getOrderIndex(),
-        section.getCreatedAt());
   }
 }

@@ -1,6 +1,6 @@
 package com.interviewintegrity.report.web;
 
-import com.interviewintegrity.report.domain.ReportSchedule;
+import com.interviewintegrity.report.service.ReportMapper;
 import com.interviewintegrity.report.service.ReportScheduleService;
 import com.interviewintegrity.report.web.dto.CreateReportScheduleRequest;
 import com.interviewintegrity.report.web.dto.ReportScheduleResponse;
@@ -31,10 +31,12 @@ import reactor.core.publisher.Mono;
 public final class ReportScheduleController {
 
   private final ReportScheduleService scheduleService;
+  private final ReportMapper mapper;
 
-  /** Creates the controller bound to the report schedule service. */
-  public ReportScheduleController(ReportScheduleService scheduleService) {
+  /** Creates the controller bound to the report schedule service and mapper. */
+  public ReportScheduleController(ReportScheduleService scheduleService, ReportMapper mapper) {
     this.scheduleService = scheduleService;
+    this.mapper = mapper;
   }
 
   /** Creates a recurring report schedule. */
@@ -53,7 +55,7 @@ public final class ReportScheduleController {
             request.parameters(),
             request.nextRunAt(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the schedules of the organization. */
@@ -62,7 +64,7 @@ public final class ReportScheduleController {
   public Flux<ReportScheduleResponse> list(Authentication authentication) {
     return scheduleService
         .listSchedules(SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single schedule. */
@@ -72,7 +74,7 @@ public final class ReportScheduleController {
       Authentication authentication, @PathVariable UUID scheduleId) {
     return scheduleService
         .getSchedule(scheduleId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates a schedule. */
@@ -92,7 +94,7 @@ public final class ReportScheduleController {
             request.parameters(),
             request.nextRunAt(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Enables a schedule. */
@@ -105,7 +107,7 @@ public final class ReportScheduleController {
             scheduleId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Disables a schedule. */
@@ -118,7 +120,7 @@ public final class ReportScheduleController {
             scheduleId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a schedule. */
@@ -130,21 +132,5 @@ public final class ReportScheduleController {
         scheduleId,
         SecurityPrincipals.organizationId(authentication),
         SecurityPrincipals.userId(authentication));
-  }
-
-  private ReportScheduleResponse toResponse(ReportSchedule schedule) {
-    return new ReportScheduleResponse(
-        schedule.getId(),
-        schedule.getOrganizationId(),
-        schedule.getType(),
-        schedule.getCronExpression(),
-        schedule.getFormat(),
-        schedule.getRecipients(),
-        schedule.getParameters(),
-        schedule.isEnabled(),
-        schedule.getNextRunAt(),
-        schedule.getLastRunAt(),
-        schedule.getCreatedAt(),
-        schedule.getUpdatedAt());
   }
 }

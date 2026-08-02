@@ -1,8 +1,8 @@
 package com.interviewintegrity.report.web;
 
-import com.interviewintegrity.report.domain.Report;
 import com.interviewintegrity.report.domain.ReportStatus;
 import com.interviewintegrity.report.domain.ReportType;
+import com.interviewintegrity.report.service.ReportMapper;
 import com.interviewintegrity.report.service.ReportService;
 import com.interviewintegrity.report.web.dto.CreateReportRequest;
 import com.interviewintegrity.report.web.dto.ReportResponse;
@@ -31,10 +31,12 @@ import reactor.core.publisher.Mono;
 public final class ReportController {
 
   private final ReportService reportService;
+  private final ReportMapper mapper;
 
-  /** Creates the controller bound to the report service. */
-  public ReportController(ReportService reportService) {
+  /** Creates the controller bound to the report service and mapper. */
+  public ReportController(ReportService reportService, ReportMapper mapper) {
     this.reportService = reportService;
+    this.mapper = mapper;
   }
 
   /** Creates a report. */
@@ -51,7 +53,7 @@ public final class ReportController {
             request.format(),
             request.filters(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the reports of the organization, optionally filtered by status and type. */
@@ -63,7 +65,7 @@ public final class ReportController {
       @RequestParam(required = false) ReportType type) {
     return reportService
         .listReports(SecurityPrincipals.organizationId(authentication), status, type)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single report. */
@@ -72,7 +74,7 @@ public final class ReportController {
   public Mono<ReportResponse> get(Authentication authentication, @PathVariable UUID reportId) {
     return reportService
         .getReport(reportId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Generates a report and publishes the report-generated event. */
@@ -81,7 +83,7 @@ public final class ReportController {
   public Mono<ReportResponse> generate(Authentication authentication, @PathVariable UUID reportId) {
     return reportService
         .generateReport(reportId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Resets a report so it can be regenerated. */
@@ -91,7 +93,7 @@ public final class ReportController {
       Authentication authentication, @PathVariable UUID reportId) {
     return reportService
         .regenerateReport(reportId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Expires a report so it is no longer downloadable. */
@@ -100,25 +102,6 @@ public final class ReportController {
   public Mono<ReportResponse> expire(Authentication authentication, @PathVariable UUID reportId) {
     return reportService
         .expireReport(reportId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
-  }
-
-  private ReportResponse toResponse(Report report) {
-    return new ReportResponse(
-        report.getId(),
-        report.getOrganizationId(),
-        report.getType(),
-        report.getTitle(),
-        report.getStatus(),
-        report.getFormat(),
-        report.getScore(),
-        report.getFilters(),
-        report.getRequestedBy(),
-        report.getRequestedAt(),
-        report.getGeneratedAt(),
-        report.getExpiresAt(),
-        report.getStorageObjectId(),
-        report.getCreatedAt(),
-        report.getUpdatedAt());
+        .map(mapper::toResponse);
   }
 }

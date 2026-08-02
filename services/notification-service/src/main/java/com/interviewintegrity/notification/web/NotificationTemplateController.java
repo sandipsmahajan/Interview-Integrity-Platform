@@ -1,7 +1,7 @@
 package com.interviewintegrity.notification.web;
 
 import com.interviewintegrity.notification.domain.NotificationChannel;
-import com.interviewintegrity.notification.domain.NotificationTemplate;
+import com.interviewintegrity.notification.service.NotificationMapper;
 import com.interviewintegrity.notification.service.NotificationTemplateService;
 import com.interviewintegrity.notification.web.dto.CreateNotificationTemplateRequest;
 import com.interviewintegrity.notification.web.dto.NotificationTemplateResponse;
@@ -33,10 +33,13 @@ import reactor.core.publisher.Mono;
 public final class NotificationTemplateController {
 
   private final NotificationTemplateService templateService;
+  private final NotificationMapper mapper;
 
-  /** Creates the controller bound to the template service. */
-  public NotificationTemplateController(NotificationTemplateService templateService) {
+  /** Creates the controller bound to the template service and mapper. */
+  public NotificationTemplateController(
+      NotificationTemplateService templateService, NotificationMapper mapper) {
     this.templateService = templateService;
+    this.mapper = mapper;
   }
 
   /** Creates a template. */
@@ -54,7 +57,7 @@ public final class NotificationTemplateController {
             request.subject(),
             request.bodyTemplate(),
             request.locale())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the templates of the organization, optionally filtered by channel. */
@@ -65,7 +68,7 @@ public final class NotificationTemplateController {
     return templateService
         .listTemplates(SecurityPrincipals.organizationId(authentication))
         .filter(template -> channel == null || template.getChannel() == channel)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single template. */
@@ -75,7 +78,7 @@ public final class NotificationTemplateController {
       Authentication authentication, @PathVariable UUID templateId) {
     return templateService
         .getTemplate(templateId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates a template. */
@@ -92,7 +95,7 @@ public final class NotificationTemplateController {
             request.subject(),
             request.bodyTemplate(),
             request.locale())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Marks a template as the tenant default for its code and channel. */
@@ -102,7 +105,7 @@ public final class NotificationTemplateController {
       Authentication authentication, @PathVariable UUID templateId) {
     return templateService
         .setDefault(templateId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a template. */
@@ -112,19 +115,5 @@ public final class NotificationTemplateController {
   public Mono<Void> delete(Authentication authentication, @PathVariable UUID templateId) {
     return templateService.deleteTemplate(
         templateId, SecurityPrincipals.organizationId(authentication));
-  }
-
-  private NotificationTemplateResponse toResponse(NotificationTemplate template) {
-    return new NotificationTemplateResponse(
-        template.getId(),
-        template.getOrganizationId(),
-        template.getCode(),
-        template.getChannel(),
-        template.getSubject(),
-        template.getBodyTemplate(),
-        template.getLocale(),
-        template.isDefault(),
-        template.getCreatedAt(),
-        template.getUpdatedAt());
   }
 }

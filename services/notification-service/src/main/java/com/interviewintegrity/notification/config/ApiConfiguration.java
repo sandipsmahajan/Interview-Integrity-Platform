@@ -1,5 +1,6 @@
 package com.interviewintegrity.notification.config;
 
+import com.interviewintegrity.notification.service.NotificationMapper;
 import com.interviewintegrity.notification.service.NotificationPreferenceService;
 import com.interviewintegrity.notification.service.NotificationService;
 import com.interviewintegrity.notification.service.NotificationTemplateService;
@@ -20,22 +21,23 @@ public class ApiConfiguration {
 
   /** Exposes the notification controller. */
   @Bean
-  public NotificationController notificationController(NotificationService notificationService) {
-    return new NotificationController(notificationService);
+  public NotificationController notificationController(
+      NotificationService notificationService, NotificationMapper mapper) {
+    return new NotificationController(notificationService, mapper);
   }
 
   /** Exposes the notification template controller. */
   @Bean
   public NotificationTemplateController notificationTemplateController(
-      NotificationTemplateService templateService) {
-    return new NotificationTemplateController(templateService);
+      NotificationTemplateService templateService, NotificationMapper mapper) {
+    return new NotificationTemplateController(templateService, mapper);
   }
 
   /** Exposes the notification preference controller. */
   @Bean
   public NotificationPreferenceController notificationPreferenceController(
-      NotificationPreferenceService preferenceService) {
-    return new NotificationPreferenceController(preferenceService);
+      NotificationPreferenceService preferenceService, NotificationMapper mapper) {
+    return new NotificationPreferenceController(preferenceService, mapper);
   }
 
   /** Describes the OpenAPI document for the notification service. */

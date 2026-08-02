@@ -1,7 +1,7 @@
 package com.interviewintegrity.notification.web;
 
 import com.interviewintegrity.notification.domain.NotificationChannel;
-import com.interviewintegrity.notification.domain.NotificationPreference;
+import com.interviewintegrity.notification.service.NotificationMapper;
 import com.interviewintegrity.notification.service.NotificationPreferenceService;
 import com.interviewintegrity.notification.web.dto.NotificationPreferenceResponse;
 import com.interviewintegrity.notification.web.dto.SetPreferenceRequest;
@@ -31,10 +31,13 @@ import reactor.core.publisher.Mono;
 public final class NotificationPreferenceController {
 
   private final NotificationPreferenceService preferenceService;
+  private final NotificationMapper mapper;
 
-  /** Creates the controller bound to the preference service. */
-  public NotificationPreferenceController(NotificationPreferenceService preferenceService) {
+  /** Creates the controller bound to the preference service and mapper. */
+  public NotificationPreferenceController(
+      NotificationPreferenceService preferenceService, NotificationMapper mapper) {
     this.preferenceService = preferenceService;
+    this.mapper = mapper;
   }
 
   /** Creates a preference for the given user. */
@@ -52,7 +55,7 @@ public final class NotificationPreferenceController {
             request.channel(),
             request.notificationType().trim(),
             request.enabled())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns the preference of a user for a channel and type. */
@@ -63,7 +66,9 @@ public final class NotificationPreferenceController {
       @PathVariable UUID userId,
       @RequestParam NotificationChannel channel,
       @RequestParam String notificationType) {
-    return preferenceService.getPreference(userId, channel, notificationType).map(this::toResponse);
+    return preferenceService
+        .getPreference(userId, channel, notificationType)
+        .map(mapper::toResponse);
   }
 
   /** Lists the preferences of a user. */
@@ -73,7 +78,7 @@ public final class NotificationPreferenceController {
       Authentication authentication, @PathVariable UUID userId) {
     return preferenceService
         .listPreferences(userId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates a preference (PUT alias of set). */
@@ -90,18 +95,6 @@ public final class NotificationPreferenceController {
             request.channel(),
             request.notificationType().trim(),
             request.enabled())
-        .map(this::toResponse);
-  }
-
-  private NotificationPreferenceResponse toResponse(NotificationPreference preference) {
-    return new NotificationPreferenceResponse(
-        preference.getId(),
-        preference.getOrganizationId(),
-        preference.getUserId(),
-        preference.getChannel(),
-        preference.getNotificationType(),
-        preference.isEnabled(),
-        preference.getCreatedAt(),
-        preference.getUpdatedAt());
+        .map(mapper::toResponse);
   }
 }

@@ -1,6 +1,6 @@
 package com.interviewintegrity.notification.web;
 
-import com.interviewintegrity.notification.domain.Notification;
+import com.interviewintegrity.notification.service.NotificationMapper;
 import com.interviewintegrity.notification.service.NotificationService;
 import com.interviewintegrity.notification.web.dto.CreateNotificationRequest;
 import com.interviewintegrity.notification.web.dto.DeliveryOutcomeRequest;
@@ -31,10 +31,13 @@ import reactor.core.publisher.Mono;
 public final class NotificationController {
 
   private final NotificationService notificationService;
+  private final NotificationMapper mapper;
 
-  /** Creates the controller bound to the notification service. */
-  public NotificationController(NotificationService notificationService) {
+  /** Creates the controller bound to the notification service and mapper. */
+  public NotificationController(
+      NotificationService notificationService, NotificationMapper mapper) {
     this.notificationService = notificationService;
+    this.mapper = mapper;
   }
 
   /** Creates a notification for a user. */
@@ -54,7 +57,7 @@ public final class NotificationController {
             request.priority(),
             request.scheduledAt(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the notifications of a user, optionally filtered by status. */
@@ -69,7 +72,7 @@ public final class NotificationController {
         .filter(
             notification ->
                 status == null || notification.getStatus().name().equalsIgnoreCase(status))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single notification. */
@@ -79,7 +82,7 @@ public final class NotificationController {
       Authentication authentication, @PathVariable UUID notificationId) {
     return notificationService
         .getNotification(notificationId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Marks a notification as dispatched and records the delivery attempt. */
@@ -95,7 +98,7 @@ public final class NotificationController {
             SecurityPrincipals.organizationId(authentication),
             request.provider(),
             request.providerMessageId())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Marks a notification as delivered and records the delivery attempt. */
@@ -111,7 +114,7 @@ public final class NotificationController {
             SecurityPrincipals.organizationId(authentication),
             request.provider(),
             request.providerMessageId())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Marks a notification as failed and records the failed delivery attempt. */
@@ -127,7 +130,7 @@ public final class NotificationController {
             SecurityPrincipals.organizationId(authentication),
             request.provider(),
             request.errorMessage())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Marks a notification as read by the recipient. */
@@ -137,7 +140,7 @@ public final class NotificationController {
       Authentication authentication, @PathVariable UUID notificationId) {
     return notificationService
         .markRead(notificationId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the delivery attempts of a notification. */
@@ -147,39 +150,6 @@ public final class NotificationController {
       Authentication authentication, @PathVariable UUID notificationId) {
     return notificationService
         .listDeliveries(notificationId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toDeliveryResponse);
-  }
-
-  private NotificationResponse toResponse(Notification notification) {
-    return new NotificationResponse(
-        notification.getId(),
-        notification.getOrganizationId(),
-        notification.getUserId(),
-        notification.getNotificationType(),
-        notification.getChannel(),
-        notification.getSubject(),
-        notification.getBody(),
-        notification.getPriority(),
-        notification.getStatus(),
-        notification.getScheduledAt(),
-        notification.getSentAt(),
-        notification.getReadAt(),
-        notification.getCreatedAt(),
-        notification.getUpdatedAt());
-  }
-
-  private NotificationDeliveryResponse toDeliveryResponse(
-      com.interviewintegrity.notification.domain.NotificationDelivery delivery) {
-    return new NotificationDeliveryResponse(
-        delivery.getId(),
-        delivery.getNotificationId(),
-        delivery.getChannel(),
-        delivery.getProvider(),
-        delivery.getProviderMessageId(),
-        delivery.getStatus(),
-        delivery.getAttempts(),
-        delivery.getLastError(),
-        delivery.getSentAt(),
-        delivery.getCreatedAt());
+        .map(mapper::toDeliveryResponse);
   }
 }

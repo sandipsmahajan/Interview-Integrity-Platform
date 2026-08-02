@@ -1,6 +1,6 @@
 package com.interviewintegrity.report.web;
 
-import com.interviewintegrity.report.domain.ReportRequest;
+import com.interviewintegrity.report.service.ReportMapper;
 import com.interviewintegrity.report.service.ReportRequestService;
 import com.interviewintegrity.report.web.dto.CreateReportRequestRequest;
 import com.interviewintegrity.report.web.dto.FailReportRequest;
@@ -29,10 +29,12 @@ import reactor.core.publisher.Mono;
 public final class ReportRequestController {
 
   private final ReportRequestService requestService;
+  private final ReportMapper mapper;
 
-  /** Creates the controller bound to the report request service. */
-  public ReportRequestController(ReportRequestService requestService) {
+  /** Creates the controller bound to the report request service and mapper. */
+  public ReportRequestController(ReportRequestService requestService, ReportMapper mapper) {
     this.requestService = requestService;
+    this.mapper = mapper;
   }
 
   /** Records the parameters of a report generation. */
@@ -51,7 +53,7 @@ public final class ReportRequestController {
             request.timeRange(),
             request.parameters(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the requests recorded for a report. */
@@ -61,7 +63,7 @@ public final class ReportRequestController {
       Authentication authentication, @PathVariable UUID reportId) {
     return requestService
         .listRequests(reportId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single request. */
@@ -71,7 +73,7 @@ public final class ReportRequestController {
       Authentication authentication, @PathVariable UUID requestId) {
     return requestService
         .getRequest(requestId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Marks a request as completed. */
@@ -81,7 +83,7 @@ public final class ReportRequestController {
       Authentication authentication, @PathVariable UUID requestId) {
     return requestService
         .completeRequest(requestId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Marks a request as failed. */
@@ -96,20 +98,6 @@ public final class ReportRequestController {
             requestId,
             SecurityPrincipals.organizationId(authentication),
             request.errorMessage().trim())
-        .map(this::toResponse);
-  }
-
-  private ReportRequestResponse toResponse(ReportRequest request) {
-    return new ReportRequestResponse(
-        request.getId(),
-        request.getOrganizationId(),
-        request.getReportId(),
-        request.getAggregationLevel(),
-        request.getTimeRange(),
-        request.getParameters(),
-        request.getRequestedBy(),
-        request.getRequestedAt(),
-        request.getCompletedAt(),
-        request.getErrorMessage());
+        .map(mapper::toResponse);
   }
 }
