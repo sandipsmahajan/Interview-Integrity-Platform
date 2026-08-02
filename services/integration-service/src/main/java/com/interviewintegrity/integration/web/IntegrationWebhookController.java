@@ -1,6 +1,6 @@
 package com.interviewintegrity.integration.web;
 
-import com.interviewintegrity.integration.domain.IntegrationWebhook;
+import com.interviewintegrity.integration.service.IntegrationMapper;
 import com.interviewintegrity.integration.service.IntegrationWebhookService;
 import com.interviewintegrity.integration.web.dto.CreateWebhookRequest;
 import com.interviewintegrity.integration.web.dto.UpdateWebhookRequest;
@@ -31,10 +31,13 @@ import reactor.core.publisher.Mono;
 public final class IntegrationWebhookController {
 
   private final IntegrationWebhookService webhookService;
+  private final IntegrationMapper mapper;
 
-  /** Creates the controller bound to the webhook service. */
-  public IntegrationWebhookController(IntegrationWebhookService webhookService) {
+  /** Creates the controller bound to the webhook service and mapper. */
+  public IntegrationWebhookController(
+      IntegrationWebhookService webhookService, IntegrationMapper mapper) {
     this.webhookService = webhookService;
+    this.mapper = mapper;
   }
 
   /** Creates a webhook subscription. */
@@ -50,7 +53,7 @@ public final class IntegrationWebhookController {
             request.url().trim(),
             request.secretHash(),
             request.events())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the webhooks of an integration. */
@@ -60,7 +63,7 @@ public final class IntegrationWebhookController {
       Authentication authentication, @RequestParam UUID integrationId) {
     return webhookService
         .listByIntegration(integrationId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single webhook. */
@@ -69,7 +72,7 @@ public final class IntegrationWebhookController {
   public Mono<WebhookResponse> get(Authentication authentication, @PathVariable UUID webhookId) {
     return webhookService
         .getWebhook(webhookId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates a webhook subscription. */
@@ -85,7 +88,7 @@ public final class IntegrationWebhookController {
             SecurityPrincipals.organizationId(authentication),
             request.url().trim(),
             request.events())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Enables a webhook. */
@@ -94,7 +97,7 @@ public final class IntegrationWebhookController {
   public Mono<WebhookResponse> enable(Authentication authentication, @PathVariable UUID webhookId) {
     return webhookService
         .enableWebhook(webhookId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Disables a webhook. */
@@ -104,18 +107,6 @@ public final class IntegrationWebhookController {
       Authentication authentication, @PathVariable UUID webhookId) {
     return webhookService
         .disableWebhook(webhookId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
-  }
-
-  private WebhookResponse toResponse(IntegrationWebhook webhook) {
-    return new WebhookResponse(
-        webhook.getId(),
-        webhook.getOrganizationId(),
-        webhook.getIntegrationId(),
-        webhook.getUrl(),
-        webhook.getEvents(),
-        webhook.isEnabled(),
-        webhook.getCreatedAt(),
-        webhook.getUpdatedAt());
+        .map(mapper::toResponse);
   }
 }

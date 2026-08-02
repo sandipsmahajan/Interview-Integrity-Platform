@@ -2,8 +2,8 @@ package com.interviewintegrity.audit.web;
 
 import com.interviewintegrity.api.PageResponse;
 import com.interviewintegrity.api.PageResponses;
-import com.interviewintegrity.audit.domain.ApiAuditLog;
 import com.interviewintegrity.audit.service.ApiAuditLogService;
+import com.interviewintegrity.audit.service.AuditMapper;
 import com.interviewintegrity.audit.web.dto.ApiAuditLogResponse;
 import com.interviewintegrity.security.SecurityPrincipals;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,10 +23,12 @@ import reactor.core.publisher.Mono;
 public final class ApiAuditLogController {
 
   private final ApiAuditLogService apiAuditLogService;
+  private final AuditMapper mapper;
 
-  /** Creates the controller bound to the API audit log service. */
-  public ApiAuditLogController(ApiAuditLogService apiAuditLogService) {
+  /** Creates the controller bound to the API audit log service and mapper. */
+  public ApiAuditLogController(ApiAuditLogService apiAuditLogService, AuditMapper mapper) {
     this.apiAuditLogService = apiAuditLogService;
+    this.mapper = mapper;
   }
 
   /** Lists the access log entries of the organization. */
@@ -41,23 +43,9 @@ public final class ApiAuditLogController {
         .map(
             page ->
                 PageResponses.of(
-                    page.items().stream().map(this::toResponse).toList(),
+                    page.items().stream().map(mapper::toResponse).toList(),
                     page.page(),
                     page.size(),
                     page.totalElements()));
-  }
-
-  private ApiAuditLogResponse toResponse(ApiAuditLog entry) {
-    return new ApiAuditLogResponse(
-        entry.getId(),
-        entry.getOrganizationId(),
-        entry.getMethod(),
-        entry.getPath(),
-        entry.getStatusCode(),
-        entry.getDurationMs(),
-        entry.getActorId(),
-        entry.getRequestId(),
-        entry.getClientIp(),
-        entry.getOccurredAt());
   }
 }

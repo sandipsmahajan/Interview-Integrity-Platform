@@ -3,8 +3,8 @@ package com.interviewintegrity.audit.web;
 import com.interviewintegrity.api.PageResponse;
 import com.interviewintegrity.api.PageResponses;
 import com.interviewintegrity.audit.domain.AuditEvent;
-import com.interviewintegrity.audit.domain.AuditEventChange;
 import com.interviewintegrity.audit.domain.AuditOutcome;
+import com.interviewintegrity.audit.service.AuditMapper;
 import com.interviewintegrity.audit.service.AuditService;
 import com.interviewintegrity.audit.web.dto.AuditEventChangeResponse;
 import com.interviewintegrity.audit.web.dto.AuditEventResponse;
@@ -36,10 +36,12 @@ import reactor.core.publisher.Mono;
 public final class AuditEventController {
 
   private final AuditService auditService;
+  private final AuditMapper mapper;
 
-  /** Creates the controller bound to the audit service. */
-  public AuditEventController(AuditService auditService) {
+  /** Creates the controller bound to the audit service and mapper. */
+  public AuditEventController(AuditService auditService, AuditMapper mapper) {
     this.auditService = auditService;
+    this.mapper = mapper;
   }
 
   /** Records a new compliance audit event. */
@@ -64,7 +66,7 @@ public final class AuditEventController {
             request.ipAddress(),
             request.userAgent(),
             request.metadata());
-    return auditService.record(event).map(this::toResponse);
+    return auditService.record(event).map(mapper::toResponse);
   }
 
   /** Searches the audit events of the organization. */
@@ -88,7 +90,7 @@ public final class AuditEventController {
         .map(
             page ->
                 PageResponses.of(
-                    page.items().stream().map(this::toResponse).toList(),
+                    page.items().stream().map(mapper::toResponse).toList(),
                     page.page(),
                     page.size(),
                     page.totalElements()));
@@ -100,7 +102,7 @@ public final class AuditEventController {
   public Mono<AuditEventResponse> get(Authentication authentication, @PathVariable UUID eventId) {
     return auditService
         .get(eventId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the field-level changes of an audit event. */
@@ -110,33 +112,6 @@ public final class AuditEventController {
       Authentication authentication, @PathVariable UUID eventId) {
     return auditService
         .changes(eventId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toChangeResponse);
-  }
-
-  private AuditEventResponse toResponse(AuditEvent event) {
-    return new AuditEventResponse(
-        event.getId(),
-        event.getOrganizationId(),
-        event.getActorId(),
-        event.getActorType(),
-        event.getAction(),
-        event.getResourceType(),
-        event.getResourceId(),
-        event.getOutcome(),
-        event.getOccurredAt(),
-        event.getRequestId(),
-        event.getIpAddress(),
-        event.getUserAgent(),
-        event.getMetadata());
-  }
-
-  private AuditEventChangeResponse toChangeResponse(AuditEventChange change) {
-    return new AuditEventChangeResponse(
-        change.getId(),
-        change.getAuditEventId(),
-        change.getOccurredAt(),
-        change.getField(),
-        change.getOldValue(),
-        change.getNewValue());
+        .map(mapper::toChangeResponse);
   }
 }

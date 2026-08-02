@@ -1,6 +1,7 @@
 package com.interviewintegrity.integration.config;
 
 import com.interviewintegrity.integration.service.IntegrationConnectionService;
+import com.interviewintegrity.integration.service.IntegrationMapper;
 import com.interviewintegrity.integration.service.IntegrationService;
 import com.interviewintegrity.integration.service.IntegrationSyncLogService;
 import com.interviewintegrity.integration.service.IntegrationWebhookService;
@@ -22,29 +23,30 @@ public class ApiConfiguration {
 
   /** Exposes the integration controller. */
   @Bean
-  public IntegrationController integrationController(IntegrationService integrationService) {
-    return new IntegrationController(integrationService);
+  public IntegrationController integrationController(
+      IntegrationService integrationService, IntegrationMapper mapper) {
+    return new IntegrationController(integrationService, mapper);
   }
 
   /** Exposes the connection controller. */
   @Bean
   public IntegrationConnectionController integrationConnectionController(
-      IntegrationConnectionService connectionService) {
-    return new IntegrationConnectionController(connectionService);
+      IntegrationConnectionService connectionService, IntegrationMapper mapper) {
+    return new IntegrationConnectionController(connectionService, mapper);
   }
 
   /** Exposes the webhook controller. */
   @Bean
   public IntegrationWebhookController integrationWebhookController(
-      IntegrationWebhookService webhookService) {
-    return new IntegrationWebhookController(webhookService);
+      IntegrationWebhookService webhookService, IntegrationMapper mapper) {
+    return new IntegrationWebhookController(webhookService, mapper);
   }
 
   /** Exposes the sync log controller. */
   @Bean
   public IntegrationSyncLogController integrationSyncLogController(
-      IntegrationSyncLogService syncLogService) {
-    return new IntegrationSyncLogController(syncLogService);
+      IntegrationSyncLogService syncLogService, IntegrationMapper mapper) {
+    return new IntegrationSyncLogController(syncLogService, mapper);
   }
 
   /** Describes the OpenAPI document for the integration service. */

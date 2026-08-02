@@ -1,7 +1,7 @@
 package com.interviewintegrity.integration.web;
 
-import com.interviewintegrity.integration.domain.IntegrationConnection;
 import com.interviewintegrity.integration.service.IntegrationConnectionService;
+import com.interviewintegrity.integration.service.IntegrationMapper;
 import com.interviewintegrity.integration.web.dto.ConnectionResponse;
 import com.interviewintegrity.integration.web.dto.CreateConnectionRequest;
 import com.interviewintegrity.security.SecurityPrincipals;
@@ -29,10 +29,13 @@ import reactor.core.publisher.Mono;
 public final class IntegrationConnectionController {
 
   private final IntegrationConnectionService connectionService;
+  private final IntegrationMapper mapper;
 
-  /** Creates the controller bound to the connection service. */
-  public IntegrationConnectionController(IntegrationConnectionService connectionService) {
+  /** Creates the controller bound to the connection service and mapper. */
+  public IntegrationConnectionController(
+      IntegrationConnectionService connectionService, IntegrationMapper mapper) {
     this.connectionService = connectionService;
+    this.mapper = mapper;
   }
 
   /** Creates and connects an external account. */
@@ -47,7 +50,7 @@ public final class IntegrationConnectionController {
             request.integrationId(),
             request.externalAccountId().trim(),
             request.scopes())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the connections of an integration. */
@@ -57,7 +60,7 @@ public final class IntegrationConnectionController {
       Authentication authentication, @RequestParam UUID integrationId) {
     return connectionService
         .listByIntegration(integrationId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single connection. */
@@ -67,7 +70,7 @@ public final class IntegrationConnectionController {
       Authentication authentication, @PathVariable UUID connectionId) {
     return connectionService
         .getConnection(connectionId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Reconnects a connection with the granted scopes. */
@@ -80,7 +83,7 @@ public final class IntegrationConnectionController {
     return connectionService
         .connectConnection(
             connectionId, SecurityPrincipals.organizationId(authentication), request.scopes())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Disconnects a connection. */
@@ -90,7 +93,7 @@ public final class IntegrationConnectionController {
       Authentication authentication, @PathVariable UUID connectionId) {
     return connectionService
         .disconnectConnection(connectionId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Marks a connection as errored. */
@@ -100,7 +103,7 @@ public final class IntegrationConnectionController {
       Authentication authentication, @PathVariable UUID connectionId) {
     return connectionService
         .markConnectionError(connectionId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Records the completion of a synchronization run on a connection. */
@@ -110,20 +113,6 @@ public final class IntegrationConnectionController {
       Authentication authentication, @PathVariable UUID connectionId) {
     return connectionService
         .recordSync(connectionId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
-  }
-
-  private ConnectionResponse toResponse(IntegrationConnection connection) {
-    return new ConnectionResponse(
-        connection.getId(),
-        connection.getOrganizationId(),
-        connection.getIntegrationId(),
-        connection.getExternalAccountId(),
-        connection.getStatus(),
-        connection.getScopes(),
-        connection.getConnectedAt(),
-        connection.getLastSyncAt(),
-        connection.getCreatedAt(),
-        connection.getUpdatedAt());
+        .map(mapper::toResponse);
   }
 }

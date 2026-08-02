@@ -1,7 +1,7 @@
 package com.interviewintegrity.integration.web;
 
-import com.interviewintegrity.integration.domain.Integration;
 import com.interviewintegrity.integration.domain.IntegrationStatus;
+import com.interviewintegrity.integration.service.IntegrationMapper;
 import com.interviewintegrity.integration.service.IntegrationService;
 import com.interviewintegrity.integration.web.dto.CreateIntegrationRequest;
 import com.interviewintegrity.integration.web.dto.IntegrationResponse;
@@ -34,10 +34,12 @@ import reactor.core.publisher.Mono;
 public final class IntegrationController {
 
   private final IntegrationService integrationService;
+  private final IntegrationMapper mapper;
 
-  /** Creates the controller bound to the integration service. */
-  public IntegrationController(IntegrationService integrationService) {
+  /** Creates the controller bound to the integration service and mapper. */
+  public IntegrationController(IntegrationService integrationService, IntegrationMapper mapper) {
     this.integrationService = integrationService;
+    this.mapper = mapper;
   }
 
   /** Creates an integration. */
@@ -54,7 +56,7 @@ public final class IntegrationController {
             request.credentialsRef().trim(),
             request.config(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the integrations of the organization, optionally filtered by status. */
@@ -64,7 +66,7 @@ public final class IntegrationController {
       Authentication authentication, @RequestParam(required = false) IntegrationStatus status) {
     return integrationService
         .listIntegrations(SecurityPrincipals.organizationId(authentication), status)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single integration. */
@@ -74,7 +76,7 @@ public final class IntegrationController {
       Authentication authentication, @PathVariable UUID integrationId) {
     return integrationService
         .getIntegration(integrationId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates an integration. */
@@ -91,7 +93,7 @@ public final class IntegrationController {
             request.name().trim(),
             request.config(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Connects an integration. */
@@ -104,7 +106,7 @@ public final class IntegrationController {
             integrationId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Disconnects an integration. */
@@ -117,7 +119,7 @@ public final class IntegrationController {
             integrationId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Marks an integration as errored. */
@@ -130,7 +132,7 @@ public final class IntegrationController {
             integrationId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes an integration. */
@@ -142,20 +144,5 @@ public final class IntegrationController {
         integrationId,
         SecurityPrincipals.organizationId(authentication),
         SecurityPrincipals.userId(authentication));
-  }
-
-  private IntegrationResponse toResponse(Integration integration) {
-    return new IntegrationResponse(
-        integration.getId(),
-        integration.getOrganizationId(),
-        integration.getProvider(),
-        integration.getName(),
-        integration.getStatus(),
-        integration.getCredentialsRef(),
-        integration.getConfig(),
-        integration.getCreatedBy(),
-        integration.getCreatedAt(),
-        integration.getUpdatedBy(),
-        integration.getUpdatedAt());
   }
 }

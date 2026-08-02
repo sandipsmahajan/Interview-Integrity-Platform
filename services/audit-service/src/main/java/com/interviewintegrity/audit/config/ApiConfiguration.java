@@ -1,6 +1,7 @@
 package com.interviewintegrity.audit.config;
 
 import com.interviewintegrity.audit.service.ApiAuditLogService;
+import com.interviewintegrity.audit.service.AuditMapper;
 import com.interviewintegrity.audit.service.AuditService;
 import com.interviewintegrity.audit.web.ApiAuditLogController;
 import com.interviewintegrity.audit.web.AuditEventController;
@@ -18,14 +19,15 @@ public class ApiConfiguration {
 
   /** Exposes the audit event controller. */
   @Bean
-  public AuditEventController auditEventController(AuditService auditService) {
-    return new AuditEventController(auditService);
+  public AuditEventController auditEventController(AuditService auditService, AuditMapper mapper) {
+    return new AuditEventController(auditService, mapper);
   }
 
   /** Exposes the API audit log controller. */
   @Bean
-  public ApiAuditLogController apiAuditLogController(ApiAuditLogService apiAuditLogService) {
-    return new ApiAuditLogController(apiAuditLogService);
+  public ApiAuditLogController apiAuditLogController(
+      ApiAuditLogService apiAuditLogService, AuditMapper mapper) {
+    return new ApiAuditLogController(apiAuditLogService, mapper);
   }
 
   /** Describes the OpenAPI document for the audit service. */

@@ -1,6 +1,6 @@
 package com.interviewintegrity.integration.web;
 
-import com.interviewintegrity.integration.domain.IntegrationSyncLog;
+import com.interviewintegrity.integration.service.IntegrationMapper;
 import com.interviewintegrity.integration.service.IntegrationSyncLogService;
 import com.interviewintegrity.integration.web.dto.FinishSyncRequest;
 import com.interviewintegrity.integration.web.dto.StartSyncRequest;
@@ -30,10 +30,13 @@ import reactor.core.publisher.Mono;
 public final class IntegrationSyncLogController {
 
   private final IntegrationSyncLogService syncLogService;
+  private final IntegrationMapper mapper;
 
-  /** Creates the controller bound to the sync log service. */
-  public IntegrationSyncLogController(IntegrationSyncLogService syncLogService) {
+  /** Creates the controller bound to the sync log service and mapper. */
+  public IntegrationSyncLogController(
+      IntegrationSyncLogService syncLogService, IntegrationMapper mapper) {
     this.syncLogService = syncLogService;
+    this.mapper = mapper;
   }
 
   /** Starts a synchronization run for a connection. */
@@ -47,7 +50,7 @@ public final class IntegrationSyncLogController {
             SecurityPrincipals.organizationId(authentication),
             request.connectionId(),
             request.direction())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Completes a synchronization run successfully. */
@@ -62,7 +65,7 @@ public final class IntegrationSyncLogController {
             syncLogId,
             SecurityPrincipals.organizationId(authentication),
             request.recordsProcessed())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Fails a synchronization run with an error detail. */
@@ -75,7 +78,7 @@ public final class IntegrationSyncLogController {
     return syncLogService
         .failSync(
             syncLogId, SecurityPrincipals.organizationId(authentication), request.errorMessage())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the synchronization runs of a connection. */
@@ -85,20 +88,6 @@ public final class IntegrationSyncLogController {
       Authentication authentication, @RequestParam UUID connectionId) {
     return syncLogService
         .listByConnection(connectionId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
-  }
-
-  private SyncLogResponse toResponse(IntegrationSyncLog syncLog) {
-    return new SyncLogResponse(
-        syncLog.getId(),
-        syncLog.getOrganizationId(),
-        syncLog.getConnectionId(),
-        syncLog.getDirection(),
-        syncLog.getStatus(),
-        syncLog.getRecordsProcessed(),
-        syncLog.getErrorMessage(),
-        syncLog.getStartedAt(),
-        syncLog.getFinishedAt(),
-        syncLog.getDurationMs());
+        .map(mapper::toResponse);
   }
 }
