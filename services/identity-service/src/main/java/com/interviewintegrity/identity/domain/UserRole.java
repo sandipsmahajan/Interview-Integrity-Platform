@@ -2,26 +2,16 @@ package com.interviewintegrity.identity.domain;
 
 import java.time.Instant;
 import java.util.UUID;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
 
 /** Bridge between a user and its roles. */
-@Table("user_roles")
 public class UserRole {
 
-  @Id
-  @Column("user_id")
   private UUID userId;
 
-  @Id
-  @Column("role_id")
   private UUID roleId;
 
-  @Column("assigned_by")
   private UUID assignedBy;
 
-  @Column("assigned_at")
   private Instant assignedAt;
 
   /** Creates a new assignment. */
