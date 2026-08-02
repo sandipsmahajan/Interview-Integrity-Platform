@@ -1,7 +1,7 @@
 package com.interviewintegrity.interview.web;
 
-import com.interviewintegrity.interview.domain.InterviewFeedback;
 import com.interviewintegrity.interview.service.InterviewFeedbackService;
+import com.interviewintegrity.interview.service.InterviewMapper;
 import com.interviewintegrity.interview.web.dto.CreateFeedbackRequest;
 import com.interviewintegrity.interview.web.dto.InterviewFeedbackResponse;
 import com.interviewintegrity.interview.web.dto.UpdateFeedbackRequest;
@@ -31,10 +31,13 @@ import reactor.core.publisher.Mono;
 public final class InterviewFeedbackController {
 
   private final InterviewFeedbackService feedbackService;
+  private final InterviewMapper mapper;
 
-  /** Creates the controller bound to the feedback service. */
-  public InterviewFeedbackController(InterviewFeedbackService feedbackService) {
+  /** Creates the controller bound to the feedback service and mapper. */
+  public InterviewFeedbackController(
+      InterviewFeedbackService feedbackService, InterviewMapper mapper) {
     this.feedbackService = feedbackService;
+    this.mapper = mapper;
   }
 
   /** Creates a draft feedback record. */
@@ -51,7 +54,7 @@ public final class InterviewFeedbackController {
             interviewId,
             request.interviewerId(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the feedback of an interview. */
@@ -61,7 +64,7 @@ public final class InterviewFeedbackController {
       Authentication authentication, @PathVariable UUID interviewId) {
     return feedbackService
         .list(SecurityPrincipals.organizationId(authentication), interviewId)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates a draft feedback record. */
@@ -81,7 +84,7 @@ public final class InterviewFeedbackController {
             request.concerns(),
             request.recommendation(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Submits a draft feedback record. */
@@ -96,7 +99,7 @@ public final class InterviewFeedbackController {
             feedbackId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a feedback record. */
@@ -111,21 +114,5 @@ public final class InterviewFeedbackController {
         feedbackId,
         SecurityPrincipals.organizationId(authentication),
         SecurityPrincipals.userId(authentication));
-  }
-
-  private InterviewFeedbackResponse toResponse(InterviewFeedback feedback) {
-    return new InterviewFeedbackResponse(
-        feedback.getId(),
-        feedback.getOrganizationId(),
-        feedback.getInterviewId(),
-        feedback.getInterviewerId(),
-        feedback.getRating(),
-        feedback.getStrengths(),
-        feedback.getConcerns(),
-        feedback.getRecommendation(),
-        feedback.getStatus(),
-        feedback.getSubmittedAt(),
-        feedback.getCreatedAt(),
-        feedback.getUpdatedAt());
   }
 }

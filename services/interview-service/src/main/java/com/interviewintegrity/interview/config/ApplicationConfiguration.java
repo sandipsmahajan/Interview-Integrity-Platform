@@ -9,6 +9,7 @@ import com.interviewintegrity.interview.repository.InterviewerRepository;
 import com.interviewintegrity.interview.service.InterviewCalendarEventService;
 import com.interviewintegrity.interview.service.InterviewEventPublisher;
 import com.interviewintegrity.interview.service.InterviewFeedbackService;
+import com.interviewintegrity.interview.service.InterviewMapper;
 import com.interviewintegrity.interview.service.InterviewPanelService;
 import com.interviewintegrity.interview.service.InterviewService;
 import com.interviewintegrity.interview.service.InterviewSessionService;
@@ -70,8 +71,10 @@ public class ApplicationConfiguration {
   public InterviewPanelService interviewPanelService(
       InterviewPanelRepository panelRepository,
       InterviewRepository interviewRepository,
-      InterviewerRepository interviewerRepository) {
-    return new InterviewPanelService(panelRepository, interviewRepository, interviewerRepository);
+      InterviewerRepository interviewerRepository,
+      InterviewMapper mapper) {
+    return new InterviewPanelService(
+        panelRepository, interviewRepository, interviewerRepository, mapper);
   }
 
   /** Provides the feedback service. */

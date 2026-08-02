@@ -1,7 +1,7 @@
 package com.interviewintegrity.interview.web;
 
-import com.interviewintegrity.interview.domain.InterviewCalendarEvent;
 import com.interviewintegrity.interview.service.InterviewCalendarEventService;
+import com.interviewintegrity.interview.service.InterviewMapper;
 import com.interviewintegrity.interview.web.dto.CreateCalendarEventRequest;
 import com.interviewintegrity.interview.web.dto.InterviewCalendarEventResponse;
 import com.interviewintegrity.interview.web.dto.UpdateCalendarEventRequest;
@@ -30,10 +30,13 @@ import reactor.core.publisher.Mono;
 public final class InterviewCalendarEventController {
 
   private final InterviewCalendarEventService calendarService;
+  private final InterviewMapper mapper;
 
-  /** Creates the controller bound to the calendar event service. */
-  public InterviewCalendarEventController(InterviewCalendarEventService calendarService) {
+  /** Creates the controller bound to the calendar event service and mapper. */
+  public InterviewCalendarEventController(
+      InterviewCalendarEventService calendarService, InterviewMapper mapper) {
     this.calendarService = calendarService;
+    this.mapper = mapper;
   }
 
   /** Creates a calendar event mirror. */
@@ -53,7 +56,7 @@ public final class InterviewCalendarEventController {
             request.eventUrl(),
             request.startsAt(),
             request.endsAt())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the calendar event mirrors of an interview. */
@@ -63,7 +66,7 @@ public final class InterviewCalendarEventController {
       Authentication authentication, @PathVariable UUID interviewId) {
     return calendarService
         .list(SecurityPrincipals.organizationId(authentication), interviewId)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates a calendar event mirror. */
@@ -82,21 +85,6 @@ public final class InterviewCalendarEventController {
             request.startsAt(),
             request.endsAt(),
             request.status())
-        .map(this::toResponse);
-  }
-
-  private InterviewCalendarEventResponse toResponse(InterviewCalendarEvent event) {
-    return new InterviewCalendarEventResponse(
-        event.getId(),
-        event.getOrganizationId(),
-        event.getInterviewId(),
-        event.getProvider(),
-        event.getProviderEventId(),
-        event.getEventUrl(),
-        event.getStartsAt(),
-        event.getEndsAt(),
-        event.getStatus(),
-        event.getCreatedAt(),
-        event.getUpdatedAt());
+        .map(mapper::toResponse);
   }
 }

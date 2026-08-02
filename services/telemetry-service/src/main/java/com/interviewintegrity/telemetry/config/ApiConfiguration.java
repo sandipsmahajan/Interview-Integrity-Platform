@@ -2,6 +2,7 @@ package com.interviewintegrity.telemetry.config;
 
 import com.interviewintegrity.telemetry.service.TelemetryEventService;
 import com.interviewintegrity.telemetry.service.TelemetryEventTypeService;
+import com.interviewintegrity.telemetry.service.TelemetryMapper;
 import com.interviewintegrity.telemetry.service.TelemetrySessionService;
 import com.interviewintegrity.telemetry.web.TelemetryEventController;
 import com.interviewintegrity.telemetry.web.TelemetryEventTypeController;
@@ -21,21 +22,22 @@ public class ApiConfiguration {
   /** Exposes the event type controller. */
   @Bean
   public TelemetryEventTypeController telemetryEventTypeController(
-      TelemetryEventTypeService eventTypeService) {
-    return new TelemetryEventTypeController(eventTypeService);
+      TelemetryEventTypeService eventTypeService, TelemetryMapper mapper) {
+    return new TelemetryEventTypeController(eventTypeService, mapper);
   }
 
   /** Exposes the session controller. */
   @Bean
   public TelemetrySessionController telemetrySessionController(
-      TelemetrySessionService sessionService) {
-    return new TelemetrySessionController(sessionService);
+      TelemetrySessionService sessionService, TelemetryMapper mapper) {
+    return new TelemetrySessionController(sessionService, mapper);
   }
 
   /** Exposes the event controller. */
   @Bean
-  public TelemetryEventController telemetryEventController(TelemetryEventService eventService) {
-    return new TelemetryEventController(eventService);
+  public TelemetryEventController telemetryEventController(
+      TelemetryEventService eventService, TelemetryMapper mapper) {
+    return new TelemetryEventController(eventService, mapper);
   }
 
   /** Describes the OpenAPI document for the telemetry service. */

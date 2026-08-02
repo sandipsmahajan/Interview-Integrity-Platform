@@ -1,7 +1,7 @@
 package com.interviewintegrity.analytics.web;
 
-import com.interviewintegrity.analytics.domain.AnalyticsJobRun;
 import com.interviewintegrity.analytics.service.AnalyticsJobRunService;
+import com.interviewintegrity.analytics.service.AnalyticsMapper;
 import com.interviewintegrity.analytics.web.dto.CompleteJobRunRequest;
 import com.interviewintegrity.analytics.web.dto.JobRunResponse;
 import com.interviewintegrity.analytics.web.dto.StartJobRunRequest;
@@ -27,10 +27,12 @@ import reactor.core.publisher.Mono;
 public final class AnalyticsJobRunController {
 
   private final AnalyticsJobRunService jobRunService;
+  private final AnalyticsMapper mapper;
 
-  /** Creates the controller bound to the job run service. */
-  public AnalyticsJobRunController(AnalyticsJobRunService jobRunService) {
+  /** Creates the controller bound to the job run service and mapper. */
+  public AnalyticsJobRunController(AnalyticsJobRunService jobRunService, AnalyticsMapper mapper) {
     this.jobRunService = jobRunService;
+    this.mapper = mapper;
   }
 
   /** Starts a job run. */
@@ -38,7 +40,7 @@ public final class AnalyticsJobRunController {
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(summary = "Start a job run")
   public Mono<JobRunResponse> start(@Valid @RequestBody StartJobRunRequest request) {
-    return jobRunService.startJob(request.jobName().trim()).map(this::toResponse);
+    return jobRunService.startJob(request.jobName().trim()).map(mapper::toResponse);
   }
 
   /** Marks a job run as succeeded. */
@@ -46,7 +48,7 @@ public final class AnalyticsJobRunController {
   @Operation(summary = "Succeed a job run")
   public Mono<JobRunResponse> succeed(
       @PathVariable Long jobRunId, @Valid @RequestBody CompleteJobRunRequest request) {
-    return jobRunService.succeedJob(jobRunId, request.recordsProcessed()).map(this::toResponse);
+    return jobRunService.succeedJob(jobRunId, request.recordsProcessed()).map(mapper::toResponse);
   }
 
   /** Marks a job run as failed. */
@@ -54,25 +56,13 @@ public final class AnalyticsJobRunController {
   @Operation(summary = "Fail a job run")
   public Mono<JobRunResponse> fail(
       @PathVariable Long jobRunId, @Valid @RequestBody CompleteJobRunRequest request) {
-    return jobRunService.failJob(jobRunId, request.errorMessage()).map(this::toResponse);
+    return jobRunService.failJob(jobRunId, request.errorMessage()).map(mapper::toResponse);
   }
 
   /** Lists the most recent job runs. */
   @GetMapping
   @Operation(summary = "List job runs")
   public Flux<JobRunResponse> listRecent(@RequestParam(defaultValue = "20") int limit) {
-    return jobRunService.listRecent(limit).map(this::toResponse);
-  }
-
-  private JobRunResponse toResponse(AnalyticsJobRun run) {
-    return new JobRunResponse(
-        run.getId(),
-        run.getJobName(),
-        run.getStatus(),
-        run.getRecordsProcessed(),
-        run.getErrorMessage(),
-        run.getStartedAt(),
-        run.getFinishedAt(),
-        run.getDurationMs());
+    return jobRunService.listRecent(limit).map(mapper::toResponse);
   }
 }

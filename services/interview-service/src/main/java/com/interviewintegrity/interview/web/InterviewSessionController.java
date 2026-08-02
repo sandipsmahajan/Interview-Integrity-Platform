@@ -1,6 +1,6 @@
 package com.interviewintegrity.interview.web;
 
-import com.interviewintegrity.interview.domain.InterviewSession;
+import com.interviewintegrity.interview.service.InterviewMapper;
 import com.interviewintegrity.interview.service.InterviewSessionService;
 import com.interviewintegrity.interview.web.dto.InterviewSessionResponse;
 import com.interviewintegrity.interview.web.dto.StartSessionRequest;
@@ -28,10 +28,13 @@ import reactor.core.publisher.Mono;
 public final class InterviewSessionController {
 
   private final InterviewSessionService sessionService;
+  private final InterviewMapper mapper;
 
-  /** Creates the controller bound to the session service. */
-  public InterviewSessionController(InterviewSessionService sessionService) {
+  /** Creates the controller bound to the session service and mapper. */
+  public InterviewSessionController(
+      InterviewSessionService sessionService, InterviewMapper mapper) {
     this.sessionService = sessionService;
+    this.mapper = mapper;
   }
 
   /** Starts a monitoring session for an interview. */
@@ -51,7 +54,7 @@ public final class InterviewSessionController {
             request.clientVersion(),
             request.heartbeatCadenceSeconds(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the sessions of an interview. */
@@ -61,7 +64,7 @@ public final class InterviewSessionController {
       Authentication authentication, @PathVariable UUID interviewId) {
     return sessionService
         .list(SecurityPrincipals.organizationId(authentication), interviewId)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Pauses an active session. */
@@ -71,7 +74,7 @@ public final class InterviewSessionController {
       Authentication authentication, @PathVariable UUID sessionId) {
     return sessionService
         .pause(sessionId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Resumes a paused session. */
@@ -81,7 +84,7 @@ public final class InterviewSessionController {
       Authentication authentication, @PathVariable UUID sessionId) {
     return sessionService
         .resume(sessionId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Completes a session and its interview. */
@@ -94,7 +97,7 @@ public final class InterviewSessionController {
             sessionId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Marks a session as ended abnormally. */
@@ -104,20 +107,6 @@ public final class InterviewSessionController {
       Authentication authentication, @PathVariable UUID sessionId) {
     return sessionService
         .markAbnormal(sessionId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
-  }
-
-  private InterviewSessionResponse toResponse(InterviewSession session) {
-    return new InterviewSessionResponse(
-        session.getId(),
-        session.getOrganizationId(),
-        session.getInterviewId(),
-        session.getStatus(),
-        session.getDeviceId(),
-        session.getClientVersion(),
-        session.getStartedAt(),
-        session.getEndedAt(),
-        session.getHeartbeatCadenceSeconds(),
-        session.getCreatedAt());
+        .map(mapper::toResponse);
   }
 }

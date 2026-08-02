@@ -3,7 +3,6 @@ package com.interviewintegrity.interview.service;
 import com.interviewintegrity.exception.ConflictException;
 import com.interviewintegrity.exception.NotFoundException;
 import com.interviewintegrity.interview.domain.Interview;
-import com.interviewintegrity.interview.domain.InterviewPanel;
 import com.interviewintegrity.interview.domain.Interviewer;
 import com.interviewintegrity.interview.repository.InterviewPanelRepository;
 import com.interviewintegrity.interview.repository.InterviewRepository;
@@ -21,15 +20,18 @@ public class InterviewPanelService {
   private final InterviewPanelRepository panelRepository;
   private final InterviewRepository interviewRepository;
   private final InterviewerRepository interviewerRepository;
+  private final InterviewMapper mapper;
 
-  /** Wires the service with its repositories. */
+  /** Wires the service with its repositories and mapper. */
   public InterviewPanelService(
       InterviewPanelRepository panelRepository,
       InterviewRepository interviewRepository,
-      InterviewerRepository interviewerRepository) {
+      InterviewerRepository interviewerRepository,
+      InterviewMapper mapper) {
     this.panelRepository = panelRepository;
     this.interviewRepository = interviewRepository;
     this.interviewerRepository = interviewerRepository;
+    this.mapper = mapper;
   }
 
   /** Adds an interviewer to the panel of an interview. */
@@ -61,7 +63,7 @@ public class InterviewPanelService {
   @Transactional(readOnly = true)
   public Flux<InterviewPanelResponse> listPanel(UUID organizationId, UUID interviewId) {
     return requireInterview(organizationId, interviewId)
-        .thenMany(panelRepository.listByInterview(interviewId).map(this::toResponse));
+        .thenMany(panelRepository.listByInterview(interviewId).map(mapper::toResponse));
   }
 
   private Mono<Interview> requireInterview(UUID organizationId, UUID interviewId) {
@@ -88,14 +90,5 @@ public class InterviewPanelService {
               }
               return Mono.just(interviewer);
             });
-  }
-
-  private InterviewPanelResponse toResponse(InterviewPanel panel) {
-    return new InterviewPanelResponse(
-        panel.getInterviewId(),
-        panel.getInterviewerId(),
-        panel.getRole(),
-        panel.getAddedBy(),
-        panel.getAddedAt());
   }
 }

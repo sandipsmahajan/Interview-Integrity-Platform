@@ -1,7 +1,7 @@
 package com.interviewintegrity.interview.web;
 
-import com.interviewintegrity.interview.domain.Interview;
 import com.interviewintegrity.interview.domain.InterviewStatus;
+import com.interviewintegrity.interview.service.InterviewMapper;
 import com.interviewintegrity.interview.service.InterviewService;
 import com.interviewintegrity.interview.web.dto.CreateInterviewRequest;
 import com.interviewintegrity.interview.web.dto.InterviewResponse;
@@ -34,10 +34,12 @@ import reactor.core.publisher.Mono;
 public final class InterviewController {
 
   private final InterviewService interviewService;
+  private final InterviewMapper mapper;
 
-  /** Creates the controller bound to the interview service. */
-  public InterviewController(InterviewService interviewService) {
+  /** Creates the controller bound to the interview service and mapper. */
+  public InterviewController(InterviewService interviewService, InterviewMapper mapper) {
     this.interviewService = interviewService;
+    this.mapper = mapper;
   }
 
   /** Creates an interview. */
@@ -60,7 +62,7 @@ public final class InterviewController {
             request.timezone(),
             request.metadata(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the interviews of the organization, optionally filtered. */
@@ -73,12 +75,12 @@ public final class InterviewController {
       @RequestParam(required = false) UUID recruiterId) {
     UUID organizationId = SecurityPrincipals.organizationId(authentication);
     if (candidateId != null) {
-      return interviewService.listByCandidate(organizationId, candidateId).map(this::toResponse);
+      return interviewService.listByCandidate(organizationId, candidateId).map(mapper::toResponse);
     }
     if (recruiterId != null) {
-      return interviewService.listByRecruiter(organizationId, recruiterId).map(this::toResponse);
+      return interviewService.listByRecruiter(organizationId, recruiterId).map(mapper::toResponse);
     }
-    return interviewService.list(organizationId, status).map(this::toResponse);
+    return interviewService.list(organizationId, status).map(mapper::toResponse);
   }
 
   /** Returns a single interview. */
@@ -88,7 +90,7 @@ public final class InterviewController {
       Authentication authentication, @PathVariable UUID interviewId) {
     return interviewService
         .get(interviewId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates the mutable details of an interview. */
@@ -106,7 +108,7 @@ public final class InterviewController {
             request.meetingUrl(),
             request.metadata(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Re-schedules an interview. */
@@ -125,7 +127,7 @@ public final class InterviewController {
             request.timezone(),
             request.meetingUrl(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Cancels an interview. */
@@ -138,7 +140,7 @@ public final class InterviewController {
             interviewId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Marks an interview as no-show. */
@@ -151,7 +153,7 @@ public final class InterviewController {
             interviewId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes an interview. */
@@ -163,24 +165,5 @@ public final class InterviewController {
         interviewId,
         SecurityPrincipals.organizationId(authentication),
         SecurityPrincipals.userId(authentication));
-  }
-
-  private InterviewResponse toResponse(Interview interview) {
-    return new InterviewResponse(
-        interview.getId(),
-        interview.getOrganizationId(),
-        interview.getCandidateId(),
-        interview.getRecruiterId(),
-        interview.getRoundNumber(),
-        interview.getTitle(),
-        interview.getStatus(),
-        interview.getMode(),
-        interview.getMeetingUrl(),
-        interview.getStartsAt(),
-        interview.getEndsAt(),
-        interview.getTimezone(),
-        interview.getMetadata(),
-        interview.getCreatedAt(),
-        interview.getUpdatedAt());
   }
 }

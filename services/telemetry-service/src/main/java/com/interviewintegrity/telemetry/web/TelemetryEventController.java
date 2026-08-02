@@ -1,8 +1,8 @@
 package com.interviewintegrity.telemetry.web;
 
 import com.interviewintegrity.security.SecurityPrincipals;
-import com.interviewintegrity.telemetry.domain.TelemetryEvent;
 import com.interviewintegrity.telemetry.service.TelemetryEventService;
+import com.interviewintegrity.telemetry.service.TelemetryMapper;
 import com.interviewintegrity.telemetry.web.dto.IngestEventsRequest;
 import com.interviewintegrity.telemetry.web.dto.TelemetryEventResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,10 +29,12 @@ import reactor.core.publisher.Mono;
 public final class TelemetryEventController {
 
   private final TelemetryEventService eventService;
+  private final TelemetryMapper mapper;
 
-  /** Creates the controller bound to the event service. */
-  public TelemetryEventController(TelemetryEventService eventService) {
+  /** Creates the controller bound to the event service and mapper. */
+  public TelemetryEventController(TelemetryEventService eventService, TelemetryMapper mapper) {
     this.eventService = eventService;
+    this.mapper = mapper;
   }
 
   /** Ingests a batch of events for a session. */
@@ -45,7 +47,7 @@ public final class TelemetryEventController {
       @Valid @RequestBody IngestEventsRequest request) {
     return eventService
         .ingest(SecurityPrincipals.organizationId(authentication), sessionId, request.events())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the events of a session, optionally filtered by event type. */
@@ -57,7 +59,7 @@ public final class TelemetryEventController {
       @RequestParam(required = false) String eventType) {
     return eventService
         .list(SecurityPrincipals.organizationId(authentication), sessionId, eventType)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Counts the events of a session. */
@@ -65,17 +67,5 @@ public final class TelemetryEventController {
   @Operation(summary = "Count telemetry events")
   public Mono<Long> count(Authentication authentication, @PathVariable UUID sessionId) {
     return eventService.count(SecurityPrincipals.organizationId(authentication), sessionId);
-  }
-
-  private TelemetryEventResponse toResponse(TelemetryEvent event) {
-    return new TelemetryEventResponse(
-        event.getId(),
-        event.getSessionId(),
-        event.getInterviewId(),
-        event.getEventType(),
-        event.getSeq(),
-        event.getOccurredAt(),
-        event.getClientOccurredAt(),
-        event.getPayload());
   }
 }

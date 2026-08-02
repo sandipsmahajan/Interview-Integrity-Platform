@@ -1,6 +1,7 @@
 package com.interviewintegrity.analytics.config;
 
 import com.interviewintegrity.analytics.service.AnalyticsJobRunService;
+import com.interviewintegrity.analytics.service.AnalyticsMapper;
 import com.interviewintegrity.analytics.service.AnalyticsService;
 import com.interviewintegrity.analytics.web.AnalyticsController;
 import com.interviewintegrity.analytics.web.AnalyticsJobRunController;
@@ -24,8 +25,9 @@ public class ApiConfiguration {
 
   /** Exposes the analytics job run controller. */
   @Bean
-  public AnalyticsJobRunController analyticsJobRunController(AnalyticsJobRunService jobRunService) {
-    return new AnalyticsJobRunController(jobRunService);
+  public AnalyticsJobRunController analyticsJobRunController(
+      AnalyticsJobRunService jobRunService, AnalyticsMapper mapper) {
+    return new AnalyticsJobRunController(jobRunService, mapper);
   }
 
   /** Describes the OpenAPI document for the analytics service. */

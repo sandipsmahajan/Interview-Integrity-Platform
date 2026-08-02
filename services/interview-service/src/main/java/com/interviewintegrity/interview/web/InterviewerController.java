@@ -1,6 +1,6 @@
 package com.interviewintegrity.interview.web;
 
-import com.interviewintegrity.interview.domain.Interviewer;
+import com.interviewintegrity.interview.service.InterviewMapper;
 import com.interviewintegrity.interview.service.InterviewerService;
 import com.interviewintegrity.interview.web.dto.CreateInterviewerRequest;
 import com.interviewintegrity.interview.web.dto.InterviewerResponse;
@@ -31,10 +31,12 @@ import reactor.core.publisher.Mono;
 public final class InterviewerController {
 
   private final InterviewerService interviewerService;
+  private final InterviewMapper mapper;
 
-  /** Creates the controller bound to the interviewer service. */
-  public InterviewerController(InterviewerService interviewerService) {
+  /** Creates the controller bound to the interviewer service and mapper. */
+  public InterviewerController(InterviewerService interviewerService, InterviewMapper mapper) {
     this.interviewerService = interviewerService;
+    this.mapper = mapper;
   }
 
   /** Creates an interviewer profile. */
@@ -50,7 +52,7 @@ public final class InterviewerController {
             request.fullName().trim(),
             request.email().trim(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the interviewers of the organization. */
@@ -59,7 +61,7 @@ public final class InterviewerController {
   public Flux<InterviewerResponse> list(Authentication authentication) {
     return interviewerService
         .list(SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single interviewer. */
@@ -69,7 +71,7 @@ public final class InterviewerController {
       Authentication authentication, @PathVariable UUID interviewerId) {
     return interviewerService
         .get(interviewerId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates an interviewer profile. */
@@ -86,7 +88,7 @@ public final class InterviewerController {
             request.fullName().trim(),
             request.email().trim(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes an interviewer profile. */
@@ -98,15 +100,5 @@ public final class InterviewerController {
         interviewerId,
         SecurityPrincipals.organizationId(authentication),
         SecurityPrincipals.userId(authentication));
-  }
-
-  private InterviewerResponse toResponse(Interviewer interviewer) {
-    return new InterviewerResponse(
-        interviewer.getId(),
-        interviewer.getOrganizationId(),
-        interviewer.getUserId(),
-        interviewer.getFullName(),
-        interviewer.getEmail(),
-        interviewer.getCreatedAt());
   }
 }

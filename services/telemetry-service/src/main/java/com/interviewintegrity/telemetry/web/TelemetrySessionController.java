@@ -2,7 +2,7 @@ package com.interviewintegrity.telemetry.web;
 
 import com.interviewintegrity.security.SecurityPrincipals;
 import com.interviewintegrity.telemetry.domain.TelemetryEventSummary;
-import com.interviewintegrity.telemetry.domain.TelemetrySession;
+import com.interviewintegrity.telemetry.service.TelemetryMapper;
 import com.interviewintegrity.telemetry.service.TelemetrySessionService;
 import com.interviewintegrity.telemetry.web.dto.ChangeSessionStatusRequest;
 import com.interviewintegrity.telemetry.web.dto.CreateSessionRequest;
@@ -31,10 +31,13 @@ import reactor.core.publisher.Mono;
 public final class TelemetrySessionController {
 
   private final TelemetrySessionService sessionService;
+  private final TelemetryMapper mapper;
 
-  /** Creates the controller bound to the session service. */
-  public TelemetrySessionController(TelemetrySessionService sessionService) {
+  /** Creates the controller bound to the session service and mapper. */
+  public TelemetrySessionController(
+      TelemetrySessionService sessionService, TelemetryMapper mapper) {
     this.sessionService = sessionService;
+    this.mapper = mapper;
   }
 
   /** Creates a monitoring session. */
@@ -51,7 +54,7 @@ public final class TelemetrySessionController {
             request.deviceId(),
             request.clientVersion(),
             request.heartbeatCadenceSeconds())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the sessions of the organization, newest first. */
@@ -60,7 +63,7 @@ public final class TelemetrySessionController {
   public Flux<TelemetrySessionResponse> list(Authentication authentication) {
     return sessionService
         .list(SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single session. */
@@ -70,7 +73,7 @@ public final class TelemetrySessionController {
       Authentication authentication, @PathVariable UUID sessionId) {
     return sessionService
         .get(SecurityPrincipals.organizationId(authentication), sessionId)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Transitions a session lifecycle state. */
@@ -83,7 +86,7 @@ public final class TelemetrySessionController {
     return sessionService
         .changeStatus(
             SecurityPrincipals.organizationId(authentication), sessionId, request.status(), null)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns the hourly rollups of a session. */
@@ -94,21 +97,6 @@ public final class TelemetrySessionController {
     return sessionService
         .summaries(SecurityPrincipals.organizationId(authentication), sessionId)
         .map(this::toResponse);
-  }
-
-  private TelemetrySessionResponse toResponse(TelemetrySession session) {
-    return new TelemetrySessionResponse(
-        session.getId(),
-        session.getOrganizationId(),
-        session.getInterviewId(),
-        session.getCandidateId(),
-        session.getDeviceId(),
-        session.getClientVersion(),
-        session.getStatus(),
-        session.getHeartbeatCadenceSeconds(),
-        session.getStartedAt(),
-        session.getEndedAt(),
-        session.getCreatedAt());
   }
 
   private TelemetrySummaryResponse toResponse(TelemetryEventSummary summary) {

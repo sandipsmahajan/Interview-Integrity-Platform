@@ -2,6 +2,7 @@ package com.interviewintegrity.interview.config;
 
 import com.interviewintegrity.interview.service.InterviewCalendarEventService;
 import com.interviewintegrity.interview.service.InterviewFeedbackService;
+import com.interviewintegrity.interview.service.InterviewMapper;
 import com.interviewintegrity.interview.service.InterviewPanelService;
 import com.interviewintegrity.interview.service.InterviewService;
 import com.interviewintegrity.interview.service.InterviewSessionService;
@@ -26,21 +27,23 @@ public class ApiConfiguration {
 
   /** Exposes the interview controller. */
   @Bean
-  public InterviewController interviewController(InterviewService interviewService) {
-    return new InterviewController(interviewService);
+  public InterviewController interviewController(
+      InterviewService interviewService, InterviewMapper mapper) {
+    return new InterviewController(interviewService, mapper);
   }
 
   /** Exposes the interview session controller. */
   @Bean
   public InterviewSessionController interviewSessionController(
-      InterviewSessionService sessionService) {
-    return new InterviewSessionController(sessionService);
+      InterviewSessionService sessionService, InterviewMapper mapper) {
+    return new InterviewSessionController(sessionService, mapper);
   }
 
   /** Exposes the interviewer controller. */
   @Bean
-  public InterviewerController interviewerController(InterviewerService interviewerService) {
-    return new InterviewerController(interviewerService);
+  public InterviewerController interviewerController(
+      InterviewerService interviewerService, InterviewMapper mapper) {
+    return new InterviewerController(interviewerService, mapper);
   }
 
   /** Exposes the panel controller. */
@@ -52,15 +55,15 @@ public class ApiConfiguration {
   /** Exposes the feedback controller. */
   @Bean
   public InterviewFeedbackController interviewFeedbackController(
-      InterviewFeedbackService feedbackService) {
-    return new InterviewFeedbackController(feedbackService);
+      InterviewFeedbackService feedbackService, InterviewMapper mapper) {
+    return new InterviewFeedbackController(feedbackService, mapper);
   }
 
   /** Exposes the calendar event controller. */
   @Bean
   public InterviewCalendarEventController interviewCalendarEventController(
-      InterviewCalendarEventService calendarService) {
-    return new InterviewCalendarEventController(calendarService);
+      InterviewCalendarEventService calendarService, InterviewMapper mapper) {
+    return new InterviewCalendarEventController(calendarService, mapper);
   }
 
   /** Describes the OpenAPI document for the interview service. */
