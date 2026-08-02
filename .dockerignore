@@ -2,6 +2,7 @@
 **/.git
 **/.gradle
 **/build
+**/target
 **/node_modules
 **/dist
 **/coverage

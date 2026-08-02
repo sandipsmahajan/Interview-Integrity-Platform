@@ -1,34 +1,8 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode
-} from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api } from '../lib/api';
 import { clearTokens, getRefreshToken, readStoredUser, writeRememberMePreference } from '../lib/session';
-import type {
-  LoginRequest,
-  LoginResponse,
-  MfaVerifyRequest,
-  RegisterOrganizationRequest,
-  UserResponse
-} from '../lib/types';
-
-interface AuthContextValue {
-  user: UserResponse | null;
-  loading: boolean;
-  isAuthenticated: boolean;
-  login: (payload: LoginRequest, rememberMe: boolean) => Promise<LoginResponse>;
-  mfaVerify: (payload: MfaVerifyRequest) => Promise<UserResponse>;
-  mfaEmailOtp: (challengeId: string) => Promise<void>;
-  register: (payload: RegisterOrganizationRequest) => Promise<UserResponse>;
-  logout: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+import { AuthContext, type AuthContextValue } from '../hooks/useAuth';
+import type { LoginRequest, MfaVerifyRequest, RegisterOrganizationRequest, UserResponse } from '../lib/types';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserResponse | null>(() => readStoredUser());
@@ -78,15 +52,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
-}
-
-export function useCurrentUserId(): string | null {
-  const { user } = useAuth();
-  return user?.id ?? null;
 }

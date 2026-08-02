@@ -6,7 +6,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import { Toaster } from 'react-hot-toast';
 import { LoginPage } from '../pages/auth/LoginPage';
-import { AuthProvider } from '../hooks/useAuth';
+import { AuthProvider } from '../components/AuthProvider';
 import { lightTheme } from '../theme';
 
 vi.mock('../lib/api', () => ({
