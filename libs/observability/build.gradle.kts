@@ -7,5 +7,10 @@ dependencies {
     implementation("org.springframework:spring-webflux")
     implementation("org.springframework.boot:spring-boot")
     implementation("org.springframework.boot:spring-boot-autoconfigure")
+    implementation("io.projectreactor:reactor-core")
+    implementation("io.micrometer:context-propagation")
     errorprone(libs.errorprone.core)
+
+    testImplementation(libs.reactor.test)
+    testImplementation(libs.spring.boot.starter.test)
 }

@@ -2,6 +2,7 @@ package com.interviewintegrity.policy.service;
 
 import com.interviewintegrity.event.EventEnvelope;
 import com.interviewintegrity.event.KafkaTopics;
+import com.interviewintegrity.observability.MdcCorrelation;
 import com.interviewintegrity.policy.domain.ViolationSeverity;
 import java.util.Locale;
 import java.util.UUID;
@@ -82,25 +83,27 @@ public final class ViolationConsumer implements DisposableBean {
         }
         return Mono.empty();
       }
-      return violationService
-          .exists(signal.sessionId(), signal.ruleCode(), signal.occurredAt())
-          .flatMap(
-              alreadyStored ->
-                  alreadyStored
-                      ? Mono.empty()
-                      : violationService
-                          .record(
-                              organizationId,
-                              signal.sessionId(),
-                              signal.interviewId(),
-                              signal.policyId(),
-                              signal.ruleCode(),
-                              severity(signal.severity()),
-                              signal.message(),
-                              signal.evidence(),
-                              signal.occurredAt(),
-                              signal.detectedBy())
-                          .then());
+      return MdcCorrelation.withCorrelationId(
+          violationService
+              .exists(signal.sessionId(), signal.ruleCode(), signal.occurredAt())
+              .flatMap(
+                  alreadyStored ->
+                      alreadyStored
+                          ? Mono.empty()
+                          : violationService
+                              .record(
+                                  organizationId,
+                                  signal.sessionId(),
+                                  signal.interviewId(),
+                                  signal.policyId(),
+                                  signal.ruleCode(),
+                                  severity(signal.severity()),
+                                  signal.message(),
+                                  signal.evidence(),
+                                  signal.occurredAt(),
+                                  signal.detectedBy())
+                              .then()),
+          envelope.eventId().toString());
     } catch (Exception e) {
       if (log.isErrorEnabled()) {
         log.error(

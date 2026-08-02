@@ -2,6 +2,7 @@ package com.interviewintegrity.telemetry.service;
 
 import com.interviewintegrity.event.EventEnvelope;
 import com.interviewintegrity.event.KafkaTopics;
+import com.interviewintegrity.observability.MdcCorrelation;
 import com.interviewintegrity.telemetry.domain.TelemetrySessionStatus;
 import java.util.UUID;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -110,7 +111,8 @@ public final class TelemetryEventConsumer implements DisposableBean {
           payload.events() == null || payload.events().isEmpty()
               ? Mono.empty()
               : eventService.ingest(organizationId, payload.sessionId(), payload.events()).then();
-      return sessionSync.then(eventsSync);
+      return MdcCorrelation.withCorrelationId(
+          sessionSync.then(eventsSync), envelope.eventId().toString());
     } catch (Exception e) {
       if (log.isErrorEnabled()) {
         log.error(

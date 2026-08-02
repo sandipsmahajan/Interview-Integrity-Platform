@@ -6,6 +6,7 @@ import com.interviewintegrity.event.KafkaTopics;
 import com.interviewintegrity.notification.domain.NotificationChannel;
 import com.interviewintegrity.notification.domain.NotificationPriority;
 import com.interviewintegrity.notification.repository.NotificationPreferenceRepository;
+import com.interviewintegrity.observability.MdcCorrelation;
 import java.util.Locale;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
@@ -98,7 +99,9 @@ public final class IdentityEmailConsumer implements DisposableBean {
         }
         return Mono.empty();
       }
-      return isEnabled(event).filter(Boolean::booleanValue).flatMap(ignored -> process(event));
+      return MdcCorrelation.withCorrelationId(
+          isEnabled(event).filter(Boolean::booleanValue).flatMap(ignored -> process(event)),
+          envelope.eventId().toString());
     } catch (Exception e) {
       if (log.isErrorEnabled()) {
         log.error(
