@@ -19,12 +19,16 @@ public final class SubscriptionService {
 
   private final SubscriptionRepository subscriptionRepository;
   private final PlanService planService;
+  private final OrganizationMapper mapper;
 
   /** Creates a service bound to the given repository and plan catalog. */
   public SubscriptionService(
-      SubscriptionRepository subscriptionRepository, PlanService planService) {
+      SubscriptionRepository subscriptionRepository,
+      PlanService planService,
+      OrganizationMapper mapper) {
     this.subscriptionRepository = subscriptionRepository;
     this.planService = planService;
+    this.mapper = mapper;
   }
 
   /** Subscribes the organization to the requested plan, creating or switching the subscription. */
@@ -100,18 +104,6 @@ public final class SubscriptionService {
   private Mono<SubscriptionResponse> withPlan(Subscription subscription) {
     return planService
         .requirePlanById(subscription.getPlanId())
-        .map(plan -> toResponse(subscription, plan));
-  }
-
-  private SubscriptionResponse toResponse(Subscription subscription, Plan plan) {
-    return new SubscriptionResponse(
-        subscription.getId(),
-        subscription.getOrganizationId(),
-        plan.getCode(),
-        plan.getName(),
-        subscription.getStatus().name(),
-        subscription.getCurrentPeriodStart(),
-        subscription.getCurrentPeriodEnd(),
-        subscription.isCancelAtPeriodEnd());
+        .map(plan -> mapper.toResponse(subscription, plan));
   }
 }

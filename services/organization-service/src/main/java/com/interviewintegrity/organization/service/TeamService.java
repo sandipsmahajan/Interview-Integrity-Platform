@@ -2,7 +2,6 @@ package com.interviewintegrity.organization.service;
 
 import com.interviewintegrity.exception.NotFoundException;
 import com.interviewintegrity.organization.domain.Team;
-import com.interviewintegrity.organization.domain.TeamMember;
 import com.interviewintegrity.organization.repository.DepartmentRepository;
 import com.interviewintegrity.organization.repository.TeamMemberRepository;
 import com.interviewintegrity.organization.repository.TeamRepository;
@@ -22,15 +21,18 @@ public final class TeamService {
   private final TeamRepository teamRepository;
   private final DepartmentRepository departmentRepository;
   private final TeamMemberRepository teamMemberRepository;
+  private final OrganizationMapper mapper;
 
   /** Creates a service bound to the given repositories. */
   public TeamService(
       TeamRepository teamRepository,
       DepartmentRepository departmentRepository,
-      TeamMemberRepository teamMemberRepository) {
+      TeamMemberRepository teamMemberRepository,
+      OrganizationMapper mapper) {
     this.teamRepository = teamRepository;
     this.departmentRepository = departmentRepository;
     this.teamMemberRepository = teamMemberRepository;
+    this.mapper = mapper;
   }
 
   /** Creates a team within a department of the organization. */
@@ -41,23 +43,23 @@ public final class TeamService {
             teamRepository
                 .save(
                     new Team(organizationId, request.departmentId(), request.name().trim(), byUser))
-                .map(this::toResponse));
+                .map(mapper::toResponse));
   }
 
   /** Lists the teams of the organization. */
   public Flux<TeamResponse> listTeams(UUID organizationId) {
-    return teamRepository.listLiveByOrganization(organizationId).map(this::toResponse);
+    return teamRepository.listLiveByOrganization(organizationId).map(mapper::toResponse);
   }
 
   /** Lists the teams within a department. */
   public Flux<TeamResponse> listTeamsByDepartment(UUID organizationId, UUID departmentId) {
     return validateDepartment(organizationId, departmentId)
-        .thenMany(teamRepository.listLiveByDepartment(departmentId).map(this::toResponse));
+        .thenMany(teamRepository.listLiveByDepartment(departmentId).map(mapper::toResponse));
   }
 
   /** Returns a single team. */
   public Mono<TeamResponse> getTeam(UUID organizationId, UUID teamId) {
-    return requireTeam(organizationId, teamId).map(this::toResponse);
+    return requireTeam(organizationId, teamId).map(mapper::toResponse);
   }
 
   /** Renames a team. */
@@ -69,7 +71,7 @@ public final class TeamService {
               team.rename(request.name().trim(), byUser);
               return teamRepository.save(team);
             })
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a team. */
@@ -100,7 +102,7 @@ public final class TeamService {
   /** Lists the members of a team. */
   public Flux<TeamMemberResponse> listMembers(UUID organizationId, UUID teamId) {
     return requireTeam(organizationId, teamId)
-        .thenMany(teamMemberRepository.listByTeam(teamId).map(this::toMemberResponse));
+        .thenMany(teamMemberRepository.listByTeam(teamId).map(mapper::toMemberResponse));
   }
 
   private Mono<Void> validateDepartment(UUID organizationId, UUID departmentId) {
@@ -130,19 +132,5 @@ public final class TeamService {
               }
               return Mono.just(team);
             });
-  }
-
-  private TeamResponse toResponse(Team team) {
-    return new TeamResponse(
-        team.getId(),
-        team.getOrganizationId(),
-        team.getDepartmentId(),
-        team.getName(),
-        team.getCreatedAt());
-  }
-
-  private TeamMemberResponse toMemberResponse(TeamMember member) {
-    return new TeamMemberResponse(
-        member.getTeamId(), member.getUserId(), member.getAddedBy(), member.getAddedAt());
   }
 }

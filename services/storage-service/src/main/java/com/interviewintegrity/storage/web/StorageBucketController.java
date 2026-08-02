@@ -1,8 +1,8 @@
 package com.interviewintegrity.storage.web;
 
 import com.interviewintegrity.security.SecurityPrincipals;
-import com.interviewintegrity.storage.domain.StorageBucket;
 import com.interviewintegrity.storage.service.StorageBucketService;
+import com.interviewintegrity.storage.service.StorageMapper;
 import com.interviewintegrity.storage.web.dto.BucketResponse;
 import com.interviewintegrity.storage.web.dto.CreateBucketRequest;
 import com.interviewintegrity.storage.web.dto.UpdateBucketRequest;
@@ -31,10 +31,12 @@ import reactor.core.publisher.Mono;
 public final class StorageBucketController {
 
   private final StorageBucketService bucketService;
+  private final StorageMapper mapper;
 
   /** Creates the controller bound to the bucket service. */
-  public StorageBucketController(StorageBucketService bucketService) {
+  public StorageBucketController(StorageBucketService bucketService, StorageMapper mapper) {
     this.bucketService = bucketService;
+    this.mapper = mapper;
   }
 
   /** Creates a storage bucket. */
@@ -52,7 +54,7 @@ public final class StorageBucketController {
             versioningEnabled,
             request.policy(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the buckets of the organization. */
@@ -61,7 +63,7 @@ public final class StorageBucketController {
   public Flux<BucketResponse> list(Authentication authentication) {
     return bucketService
         .list(SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single bucket. */
@@ -70,7 +72,7 @@ public final class StorageBucketController {
   public Mono<BucketResponse> get(Authentication authentication, @PathVariable UUID bucketId) {
     return bucketService
         .get(bucketId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates a bucket. */
@@ -90,7 +92,7 @@ public final class StorageBucketController {
             versioningEnabled,
             request.policy(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a bucket. */
@@ -102,16 +104,5 @@ public final class StorageBucketController {
         bucketId,
         SecurityPrincipals.organizationId(authentication),
         SecurityPrincipals.userId(authentication));
-  }
-
-  private BucketResponse toResponse(StorageBucket bucket) {
-    return new BucketResponse(
-        bucket.getId(),
-        bucket.getOrganizationId(),
-        bucket.getName(),
-        bucket.isVersioningEnabled(),
-        bucket.getPolicy(),
-        bucket.getCreatedAt(),
-        bucket.getUpdatedAt());
   }
 }

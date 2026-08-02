@@ -1,9 +1,9 @@
 package com.interviewintegrity.storage.web;
 
 import com.interviewintegrity.security.SecurityPrincipals;
-import com.interviewintegrity.storage.domain.SignedUrl;
 import com.interviewintegrity.storage.service.SignedUrlService;
 import com.interviewintegrity.storage.service.SignedUrlService.SignedUrlGrant;
+import com.interviewintegrity.storage.service.StorageMapper;
 import com.interviewintegrity.storage.web.dto.CreateSignedUrlRequest;
 import com.interviewintegrity.storage.web.dto.SignedUrlResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,10 +29,12 @@ import reactor.core.publisher.Mono;
 public final class SignedUrlController {
 
   private final SignedUrlService signedUrlService;
+  private final StorageMapper mapper;
 
   /** Creates the controller bound to the signed URL service. */
-  public SignedUrlController(SignedUrlService signedUrlService) {
+  public SignedUrlController(SignedUrlService signedUrlService, StorageMapper mapper) {
     this.signedUrlService = signedUrlService;
+    this.mapper = mapper;
   }
 
   /** Issues a signed URL grant for an object. */
@@ -60,7 +62,7 @@ public final class SignedUrlController {
   public Flux<SignedUrlResponse> list(Authentication authentication, @PathVariable UUID objectId) {
     return signedUrlService
         .list(objectId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single signed URL grant. */
@@ -69,7 +71,7 @@ public final class SignedUrlController {
   public Mono<SignedUrlResponse> get(Authentication authentication, @PathVariable UUID urlId) {
     return signedUrlService
         .get(urlId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Revokes a signed URL grant. */
@@ -81,28 +83,10 @@ public final class SignedUrlController {
             urlId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   private SignedUrlResponse toGrantResponse(SignedUrlGrant grant) {
-    return toResponse(grant.signedUrl(), grant.token());
-  }
-
-  private SignedUrlResponse toResponse(SignedUrl signedUrl) {
-    return toResponse(signedUrl, null);
-  }
-
-  private SignedUrlResponse toResponse(SignedUrl signedUrl, String token) {
-    return new SignedUrlResponse(
-        signedUrl.getId(),
-        signedUrl.getOrganizationId(),
-        signedUrl.getObjectId(),
-        signedUrl.getPurpose(),
-        token,
-        signedUrl.getExpiresAt(),
-        signedUrl.getMaxUses(),
-        signedUrl.getUsageCount(),
-        signedUrl.getCreatedAt(),
-        signedUrl.getRevokedAt());
+    return mapper.toResponse(grant.signedUrl(), grant.token());
   }
 }

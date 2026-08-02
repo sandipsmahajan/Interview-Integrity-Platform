@@ -11,6 +11,7 @@ import com.interviewintegrity.organization.repository.TeamRepository;
 import com.interviewintegrity.organization.service.DepartmentService;
 import com.interviewintegrity.organization.service.KafkaOrganizationEventPublisher;
 import com.interviewintegrity.organization.service.OrganizationEventPublisher;
+import com.interviewintegrity.organization.service.OrganizationMapper;
 import com.interviewintegrity.organization.service.OrganizationService;
 import com.interviewintegrity.organization.service.PlanService;
 import com.interviewintegrity.organization.service.SubscriptionService;
@@ -50,28 +51,32 @@ public class ApplicationConfiguration {
       OrganizationRepository organizationRepository,
       OrganizationAddressRepository addressRepository,
       OrganizationDomainRepository domainRepository,
-      OrganizationEventPublisher eventPublisher) {
+      OrganizationEventPublisher eventPublisher,
+      OrganizationMapper mapper) {
     return new OrganizationService(
-        organizationRepository, addressRepository, domainRepository, eventPublisher);
+        organizationRepository, addressRepository, domainRepository, eventPublisher, mapper);
   }
 
   /** Provides the plan catalog service. */
   @Bean
-  public PlanService planService(PlanRepository planRepository) {
-    return new PlanService(planRepository);
+  public PlanService planService(PlanRepository planRepository, OrganizationMapper mapper) {
+    return new PlanService(planRepository, mapper);
   }
 
   /** Provides the subscription service. */
   @Bean
   public SubscriptionService subscriptionService(
-      SubscriptionRepository subscriptionRepository, PlanService planService) {
-    return new SubscriptionService(subscriptionRepository, planService);
+      SubscriptionRepository subscriptionRepository,
+      PlanService planService,
+      OrganizationMapper mapper) {
+    return new SubscriptionService(subscriptionRepository, planService, mapper);
   }
 
   /** Provides the department service. */
   @Bean
-  public DepartmentService departmentService(DepartmentRepository departmentRepository) {
-    return new DepartmentService(departmentRepository);
+  public DepartmentService departmentService(
+      DepartmentRepository departmentRepository, OrganizationMapper mapper) {
+    return new DepartmentService(departmentRepository, mapper);
   }
 
   /** Provides the team service. */
@@ -79,7 +84,8 @@ public class ApplicationConfiguration {
   public TeamService teamService(
       TeamRepository teamRepository,
       DepartmentRepository departmentRepository,
-      TeamMemberRepository teamMemberRepository) {
-    return new TeamService(teamRepository, departmentRepository, teamMemberRepository);
+      TeamMemberRepository teamMemberRepository,
+      OrganizationMapper mapper) {
+    return new TeamService(teamRepository, departmentRepository, teamMemberRepository, mapper);
   }
 }

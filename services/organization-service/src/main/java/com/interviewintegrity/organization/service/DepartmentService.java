@@ -14,10 +14,12 @@ import reactor.core.publisher.Mono;
 public final class DepartmentService {
 
   private final DepartmentRepository departmentRepository;
+  private final OrganizationMapper mapper;
 
   /** Creates a service bound to the given repository. */
-  public DepartmentService(DepartmentRepository departmentRepository) {
+  public DepartmentService(DepartmentRepository departmentRepository, OrganizationMapper mapper) {
     this.departmentRepository = departmentRepository;
+    this.mapper = mapper;
   }
 
   /** Creates a department, optionally under a parent of the same organization. */
@@ -29,17 +31,17 @@ public final class DepartmentService {
                 .save(
                     new Department(
                         organizationId, request.parentId(), request.name().trim(), byUser))
-                .map(this::toResponse));
+                .map(mapper::toResponse));
   }
 
   /** Lists the departments of the organization. */
   public Flux<DepartmentResponse> listDepartments(UUID organizationId) {
-    return departmentRepository.listLiveByOrganization(organizationId).map(this::toResponse);
+    return departmentRepository.listLiveByOrganization(organizationId).map(mapper::toResponse);
   }
 
   /** Returns a single department. */
   public Mono<DepartmentResponse> getDepartment(UUID organizationId, UUID departmentId) {
-    return requireDepartment(organizationId, departmentId).map(this::toResponse);
+    return requireDepartment(organizationId, departmentId).map(mapper::toResponse);
   }
 
   /** Renames a department. */
@@ -51,7 +53,7 @@ public final class DepartmentService {
               department.rename(request.name().trim(), byUser);
               return departmentRepository.save(department);
             })
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a department. */
@@ -82,14 +84,5 @@ public final class DepartmentService {
               }
               return Mono.just(department);
             });
-  }
-
-  private DepartmentResponse toResponse(Department department) {
-    return new DepartmentResponse(
-        department.getId(),
-        department.getOrganizationId(),
-        department.getParentId(),
-        department.getName(),
-        department.getCreatedAt());
   }
 }

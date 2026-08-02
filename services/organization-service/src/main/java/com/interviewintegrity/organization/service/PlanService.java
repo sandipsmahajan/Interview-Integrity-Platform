@@ -12,15 +12,17 @@ import reactor.core.publisher.Mono;
 public final class PlanService {
 
   private final PlanRepository planRepository;
+  private final OrganizationMapper mapper;
 
   /** Creates a service bound to the given repository. */
-  public PlanService(PlanRepository planRepository) {
+  public PlanService(PlanRepository planRepository, OrganizationMapper mapper) {
     this.planRepository = planRepository;
+    this.mapper = mapper;
   }
 
   /** Lists all plans ordered by price. */
   public Flux<PlanResponse> listPlans() {
-    return planRepository.findAllOrdered().map(this::toResponse);
+    return planRepository.findAllOrdered().map(mapper::toResponse);
   }
 
   /** Returns a single plan by code. */
@@ -28,17 +30,7 @@ public final class PlanService {
     return planRepository
         .findByCode(code)
         .switchIfEmpty(Mono.error(new NotFoundException("Plan not found: " + code)))
-        .map(this::toResponse);
-  }
-
-  private PlanResponse toResponse(Plan plan) {
-    return new PlanResponse(
-        plan.getId(),
-        plan.getCode(),
-        plan.getName(),
-        plan.getMonthlyPriceCents(),
-        plan.getMaxSeats(),
-        plan.getFeatures());
+        .map(mapper::toResponse);
   }
 
   /** Returns the raw plan for a code, used internally by the subscription service. */

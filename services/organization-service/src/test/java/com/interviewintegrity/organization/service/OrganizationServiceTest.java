@@ -37,6 +37,7 @@ class OrganizationServiceTest {
   @Mock private OrganizationAddressRepository addressRepository;
   @Mock private OrganizationDomainRepository domainRepository;
   @Mock private OrganizationEventPublisher eventPublisher;
+  private final OrganizationMapper mapper = new OrganizationMapperImpl();
 
   private OrganizationService organizationService;
 
@@ -44,7 +45,7 @@ class OrganizationServiceTest {
   void setUp() {
     organizationService =
         new OrganizationService(
-            organizationRepository, addressRepository, domainRepository, eventPublisher);
+            organizationRepository, addressRepository, domainRepository, eventPublisher, mapper);
   }
 
   @Test

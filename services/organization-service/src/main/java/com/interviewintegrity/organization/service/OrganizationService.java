@@ -30,17 +30,20 @@ public final class OrganizationService {
   private final OrganizationAddressRepository addressRepository;
   private final OrganizationDomainRepository domainRepository;
   private final OrganizationEventPublisher eventPublisher;
+  private final OrganizationMapper mapper;
 
   /** Creates a service bound to the given repositories and event publisher. */
   public OrganizationService(
       OrganizationRepository organizationRepository,
       OrganizationAddressRepository addressRepository,
       OrganizationDomainRepository domainRepository,
-      OrganizationEventPublisher eventPublisher) {
+      OrganizationEventPublisher eventPublisher,
+      OrganizationMapper mapper) {
     this.organizationRepository = organizationRepository;
     this.addressRepository = addressRepository;
     this.domainRepository = domainRepository;
     this.eventPublisher = eventPublisher;
+    this.mapper = mapper;
   }
 
   /** Creates an organization and publishes the registration event. */
@@ -65,12 +68,12 @@ public final class OrganizationService {
                     .save(new OrganizationAddress(organization.getId()))
                     .then(eventPublisher.publishOrganizationRegistered(organization))
                     .thenReturn(organization))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns the organization. */
   public Mono<OrganizationResponse> getOrganization(UUID organizationId) {
-    return requireOrganization(organizationId).map(this::toResponse);
+    return requireOrganization(organizationId).map(mapper::toResponse);
   }
 
   /** Updates the mutable profile of the organization. */
@@ -83,7 +86,7 @@ public final class OrganizationService {
               organization.updateSettings(request.settings(), byUser);
               return organizationRepository.save(organization);
             })
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Changes the lifecycle status of the organization. */
@@ -101,7 +104,7 @@ public final class OrganizationService {
               }
               return organizationRepository.save(organization);
             })
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes the organization. */
@@ -119,7 +122,7 @@ public final class OrganizationService {
     return addressRepository
         .findByOrganizationId(organizationId)
         .switchIfEmpty(Mono.error(new NotFoundException("Organization has no address")))
-        .map(this::toAddressResponse);
+        .map(mapper::toAddressResponse);
   }
 
   /** Creates or updates the registered billing address of the organization. */
@@ -138,12 +141,12 @@ public final class OrganizationService {
                   request.countryCode());
               return addressRepository.save(address);
             })
-        .map(this::toAddressResponse);
+        .map(mapper::toAddressResponse);
   }
 
   /** Lists the claimed domains of the organization. */
   public Flux<DomainResponse> listDomains(UUID organizationId) {
-    return domainRepository.listLiveByOrganization(organizationId).map(this::toDomainResponse);
+    return domainRepository.listLiveByOrganization(organizationId).map(mapper::toDomainResponse);
   }
 
   /** Claims a new email domain for the organization. */
@@ -160,7 +163,7 @@ public final class OrganizationService {
               }
               return domainRepository
                   .save(new OrganizationDomain(organizationId, normalized, byUser))
-                  .map(this::toDomainResponse);
+                  .map(mapper::toDomainResponse);
             });
   }
 
@@ -172,7 +175,7 @@ public final class OrganizationService {
               domain.verify();
               return domainRepository.save(domain);
             })
-        .map(this::toDomainResponse);
+        .map(mapper::toDomainResponse);
   }
 
   /** Releases a claimed domain. */
@@ -209,38 +212,5 @@ public final class OrganizationService {
       return slug.toLowerCase(Locale.ROOT);
     }
     return name.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("(^-+|-+$)", "");
-  }
-
-  private OrganizationResponse toResponse(Organization organization) {
-    return new OrganizationResponse(
-        organization.getId(),
-        organization.getName(),
-        organization.getSlug(),
-        organization.getLegalName(),
-        organization.getStatus().name(),
-        organization.getSettings(),
-        organization.getCreatedAt(),
-        organization.getUpdatedAt());
-  }
-
-  private AddressResponse toAddressResponse(OrganizationAddress address) {
-    return new AddressResponse(
-        address.getId(),
-        address.getLine1(),
-        address.getLine2(),
-        address.getCity(),
-        address.getRegion(),
-        address.getPostalCode(),
-        address.getCountryCode(),
-        address.getUpdatedAt());
-  }
-
-  private DomainResponse toDomainResponse(OrganizationDomain domain) {
-    return new DomainResponse(
-        domain.getId(),
-        domain.getOrganizationId(),
-        domain.getDomain(),
-        domain.getVerifiedAt(),
-        domain.getCreatedAt());
   }
 }

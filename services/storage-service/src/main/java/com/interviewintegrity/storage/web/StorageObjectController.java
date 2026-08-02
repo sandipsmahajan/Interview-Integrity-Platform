@@ -1,10 +1,8 @@
 package com.interviewintegrity.storage.web;
 
 import com.interviewintegrity.security.SecurityPrincipals;
-import com.interviewintegrity.storage.domain.ObjectVersion;
 import com.interviewintegrity.storage.domain.StorageClass;
-import com.interviewintegrity.storage.domain.StorageObject;
-import com.interviewintegrity.storage.domain.StorageObjectHistory;
+import com.interviewintegrity.storage.service.StorageMapper;
 import com.interviewintegrity.storage.service.StorageObjectService;
 import com.interviewintegrity.storage.web.dto.ObjectResponse;
 import com.interviewintegrity.storage.web.dto.ObjectVersionResponse;
@@ -37,10 +35,12 @@ import reactor.core.publisher.Mono;
 public final class StorageObjectController {
 
   private final StorageObjectService objectService;
+  private final StorageMapper mapper;
 
   /** Creates the controller bound to the object service. */
-  public StorageObjectController(StorageObjectService objectService) {
+  public StorageObjectController(StorageObjectService objectService, StorageMapper mapper) {
     this.objectService = objectService;
+    this.mapper = mapper;
   }
 
   /** Registers an object in a bucket. */
@@ -63,7 +63,7 @@ public final class StorageObjectController {
             request.storageRef(),
             request.metadata(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the objects of the organization, optionally scoped by bucket or storage class. */
@@ -75,7 +75,7 @@ public final class StorageObjectController {
       @RequestParam(required = false) StorageClass storageClass) {
     return objectService
         .list(SecurityPrincipals.organizationId(authentication), bucketId, storageClass)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single object. */
@@ -84,7 +84,7 @@ public final class StorageObjectController {
   public Mono<ObjectResponse> get(Authentication authentication, @PathVariable UUID objectId) {
     return objectService
         .get(objectId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates the mutable metadata of an object. */
@@ -102,7 +102,7 @@ public final class StorageObjectController {
             request.storageClass(),
             request.metadata(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes an object. */
@@ -123,7 +123,7 @@ public final class StorageObjectController {
       Authentication authentication, @PathVariable UUID objectId) {
     return objectService
         .listVersions(objectId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toVersionResponse);
+        .map(mapper::toVersionResponse);
   }
 
   /** Lists the history snapshots of an object. */
@@ -133,50 +133,6 @@ public final class StorageObjectController {
       Authentication authentication, @PathVariable UUID objectId) {
     return objectService
         .listHistory(objectId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toHistoryResponse);
-  }
-
-  private ObjectResponse toResponse(StorageObject object) {
-    return new ObjectResponse(
-        object.getId(),
-        object.getOrganizationId(),
-        object.getBucketId(),
-        object.getKey(),
-        object.getSizeBytes(),
-        object.getContentType(),
-        object.getChecksumSha256(),
-        object.getStorageClass(),
-        object.getStorageRef(),
-        object.getMetadata(),
-        object.getUploadedBy(),
-        object.getUploadedAt());
-  }
-
-  private ObjectVersionResponse toVersionResponse(ObjectVersion version) {
-    return new ObjectVersionResponse(
-        version.getId(),
-        version.getObjectId(),
-        version.getVersion(),
-        version.getStorageRef(),
-        version.getSizeBytes(),
-        version.getChecksumSha256(),
-        version.getCreatedBy(),
-        version.getCreatedAt());
-  }
-
-  private StorageObjectHistoryResponse toHistoryResponse(StorageObjectHistory history) {
-    return new StorageObjectHistoryResponse(
-        history.getHistoryId(),
-        history.getHistoryAction(),
-        history.getChangedBy(),
-        history.getChangedAt(),
-        history.getId(),
-        history.getOrganizationId(),
-        history.getBucketId(),
-        history.getKey(),
-        history.getSizeBytes(),
-        history.getContentType(),
-        history.getStorageClass(),
-        history.getVersion());
+        .map(mapper::toHistoryResponse);
   }
 }

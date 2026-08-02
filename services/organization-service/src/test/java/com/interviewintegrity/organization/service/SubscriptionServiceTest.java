@@ -26,12 +26,13 @@ class SubscriptionServiceTest {
 
   @Mock private SubscriptionRepository subscriptionRepository;
   @Mock private PlanService planService;
+  private final OrganizationMapper mapper = new OrganizationMapperImpl();
 
   private SubscriptionService subscriptionService;
 
   @BeforeEach
   void setUp() {
-    subscriptionService = new SubscriptionService(subscriptionRepository, planService);
+    subscriptionService = new SubscriptionService(subscriptionRepository, planService, mapper);
   }
 
   @Test

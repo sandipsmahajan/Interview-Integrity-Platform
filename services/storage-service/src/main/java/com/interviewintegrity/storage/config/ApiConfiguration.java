@@ -2,6 +2,7 @@ package com.interviewintegrity.storage.config;
 
 import com.interviewintegrity.storage.service.SignedUrlService;
 import com.interviewintegrity.storage.service.StorageBucketService;
+import com.interviewintegrity.storage.service.StorageMapper;
 import com.interviewintegrity.storage.service.StorageObjectService;
 import com.interviewintegrity.storage.web.SignedUrlController;
 import com.interviewintegrity.storage.web.StorageBucketController;
@@ -20,20 +21,23 @@ public class ApiConfiguration {
 
   /** Exposes the storage bucket controller. */
   @Bean
-  public StorageBucketController storageBucketController(StorageBucketService bucketService) {
-    return new StorageBucketController(bucketService);
+  public StorageBucketController storageBucketController(
+      StorageBucketService bucketService, StorageMapper mapper) {
+    return new StorageBucketController(bucketService, mapper);
   }
 
   /** Exposes the storage object controller. */
   @Bean
-  public StorageObjectController storageObjectController(StorageObjectService objectService) {
-    return new StorageObjectController(objectService);
+  public StorageObjectController storageObjectController(
+      StorageObjectService objectService, StorageMapper mapper) {
+    return new StorageObjectController(objectService, mapper);
   }
 
   /** Exposes the signed URL controller. */
   @Bean
-  public SignedUrlController signedUrlController(SignedUrlService signedUrlService) {
-    return new SignedUrlController(signedUrlService);
+  public SignedUrlController signedUrlController(
+      SignedUrlService signedUrlService, StorageMapper mapper) {
+    return new SignedUrlController(signedUrlService, mapper);
   }
 
   /** Describes the OpenAPI document for the storage service. */
