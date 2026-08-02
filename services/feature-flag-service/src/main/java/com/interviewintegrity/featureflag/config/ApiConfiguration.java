@@ -1,6 +1,7 @@
 package com.interviewintegrity.featureflag.config;
 
 import com.interviewintegrity.featureflag.service.ExperimentService;
+import com.interviewintegrity.featureflag.service.FeatureFlagMapper;
 import com.interviewintegrity.featureflag.service.FeatureFlagService;
 import com.interviewintegrity.featureflag.service.FeatureService;
 import com.interviewintegrity.featureflag.web.ExperimentController;
@@ -20,20 +21,23 @@ public class ApiConfiguration {
 
   /** Exposes the feature controller. */
   @Bean
-  public FeatureController featureController(FeatureService featureService) {
-    return new FeatureController(featureService);
+  public FeatureController featureController(
+      FeatureService featureService, FeatureFlagMapper mapper) {
+    return new FeatureController(featureService, mapper);
   }
 
   /** Exposes the feature flag controller. */
   @Bean
-  public FeatureFlagController featureFlagController(FeatureFlagService flagService) {
-    return new FeatureFlagController(flagService);
+  public FeatureFlagController featureFlagController(
+      FeatureFlagService flagService, FeatureFlagMapper mapper) {
+    return new FeatureFlagController(flagService, mapper);
   }
 
   /** Exposes the experiment controller. */
   @Bean
-  public ExperimentController experimentController(ExperimentService experimentService) {
-    return new ExperimentController(experimentService);
+  public ExperimentController experimentController(
+      ExperimentService experimentService, FeatureFlagMapper mapper) {
+    return new ExperimentController(experimentService, mapper);
   }
 
   /** Describes the OpenAPI document for the feature flag service. */

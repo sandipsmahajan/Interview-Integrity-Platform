@@ -1,6 +1,6 @@
 package com.interviewintegrity.configuration.web;
 
-import com.interviewintegrity.configuration.domain.ConfigurationSchema;
+import com.interviewintegrity.configuration.service.ConfigurationMapper;
 import com.interviewintegrity.configuration.service.ConfigurationSchemaService;
 import com.interviewintegrity.configuration.web.dto.ConfigurationSchemaResponse;
 import com.interviewintegrity.configuration.web.dto.CreateConfigurationSchemaRequest;
@@ -29,10 +29,13 @@ import reactor.core.publisher.Mono;
 public final class ConfigurationSchemaController {
 
   private final ConfigurationSchemaService schemaService;
+  private final ConfigurationMapper mapper;
 
-  /** Creates the controller bound to the schema service. */
-  public ConfigurationSchemaController(ConfigurationSchemaService schemaService) {
+  /** Creates the controller bound to the schema service and mapper. */
+  public ConfigurationSchemaController(
+      ConfigurationSchemaService schemaService, ConfigurationMapper mapper) {
     this.schemaService = schemaService;
+    this.mapper = mapper;
   }
 
   /** Declares a new configuration key. */
@@ -48,14 +51,14 @@ public final class ConfigurationSchemaController {
             request.defaultValue(),
             request.constraints(),
             request.description())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists every declared configuration key. */
   @GetMapping
   @Operation(summary = "List configuration schema")
   public Flux<ConfigurationSchemaResponse> list(Authentication authentication) {
-    return schemaService.list().map(this::toResponse);
+    return schemaService.list().map(mapper::toResponse);
   }
 
   /** Returns a single schema entry. */
@@ -63,7 +66,7 @@ public final class ConfigurationSchemaController {
   @Operation(summary = "Get a configuration schema entry")
   public Mono<ConfigurationSchemaResponse> get(
       Authentication authentication, @PathVariable UUID schemaId) {
-    return schemaService.get(schemaId).map(this::toResponse);
+    return schemaService.get(schemaId).map(mapper::toResponse);
   }
 
   /** Updates a schema entry. */
@@ -80,17 +83,6 @@ public final class ConfigurationSchemaController {
             request.defaultValue(),
             request.constraints(),
             request.description())
-        .map(this::toResponse);
-  }
-
-  private ConfigurationSchemaResponse toResponse(ConfigurationSchema schema) {
-    return new ConfigurationSchemaResponse(
-        schema.getId(),
-        schema.getKey(),
-        schema.getValueType(),
-        schema.getDefaultValue(),
-        schema.getConstraints(),
-        schema.getDescription(),
-        schema.getCreatedAt());
+        .map(mapper::toResponse);
   }
 }

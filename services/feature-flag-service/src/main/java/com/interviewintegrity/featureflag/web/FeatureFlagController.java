@@ -1,8 +1,6 @@
 package com.interviewintegrity.featureflag.web;
 
-import com.interviewintegrity.featureflag.domain.FeatureFlag;
-import com.interviewintegrity.featureflag.domain.FeatureFlagHistory;
-import com.interviewintegrity.featureflag.domain.FlagTarget;
+import com.interviewintegrity.featureflag.service.FeatureFlagMapper;
 import com.interviewintegrity.featureflag.service.FeatureFlagService;
 import com.interviewintegrity.featureflag.web.dto.AddTargetRequest;
 import com.interviewintegrity.featureflag.web.dto.CreateFlagRequest;
@@ -39,10 +37,12 @@ public final class FeatureFlagController {
   private static final String DEFAULT_ENVIRONMENT = "PRODUCTION";
 
   private final FeatureFlagService flagService;
+  private final FeatureFlagMapper mapper;
 
-  /** Creates the controller bound to the flag service. */
-  public FeatureFlagController(FeatureFlagService flagService) {
+  /** Creates the controller bound to the flag service and mapper. */
+  public FeatureFlagController(FeatureFlagService flagService, FeatureFlagMapper mapper) {
     this.flagService = flagService;
+    this.mapper = mapper;
   }
 
   /** Creates a flag for a feature. */
@@ -64,7 +64,7 @@ public final class FeatureFlagController {
             request.variants(),
             request.rules(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the flags of a feature. */
@@ -74,7 +74,7 @@ public final class FeatureFlagController {
       Authentication authentication, @PathVariable UUID featureId) {
     return flagService
         .listFlags(SecurityPrincipals.organizationId(authentication), featureId)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single flag. */
@@ -84,7 +84,7 @@ public final class FeatureFlagController {
       Authentication authentication, @PathVariable UUID flagId) {
     return flagService
         .getFlag(flagId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates a flag configuration. */
@@ -104,7 +104,7 @@ public final class FeatureFlagController {
             request.variants(),
             request.rules(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the per-user overrides of a flag. */
@@ -114,7 +114,7 @@ public final class FeatureFlagController {
       Authentication authentication, @PathVariable UUID flagId) {
     return flagService
         .listTargets(flagId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toTargetResponse);
+        .map(mapper::toTargetResponse);
   }
 
   /** Adds or replaces a per-user override for a flag. */
@@ -133,7 +133,7 @@ public final class FeatureFlagController {
             request.variant(),
             request.enabled(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toTargetResponse);
+        .map(mapper::toTargetResponse);
   }
 
   /** Removes a per-user override for a flag. */
@@ -153,7 +153,7 @@ public final class FeatureFlagController {
       Authentication authentication, @PathVariable UUID flagId) {
     return flagService
         .history(flagId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toHistoryResponse);
+        .map(mapper::toHistoryResponse);
   }
 
   private String environment(String environment) {
@@ -161,45 +161,5 @@ public final class FeatureFlagController {
       return DEFAULT_ENVIRONMENT;
     }
     return environment.trim().toUpperCase(Locale.ROOT);
-  }
-
-  private FeatureFlagResponse toResponse(FeatureFlag flag) {
-    return new FeatureFlagResponse(
-        flag.getId(),
-        flag.getOrganizationId(),
-        flag.getFeatureId(),
-        flag.getEnvironment(),
-        flag.isEnabled(),
-        flag.getRolloutPercent(),
-        flag.getDefaultVariant(),
-        flag.getVariants(),
-        flag.getRules(),
-        flag.getCreatedAt(),
-        flag.getUpdatedAt());
-  }
-
-  private FlagTargetResponse toTargetResponse(FlagTarget target) {
-    return new FlagTargetResponse(
-        target.getFlagId(),
-        target.getUserId(),
-        target.getVariant(),
-        target.isEnabled(),
-        target.getAddedAt());
-  }
-
-  private FeatureFlagHistoryResponse toHistoryResponse(FeatureFlagHistory history) {
-    return new FeatureFlagHistoryResponse(
-        history.getHistoryId(),
-        history.getHistoryAction(),
-        history.getChangedBy(),
-        history.getChangedAt(),
-        history.getId(),
-        history.getEnvironment(),
-        history.isEnabled(),
-        history.getRolloutPercent(),
-        history.getDefaultVariant(),
-        history.getVariants(),
-        history.getRules(),
-        history.getVersion());
   }
 }

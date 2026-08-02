@@ -1,8 +1,8 @@
 package com.interviewintegrity.featureflag.web;
 
-import com.interviewintegrity.featureflag.domain.Experiment;
 import com.interviewintegrity.featureflag.domain.ExperimentStatus;
 import com.interviewintegrity.featureflag.service.ExperimentService;
+import com.interviewintegrity.featureflag.service.FeatureFlagMapper;
 import com.interviewintegrity.featureflag.web.dto.CreateExperimentRequest;
 import com.interviewintegrity.featureflag.web.dto.ExperimentResponse;
 import com.interviewintegrity.security.SecurityPrincipals;
@@ -30,10 +30,12 @@ import reactor.core.publisher.Mono;
 public final class ExperimentController {
 
   private final ExperimentService experimentService;
+  private final FeatureFlagMapper mapper;
 
-  /** Creates the controller bound to the experiment service. */
-  public ExperimentController(ExperimentService experimentService) {
+  /** Creates the controller bound to the experiment service and mapper. */
+  public ExperimentController(ExperimentService experimentService, FeatureFlagMapper mapper) {
     this.experimentService = experimentService;
+    this.mapper = mapper;
   }
 
   /** Creates a draft experiment. */
@@ -51,7 +53,7 @@ public final class ExperimentController {
             request.treatmentVariant(),
             request.metrics(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the experiments of the organization, optionally filtered by status. */
@@ -61,7 +63,7 @@ public final class ExperimentController {
       Authentication authentication, @RequestParam(required = false) ExperimentStatus status) {
     return experimentService
         .list(SecurityPrincipals.organizationId(authentication), status)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single experiment. */
@@ -71,7 +73,7 @@ public final class ExperimentController {
       Authentication authentication, @PathVariable UUID experimentId) {
     return experimentService
         .get(experimentId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Starts the experiment. */
@@ -84,7 +86,7 @@ public final class ExperimentController {
             experimentId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Pauses the experiment. */
@@ -97,7 +99,7 @@ public final class ExperimentController {
             experimentId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Resumes the experiment. */
@@ -110,7 +112,7 @@ public final class ExperimentController {
             experimentId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Completes the experiment. */
@@ -123,7 +125,7 @@ public final class ExperimentController {
             experimentId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Rejects the experiment. */
@@ -136,20 +138,6 @@ public final class ExperimentController {
             experimentId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
-  }
-
-  private ExperimentResponse toResponse(Experiment experiment) {
-    return new ExperimentResponse(
-        experiment.getId(),
-        experiment.getOrganizationId(),
-        experiment.getName(),
-        experiment.getFeatureId(),
-        experiment.getControlVariant(),
-        experiment.getTreatmentVariant(),
-        experiment.getStatus(),
-        experiment.getStartedAt(),
-        experiment.getEndedAt(),
-        experiment.getCreatedAt());
+        .map(mapper::toResponse);
   }
 }

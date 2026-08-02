@@ -1,8 +1,7 @@
 package com.interviewintegrity.configuration.web;
 
 import com.interviewintegrity.configuration.domain.ConfigScope;
-import com.interviewintegrity.configuration.domain.Configuration;
-import com.interviewintegrity.configuration.domain.ConfigurationHistory;
+import com.interviewintegrity.configuration.service.ConfigurationMapper;
 import com.interviewintegrity.configuration.service.ConfigurationService;
 import com.interviewintegrity.configuration.web.dto.ConfigurationHistoryResponse;
 import com.interviewintegrity.configuration.web.dto.ConfigurationResponse;
@@ -35,10 +34,13 @@ import reactor.core.publisher.Mono;
 public final class ConfigurationController {
 
   private final ConfigurationService configurationService;
+  private final ConfigurationMapper mapper;
 
-  /** Creates the controller bound to the configuration service. */
-  public ConfigurationController(ConfigurationService configurationService) {
+  /** Creates the controller bound to the configuration service and mapper. */
+  public ConfigurationController(
+      ConfigurationService configurationService, ConfigurationMapper mapper) {
     this.configurationService = configurationService;
+    this.mapper = mapper;
   }
 
   /** Creates a configuration value. */
@@ -55,7 +57,7 @@ public final class ConfigurationController {
             request.value(),
             request.description(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the configurations visible to the organization, optionally filtered by scope. */
@@ -65,7 +67,7 @@ public final class ConfigurationController {
       Authentication authentication, @RequestParam(required = false) ConfigScope scope) {
     return configurationService
         .list(SecurityPrincipals.organizationId(authentication), scope)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single configuration. */
@@ -75,7 +77,7 @@ public final class ConfigurationController {
       Authentication authentication, @PathVariable UUID configurationId) {
     return configurationService
         .get(configurationId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns the version history of a configuration. */
@@ -85,7 +87,7 @@ public final class ConfigurationController {
       Authentication authentication, @PathVariable UUID configurationId) {
     return configurationService
         .history(configurationId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toHistoryResponse);
+        .map(mapper::toHistoryResponse);
   }
 
   /** Updates a configuration value. */
@@ -102,7 +104,7 @@ public final class ConfigurationController {
             request.value(),
             request.description(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a configuration value. */
@@ -114,30 +116,5 @@ public final class ConfigurationController {
         configurationId,
         SecurityPrincipals.organizationId(authentication),
         SecurityPrincipals.userId(authentication));
-  }
-
-  private ConfigurationResponse toResponse(Configuration configuration) {
-    return new ConfigurationResponse(
-        configuration.getId(),
-        configuration.getOrganizationId(),
-        configuration.getScope(),
-        configuration.getKey(),
-        configuration.getValue(),
-        configuration.getDescription(),
-        configuration.getCreatedAt(),
-        configuration.getUpdatedAt());
-  }
-
-  private ConfigurationHistoryResponse toHistoryResponse(ConfigurationHistory history) {
-    return new ConfigurationHistoryResponse(
-        history.getId(),
-        history.getConfigurationId(),
-        history.getOrganizationId(),
-        history.getKey(),
-        history.getOldValue(),
-        history.getNewValue(),
-        history.getChangedBy(),
-        history.getChangedAt(),
-        history.getVersion());
   }
 }

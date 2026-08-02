@@ -1,5 +1,6 @@
 package com.interviewintegrity.configuration.config;
 
+import com.interviewintegrity.configuration.service.ConfigurationMapper;
 import com.interviewintegrity.configuration.service.ConfigurationSchemaService;
 import com.interviewintegrity.configuration.service.ConfigurationService;
 import com.interviewintegrity.configuration.web.ConfigurationController;
@@ -19,15 +20,15 @@ public class ApiConfiguration {
   /** Exposes the configuration schema controller. */
   @Bean
   public ConfigurationSchemaController configurationSchemaController(
-      ConfigurationSchemaService schemaService) {
-    return new ConfigurationSchemaController(schemaService);
+      ConfigurationSchemaService schemaService, ConfigurationMapper mapper) {
+    return new ConfigurationSchemaController(schemaService, mapper);
   }
 
   /** Exposes the configuration controller. */
   @Bean
   public ConfigurationController configurationController(
-      ConfigurationService configurationService) {
-    return new ConfigurationController(configurationService);
+      ConfigurationService configurationService, ConfigurationMapper mapper) {
+    return new ConfigurationController(configurationService, mapper);
   }
 
   /** Describes the OpenAPI document for the configuration service. */

@@ -1,6 +1,6 @@
 package com.interviewintegrity.featureflag.web;
 
-import com.interviewintegrity.featureflag.domain.Feature;
+import com.interviewintegrity.featureflag.service.FeatureFlagMapper;
 import com.interviewintegrity.featureflag.service.FeatureService;
 import com.interviewintegrity.featureflag.web.dto.CreateFeatureRequest;
 import com.interviewintegrity.featureflag.web.dto.FeatureResponse;
@@ -31,10 +31,12 @@ import reactor.core.publisher.Mono;
 public final class FeatureController {
 
   private final FeatureService featureService;
+  private final FeatureFlagMapper mapper;
 
-  /** Creates the controller bound to the feature service. */
-  public FeatureController(FeatureService featureService) {
+  /** Creates the controller bound to the feature service and mapper. */
+  public FeatureController(FeatureService featureService, FeatureFlagMapper mapper) {
     this.featureService = featureService;
+    this.mapper = mapper;
   }
 
   /** Creates a feature. */
@@ -51,7 +53,7 @@ public final class FeatureController {
             request.description(),
             request.kind(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the features of the organization. */
@@ -60,7 +62,7 @@ public final class FeatureController {
   public Flux<FeatureResponse> list(Authentication authentication) {
     return featureService
         .list(SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single feature. */
@@ -69,7 +71,7 @@ public final class FeatureController {
   public Mono<FeatureResponse> get(Authentication authentication, @PathVariable UUID featureId) {
     return featureService
         .get(featureId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates a feature. */
@@ -86,7 +88,7 @@ public final class FeatureController {
             request.name().trim(),
             request.description(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a feature. */
@@ -98,16 +100,5 @@ public final class FeatureController {
         featureId,
         SecurityPrincipals.organizationId(authentication),
         SecurityPrincipals.userId(authentication));
-  }
-
-  private FeatureResponse toResponse(Feature feature) {
-    return new FeatureResponse(
-        feature.getId(),
-        feature.getOrganizationId(),
-        feature.getCode(),
-        feature.getName(),
-        feature.getDescription(),
-        feature.getKind(),
-        feature.getCreatedAt());
   }
 }
