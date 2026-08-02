@@ -41,6 +41,7 @@ public final class ViolationConsumer {
         .subscribe(
             record ->
                 handle(record)
+                    .doOnSuccess(ignored -> record.receiverOffset().acknowledge())
                     .subscribe(
                         ignored -> {},
                         error ->

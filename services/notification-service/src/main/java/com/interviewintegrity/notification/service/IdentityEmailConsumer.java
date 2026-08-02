@@ -54,6 +54,7 @@ public final class IdentityEmailConsumer {
         .subscribe(
             record ->
                 handle(record)
+                    .doOnSuccess(ignored -> record.receiverOffset().acknowledge())
                     .subscribe(
                         ignored -> {},
                         error ->

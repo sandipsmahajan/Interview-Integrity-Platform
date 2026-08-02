@@ -44,6 +44,7 @@ public final class TelemetryEventConsumer {
         .subscribe(
             record ->
                 handle(record)
+                    .doOnSuccess(ignored -> record.receiverOffset().acknowledge())
                     .subscribe(
                         ignored -> {},
                         error ->
