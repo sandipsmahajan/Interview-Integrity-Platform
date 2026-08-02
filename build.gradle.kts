@@ -43,6 +43,11 @@ subprojects {
     tasks.withType<JavaCompile>().configureEach {
         options.encoding = "UTF-8"
         options.compilerArgs.addAll(listOf("-Xlint:all", "-Werror"))
+        val errorProneOptions =
+            (options as org.gradle.api.plugins.ExtensionAware)
+                .extensions
+                .getByName("errorprone") as net.ltgt.gradle.errorprone.ErrorProneOptions
+        errorProneOptions.disableWarningsInGeneratedCode.set(true)
     }
 
     tasks.withType<Jar>().configureEach {

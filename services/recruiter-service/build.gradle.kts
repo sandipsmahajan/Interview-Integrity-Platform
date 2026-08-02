@@ -37,11 +37,6 @@ dependencies {
 
     tasks.withType<JavaCompile>().configureEach {
         options.compilerArgs.add("-Xlint:-processing")
-        val errorProneOptions =
-            (options as org.gradle.api.plugins.ExtensionAware)
-                .extensions
-                .getByName("errorprone") as net.ltgt.gradle.errorprone.ErrorProneOptions
-        errorProneOptions.disableWarningsInGeneratedCode.set(true)
     }
 
     testImplementation(libs.spring.boot.starter.test)
