@@ -1,7 +1,7 @@
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /workspace
 COPY . .
-RUN ./gradlew :services:policy-engine-service:bootJar --no-daemon -x test -x check
+RUN sed -i 's/\r$//' gradlew && chmod +x gradlew && ./gradlew :services:policy-engine-service:bootJar --no-daemon -x test -x check
 
 FROM eclipse-temurin:21-jre
 RUN useradd --system --uid 10001 --create-home appuser
