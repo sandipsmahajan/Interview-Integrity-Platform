@@ -5,24 +5,20 @@ spring:
     gateway:
       discovery:
         locator:
-          enabled: false
+          enabled: ${GATEWAY_DISCOVERY_LOCATOR_ENABLED:false}
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
 security:
   jwt:
     secret: ${JWT_SECRET:local-development-change-me-32-bytes-minimum}
-    issuer: interview-integrity
-    audience: interview-integrity-api
-    accessTokenTtl: 15m
-    permitAll:
-      - /actuator/health
-      - /actuator/info
-    corsAllowedOrigins:
-      - http://localhost:5173
-      - http://localhost:3000
+    issuer: ${JWT_ISSUER:interview-integrity}
+    audience: ${JWT_AUDIENCE:interview-integrity-api}
+    accessTokenTtl: ${JWT_ACCESS_TOKEN_TTL:15m}
+    permitAll: ${JWT_PERMIT_ALL:/actuator/health,/actuator/info}
+    corsAllowedOrigins: ${JWT_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
 
 springdoc:
   api-docs:
@@ -31,7 +27,7 @@ springdoc:
     path: /swagger-ui.html
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   shutdown: graceful
 
 management:

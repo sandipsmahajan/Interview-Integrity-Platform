@@ -2,38 +2,34 @@ spring:
   application:
     name: policy-engine-service
   r2dbc:
-    url: r2dbc:postgresql://localhost:5432/policy_db
-    username: integrity
-    password: integrity
+    url: r2dbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:policy_db}
+    username: ${DB_USERNAME:integrity}
+    password: ${DB_PASSWORD:integrity}
     pool:
-      initial-size: 4
-      max-size: 16
+      initial-size: ${DB_POOL_INITIAL_SIZE:4}
+      max-size: ${DB_POOL_MAX_SIZE:16}
   flyway:
     enabled: true
-    url: jdbc:postgresql://localhost:5432/policy_db
-    user: integrity
-    password: integrity
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:policy_db}
+    user: ${DB_USERNAME:integrity}
+    password: ${DB_PASSWORD:integrity}
     locations: classpath:db/migration
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
-      group-id: policy-engine-service
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:policy-engine-service}
 
 security:
   jwt:
     secret: ${JWT_SECRET:local-development-change-me-32-bytes-minimum}
-    issuer: interview-integrity
-    audience: interview-integrity-api
-    accessTokenTtl: 15m
-    permitAll:
-      - /actuator/health
-      - /actuator/info
-    corsAllowedOrigins:
-      - http://localhost:5173
-      - http://localhost:3000
+    issuer: ${JWT_ISSUER:interview-integrity}
+    audience: ${JWT_AUDIENCE:interview-integrity-api}
+    accessTokenTtl: ${JWT_ACCESS_TOKEN_TTL:15m}
+    permitAll: ${JWT_PERMIT_ALL:/actuator/health,/actuator/info}
+    corsAllowedOrigins: ${JWT_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
 
 server:
-  port: 8088
+  port: ${SERVER_PORT:8088}
   shutdown: graceful
 
 management:

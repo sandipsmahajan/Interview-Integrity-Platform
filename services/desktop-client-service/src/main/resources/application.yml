@@ -2,33 +2,24 @@ spring:
   application:
     name: desktop-client-service
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
-      group-id: desktop-client-relay
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:desktop-client-relay}
 
 desktop:
-  relay-topics:
-    - telemetry.received.v1
-    - policy.violation.v1
-    - interview.started.v1
-    - interview.completed.v1
+  relay-topics: ${DESKTOP_RELAY_TOPICS:telemetry.received.v1,policy.violation.v1,interview.started.v1,interview.completed.v1}
 
 security:
   jwt:
     secret: ${JWT_SECRET:local-development-change-me-32-bytes-minimum}
-    issuer: interview-integrity
-    audience: interview-integrity-api
-    accessTokenTtl: 15m
-    permitAll:
-      - /actuator/health
-      - /actuator/info
-      - /ws/**
-    corsAllowedOrigins:
-      - http://localhost:5173
-      - http://localhost:3000
+    issuer: ${JWT_ISSUER:interview-integrity}
+    audience: ${JWT_AUDIENCE:interview-integrity-api}
+    accessTokenTtl: ${JWT_ACCESS_TOKEN_TTL:15m}
+    permitAll: ${JWT_PERMIT_ALL:/actuator/health,/actuator/info,/ws/**}
+    corsAllowedOrigins: ${JWT_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
 
 server:
-  port: 8086
+  port: ${SERVER_PORT:8086}
   shutdown: graceful
 
 management:
