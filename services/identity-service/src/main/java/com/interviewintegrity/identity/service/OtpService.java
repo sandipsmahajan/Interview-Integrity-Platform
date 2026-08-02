@@ -27,6 +27,7 @@ public final class OtpService {
   private static final Duration RESEND_INTERVAL = Duration.ofSeconds(60);
   private static final int MAX_ATTEMPTS = 5;
   private static final int CODE_DIGITS = 6;
+  private static final int CONSUMED = 1;
   private static final SecureRandom RANDOM = new SecureRandom();
 
   private final OtpCodeRepository otpCodeRepository;
@@ -97,23 +98,28 @@ public final class OtpService {
         .flatMap(
             otp -> {
               if (!otp.isUsable()) {
-                return Mono.error(new AuthenticationFailedException("Invalid or expired code"));
+                return Mono.<Void>error(
+                    new AuthenticationFailedException("Invalid or expired code"));
               }
-              otp.consume();
-              return otpCodeRepository.save(otp).then();
+              return otpCodeRepository
+                  .consumeIfOutstanding(otp.getId(), Instant.now())
+                  .flatMap(
+                      consumed -> {
+                        if (consumed != CONSUMED) {
+                          return Mono.<Void>error(
+                              new AuthenticationFailedException("Invalid or expired code"));
+                        }
+                        return Mono.empty();
+                      });
             })
-        .onErrorResume(err -> recordFailedAttempt(user, purpose).then(Mono.error(err)));
+        .onErrorResume(err -> recordFailedAttempt(user, purpose).then(Mono.<Void>error(err)));
   }
 
   private Mono<Void> recordFailedAttempt(User user, String purpose) {
     return otpCodeRepository
         .findOutstanding(user.getId(), purpose)
-        .flatMap(
-            otp -> {
-              otp.recordAttempt();
-              return otpCodeRepository.save(otp).then();
-            })
-        .switchIfEmpty(Mono.empty());
+        .flatMap(otp -> otpCodeRepository.recordAttempt(otp.getId()).then())
+        .switchIfEmpty(Mono.<Void>empty());
   }
 
   private static String generateCode() {

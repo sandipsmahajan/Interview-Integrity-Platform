@@ -1,7 +1,9 @@
 package com.interviewintegrity.identity.repository;
 
 import com.interviewintegrity.identity.domain.RecoveryCode;
+import java.time.Instant;
 import java.util.UUID;
+import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import reactor.core.publisher.Flux;
@@ -25,4 +27,16 @@ public interface RecoveryCodeRepository extends ReactiveCrudRepository<RecoveryC
   /** Deletes all recovery codes of a user (used when regenerating a set). */
   @Query("DELETE FROM recovery_codes WHERE user_id = :userId")
   Mono<Void> deleteAllByUser(UUID userId);
+
+  /**
+   * Atomically consumes an unused recovery code, returning the number of rows affected.
+   *
+   * <p>The guarded WHERE clause makes the single-use guarantee hold even when the same code is
+   * submitted concurrently.
+   */
+  @Modifying
+  @Query(
+      "UPDATE recovery_codes SET consumed_at = :consumedAt "
+          + "WHERE id = :id AND consumed_at IS NULL")
+  Mono<Integer> consumeIfUnused(UUID id, Instant consumedAt);
 }

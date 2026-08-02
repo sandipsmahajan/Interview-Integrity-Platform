@@ -8,6 +8,7 @@ import com.interviewintegrity.identity.domain.MfaDevice;
 import com.interviewintegrity.identity.domain.RecoveryCode;
 import com.interviewintegrity.identity.domain.TrustedDevice;
 import com.interviewintegrity.identity.domain.User;
+import com.interviewintegrity.identity.repository.MfaChallengeAttemptRepository;
 import com.interviewintegrity.identity.repository.MfaDeviceRepository;
 import com.interviewintegrity.identity.repository.RecoveryCodeRepository;
 import com.interviewintegrity.identity.repository.TrustedDeviceRepository;
@@ -18,6 +19,7 @@ import com.interviewintegrity.identity.web.dto.MfaEnrollResponse;
 import com.interviewintegrity.identity.web.dto.TokenResponse;
 import com.interviewintegrity.identity.web.dto.TrustedDeviceResponse;
 import com.interviewintegrity.security.JwtTokenService;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import reactor.core.publisher.Flux;
@@ -35,6 +37,7 @@ public final class MfaService {
   private static final String PURPOSE_MFA_CHALLENGE = "mfa-challenge";
   private static final int TOTP_WINDOW = 1;
   private static final long NOT_FOUND = 0L;
+  private static final int CONSUMED = 1;
 
   private final MfaDeviceRepository mfaDeviceRepository;
   private final RecoveryCodeRepository recoveryCodeRepository;
@@ -43,6 +46,7 @@ public final class MfaService {
   private final TokenIssuer tokenIssuer;
   private final JwtTokenService jwtTokenService;
   private final OtpService otpService;
+  private final MfaChallengeAttemptRepository challengeAttemptRepository;
   private final AuthProperties authProperties;
 
   /** Creates the MFA service with its collaborators. */
@@ -54,6 +58,7 @@ public final class MfaService {
       TokenIssuer tokenIssuer,
       JwtTokenService jwtTokenService,
       OtpService otpService,
+      MfaChallengeAttemptRepository challengeAttemptRepository,
       AuthProperties authProperties) {
     this.mfaDeviceRepository = mfaDeviceRepository;
     this.recoveryCodeRepository = recoveryCodeRepository;
@@ -62,6 +67,7 @@ public final class MfaService {
     this.tokenIssuer = tokenIssuer;
     this.jwtTokenService = jwtTokenService;
     this.otpService = otpService;
+    this.challengeAttemptRepository = challengeAttemptRepository;
     this.authProperties = authProperties;
   }
 
@@ -107,13 +113,44 @@ public final class MfaService {
     return resolveChallengeUser(challengeId)
         .flatMap(
             user ->
-                verifyAnyFactor(user, code)
-                    .filter(Boolean::booleanValue)
-                    .switchIfEmpty(
-                        Mono.error(new AuthenticationFailedException("Invalid verification code")))
+                assertChallengeBudget(challengeId)
                     .then(
-                        completeLogin(
-                            user, trustDevice, deviceId, deviceName, ipAddress, userAgent)));
+                        verifyAnyFactor(user, code)
+                            .filter(Boolean::booleanValue)
+                            .switchIfEmpty(
+                                Mono.defer(
+                                    () ->
+                                        challengeAttemptRepository
+                                            .recordAttempt(challengeId, user.getId(), Instant.now())
+                                            .then(
+                                                Mono.error(
+                                                    new AuthenticationFailedException(
+                                                        "Invalid verification code")))))
+                            .then(
+                                challengeAttemptRepository
+                                    .deleteByChallengeId(challengeId)
+                                    .then(
+                                        completeLogin(
+                                            user,
+                                            trustDevice,
+                                            deviceId,
+                                            deviceName,
+                                            ipAddress,
+                                            userAgent)))));
+  }
+
+  private Mono<Void> assertChallengeBudget(String challengeId) {
+    return challengeAttemptRepository
+        .attempts(challengeId)
+        .defaultIfEmpty(0)
+        .flatMap(
+            attempts -> {
+              if (attempts >= authProperties.maxMfaChallengeAttempts()) {
+                return Mono.error(
+                    new AuthenticationFailedException("Too many verification attempts"));
+              }
+              return Mono.empty();
+            });
   }
 
   /** Starts a TOTP enrollment and issues a fresh set of recovery codes. */
@@ -310,10 +347,10 @@ public final class MfaService {
     return recoveryCodeRepository
         .findUsableByHash(user.getId(), RecoveryCodes.hash(code))
         .flatMap(
-            recovery -> {
-              recovery.consume();
-              return recoveryCodeRepository.save(recovery).thenReturn(true);
-            })
+            recovery ->
+                recoveryCodeRepository
+                    .consumeIfUnused(recovery.getId(), Instant.now())
+                    .map(affected -> affected == CONSUMED))
         .defaultIfEmpty(false);
   }
 }

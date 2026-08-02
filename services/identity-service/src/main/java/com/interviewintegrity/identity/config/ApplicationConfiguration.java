@@ -1,5 +1,6 @@
 package com.interviewintegrity.identity.config;
 
+import com.interviewintegrity.identity.repository.MfaChallengeAttemptRepository;
 import com.interviewintegrity.identity.repository.MfaDeviceRepository;
 import com.interviewintegrity.identity.repository.OtpCodeRepository;
 import com.interviewintegrity.identity.repository.PasswordHistoryRepository;
@@ -140,7 +141,12 @@ public class ApplicationConfiguration {
         environment.getProperty("app.auth.app-name", "Integrity Pro"),
         environment.getProperty("app.auth.frontend-base-url", "http://localhost:5173"),
         Duration.parse(environment.getProperty("app.auth.mfa-challenge-ttl", "PT5M")),
-        environment.getProperty("app.auth.mfa-email-purpose", "mfa-login"));
+        environment.getProperty("app.auth.mfa-email-purpose", "mfa-login"),
+        environment.getProperty("app.auth.expose-reset-token", Boolean.class, false),
+        Duration.parse(environment.getProperty("app.auth.reset-request-interval", "PT1M")),
+        environment.getProperty("app.auth.max-login-attempts", Integer.class, 5),
+        Duration.parse(environment.getProperty("app.auth.login-lockout", "PT15M")),
+        environment.getProperty("app.auth.max-mfa-challenge-attempts", Integer.class, 5));
   }
 
   /** Provides the multi-factor authentication service. */
@@ -153,6 +159,7 @@ public class ApplicationConfiguration {
       TokenIssuer tokenIssuer,
       JwtTokenService jwtTokenService,
       OtpService otpService,
+      MfaChallengeAttemptRepository challengeAttemptRepository,
       AuthProperties authProperties) {
     return new MfaService(
         mfaDeviceRepository,
@@ -162,6 +169,7 @@ public class ApplicationConfiguration {
         tokenIssuer,
         jwtTokenService,
         otpService,
+        challengeAttemptRepository,
         authProperties);
   }
 

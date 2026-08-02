@@ -87,13 +87,11 @@ class OtpServiceTest {
             5,
             Instant.now().plusSeconds(600));
     when(otpCodeRepository.findOutstandingByHash(any(), any(), any())).thenReturn(Mono.just(otp));
-    when(otpCodeRepository.save(any(OtpCode.class)))
-        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+    when(otpCodeRepository.consumeIfOutstanding(eq(otp.getId()), any())).thenReturn(Mono.just(1));
 
     StepVerifier.create(otpService.verify(user, PURPOSE, "123456")).verifyComplete();
 
-    assertThat(otp.getConsumedAt()).isNotNull();
-    verify(otpCodeRepository).save(otp);
+    verify(otpCodeRepository).consumeIfOutstanding(eq(otp.getId()), any());
   }
 
   @Test
@@ -119,14 +117,13 @@ class OtpServiceTest {
             Instant.now().plusSeconds(600));
     when(otpCodeRepository.findOutstandingByHash(any(), any(), any())).thenReturn(Mono.empty());
     when(otpCodeRepository.findOutstanding(user.getId(), PURPOSE)).thenReturn(Mono.just(otp));
-    when(otpCodeRepository.save(any(OtpCode.class)))
-        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+    when(otpCodeRepository.recordAttempt(otp.getId())).thenReturn(Mono.just(1));
 
     StepVerifier.create(otpService.verify(user, PURPOSE, "000000"))
         .expectError(AuthenticationFailedException.class)
         .verify();
 
-    assertThat(otp.getAttempts()).isEqualTo(1);
+    verify(otpCodeRepository).recordAttempt(otp.getId());
   }
 
   @Test

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -76,7 +77,15 @@ class AuthServiceTest {
   void setUp() {
     authProperties =
         new AuthProperties(
-            "Integrity Pro", "http://localhost:5173", Duration.ofMinutes(5), "mfa-login");
+            "Integrity Pro",
+            "http://localhost:5173",
+            Duration.ofMinutes(5),
+            "mfa-login",
+            true,
+            Duration.ofMinutes(1),
+            5,
+            Duration.ofMinutes(15),
+            5);
     authService =
         new AuthService(
             userRepository,
@@ -104,6 +113,7 @@ class AuthServiceTest {
         new RegisterOrganizationRequest("Acme", "Admin@Example.com", PASSWORD, "Org Admin");
 
     when(userRepository.countLiveByEmail("admin@example.com")).thenReturn(Mono.just(0L));
+    when(passwordEncoder.encode(PASSWORD)).thenReturn("encoded-hash");
     when(userRepository.save(any(User.class)))
         .thenAnswer(
             invocation -> {
@@ -245,6 +255,8 @@ class AuthServiceTest {
 
     when(userRepository.findLiveByEmail("alice@example.com")).thenReturn(Flux.just(user));
     when(passwordEncoder.matches("wrong-password", "hash")).thenReturn(false);
+    when(userRepository.save(any(User.class)))
+        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
 
     assertThatThrownBy(() -> authService.login(request, "127.0.0.1").block())
         .isInstanceOf(AuthenticationFailedException.class)
@@ -272,11 +284,51 @@ class AuthServiceTest {
     LoginRequest request = new LoginRequest("alice@example.com", PASSWORD, null, null, null);
 
     when(userRepository.findLiveByEmail("alice@example.com")).thenReturn(Flux.just(user));
-    when(passwordEncoder.matches(PASSWORD, "hash")).thenReturn(true);
 
     assertThatThrownBy(() -> authService.login(request, "127.0.0.1").block())
         .isInstanceOf(AuthenticationFailedException.class)
         .hasMessage("Account is locked");
+  }
+
+  @Test
+  void loginFailsWhileTemporarilyLockedOut() {
+    User user = new User(UUID.randomUUID(), "alice@example.com", "hash", "Alice");
+    user.activate();
+    user.recordFailedLogin(5, Duration.ofMinutes(15));
+    user.recordFailedLogin(5, Duration.ofMinutes(15));
+    user.recordFailedLogin(5, Duration.ofMinutes(15));
+    user.recordFailedLogin(5, Duration.ofMinutes(15));
+    user.recordFailedLogin(5, Duration.ofMinutes(15));
+    LoginRequest request = new LoginRequest("alice@example.com", PASSWORD, null, null, null);
+
+    when(userRepository.findLiveByEmail("alice@example.com")).thenReturn(Flux.just(user));
+
+    assertThatThrownBy(() -> authService.login(request, "127.0.0.1").block())
+        .isInstanceOf(AuthenticationFailedException.class)
+        .hasMessage("Account is temporarily locked");
+  }
+
+  @Test
+  void repeatedFailedLoginsLockTheAccount() {
+    User user = new User(UUID.randomUUID(), "alice@example.com", "hash", "Alice");
+    user.activate();
+    LoginRequest request = new LoginRequest("alice@example.com", "wrong", null, null, null);
+
+    when(userRepository.findLiveByEmail("alice@example.com")).thenReturn(Flux.just(user));
+    when(passwordEncoder.matches("wrong", "hash")).thenReturn(false);
+    when(userRepository.save(any(User.class)))
+        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+
+    for (int attempt = 0; attempt < 5; attempt++) {
+      try {
+        authService.login(request, "127.0.0.1").block();
+      } catch (AuthenticationFailedException expected) {
+        // each failed attempt increments the counter
+      }
+    }
+
+    assertThat(user.getFailedLoginAttempts()).isEqualTo(5);
+    assertThat(user.isLockedOut()).isTrue();
   }
 
   @Test
@@ -321,12 +373,38 @@ class AuthServiceTest {
   }
 
   @Test
+  void refreshReuseRevokesAllSessions() {
+    UUID userId = UUID.randomUUID();
+    UserSession revoked =
+        new UserSession(
+            userId,
+            UUID.randomUUID(),
+            "revoked-hash",
+            "dev",
+            "127.0.0.1",
+            "agent",
+            Instant.now().plus(30, ChronoUnit.DAYS));
+    revoked.revoke(null);
+
+    when(sessionRepository.findByRefreshTokenHash(any())).thenReturn(Mono.just(revoked));
+    when(sessionRepository.revokeAllActiveByUser(eq(userId), any(Instant.class)))
+        .thenReturn(Mono.just(2));
+
+    assertThatThrownBy(() -> authService.refresh(new RefreshRequest("stale-token")).block())
+        .isInstanceOf(AuthenticationFailedException.class)
+        .hasMessage("Refresh token no longer valid");
+    verify(sessionRepository).revokeAllActiveByUser(eq(userId), any(Instant.class));
+  }
+
+  @Test
   void requestPasswordResetReturnsTokenForSingleAccount() {
     UUID userId = UUID.randomUUID();
     User user = new User(UUID.randomUUID(), "alice@example.com", "hash", "Alice");
     user.setId(userId);
 
     when(userRepository.findLiveByEmail("alice@example.com")).thenReturn(Flux.just(user));
+    when(userRepository.save(any(User.class)))
+        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
     when(jwtTokenService.issuePurposeToken(eq("password-reset"), eq(userId), any()))
         .thenReturn("reset-token");
     when(emailEventPublisher.publish(any(IdentityEmailEvent.class))).thenReturn(Mono.empty());
@@ -356,6 +434,77 @@ class AuthServiceTest {
 
     assertThat(response).isNotNull();
     assertThat(response.resetToken()).isNull();
+  }
+
+  @Test
+  void requestPasswordResetHidesTokenWhenExposureDisabled() {
+    authProperties =
+        new AuthProperties(
+            "Integrity Pro",
+            "http://localhost:5173",
+            Duration.ofMinutes(5),
+            "mfa-login",
+            false,
+            Duration.ofMinutes(1),
+            5,
+            Duration.ofMinutes(15),
+            5);
+    authService =
+        new AuthService(
+            userRepository,
+            userRoleRepository,
+            roleRepository,
+            rolePermissionRepository,
+            permissionRepository,
+            sessionRepository,
+            passwordHistoryRepository,
+            passwordEncoder,
+            jwtTokenService,
+            eventPublisher,
+            emailEventPublisher,
+            tokenIssuer,
+            mfaService,
+            authProperties);
+
+    UUID userId = UUID.randomUUID();
+    User user = new User(UUID.randomUUID(), "alice@example.com", "hash", "Alice");
+    user.setId(userId);
+
+    when(userRepository.findLiveByEmail("alice@example.com")).thenReturn(Flux.just(user));
+    when(userRepository.save(any(User.class)))
+        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+    when(jwtTokenService.issuePurposeToken(eq("password-reset"), eq(userId), any()))
+        .thenReturn("reset-token");
+    when(emailEventPublisher.publish(any(IdentityEmailEvent.class))).thenReturn(Mono.empty());
+
+    PasswordResetResponse response =
+        authService
+            .requestPasswordReset(new RequestPasswordResetRequest("alice@example.com"))
+            .block();
+
+    assertThat(response).isNotNull();
+    assertThat(response.resetToken()).isNull();
+    verify(emailEventPublisher).publish(any(IdentityEmailEvent.class));
+  }
+
+  @Test
+  void requestPasswordResetThrottlesRepeatRequests() {
+    UUID userId = UUID.randomUUID();
+    User user = new User(UUID.randomUUID(), "alice@example.com", "hash", "Alice");
+    user.setId(userId);
+    user.recordPasswordResetRequest();
+
+    when(userRepository.findLiveByEmail("alice@example.com")).thenReturn(Flux.just(user));
+
+    PasswordResetResponse response =
+        authService
+            .requestPasswordReset(new RequestPasswordResetRequest("alice@example.com"))
+            .block();
+
+    assertThat(response).isNotNull();
+    assertThat(response.resetToken()).isNull();
+    assertThat(response.expiresInSeconds()).isZero();
+    verify(emailEventPublisher, never()).publish(any(IdentityEmailEvent.class));
   }
 
   @Test

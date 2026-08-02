@@ -40,6 +40,11 @@ app:
     frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
     mfa-challenge-ttl: PT5M
     mfa-email-purpose: mfa-login
+    expose-reset-token: ${EXPOSE_RESET_TOKEN:false}
+    reset-request-interval: PT1M
+    max-login-attempts: 5
+    login-lockout: PT15M
+    max-mfa-challenge-attempts: 5
 
 server:
   port: 8081

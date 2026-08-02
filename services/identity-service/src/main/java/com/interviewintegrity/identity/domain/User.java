@@ -1,5 +1,6 @@
 package com.interviewintegrity.identity.domain;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -49,6 +50,15 @@ public class User {
 
   @Column("deleted_at")
   private Instant deletedAt;
+
+  @Column("failed_login_attempts")
+  private int failedLoginAttempts;
+
+  @Column("locked_until")
+  private Instant lockedUntil;
+
+  @Column("password_reset_requested_at")
+  private Instant passwordResetRequestedAt;
 
   @Version private long version = 1;
 
@@ -100,10 +110,27 @@ public class User {
     this.updatedAt = Instant.now();
   }
 
-  /** Records a successful login. */
+  /** Records a successful login, resetting the failure counter. */
+  @SuppressWarnings("PMD.NullAssignment")
   public void markLoggedIn() {
     this.lastLoginAt = Instant.now();
+    this.failedLoginAttempts = 0;
+    this.lockedUntil = null;
     this.updatedAt = Instant.now();
+  }
+
+  /** Records a failed login attempt, locking the account once the threshold is exceeded. */
+  public void recordFailedLogin(int maxAttempts, Duration lockDuration) {
+    this.failedLoginAttempts += 1;
+    if (this.failedLoginAttempts >= maxAttempts) {
+      this.lockedUntil = Instant.now().plus(lockDuration);
+    }
+    this.updatedAt = Instant.now();
+  }
+
+  /** Returns true when the account is temporarily locked out. */
+  public boolean isLockedOut() {
+    return lockedUntil != null && lockedUntil.isAfter(Instant.now());
   }
 
   /** Updates the display name. */
@@ -123,6 +150,18 @@ public class User {
   /** Returns true when the account is not soft deleted. */
   public boolean isActive() {
     return deletedAt == null;
+  }
+
+  /** Records when a password reset email was dispatched. */
+  public void recordPasswordResetRequest() {
+    this.passwordResetRequestedAt = Instant.now();
+    this.updatedAt = Instant.now();
+  }
+
+  /** Returns true when a reset email was dispatched within the given interval. */
+  public boolean recentlyRequestedReset(Duration interval) {
+    return passwordResetRequestedAt != null
+        && passwordResetRequestedAt.isAfter(Instant.now().minus(interval));
   }
 
   public UUID getId() {
@@ -179,6 +218,18 @@ public class User {
 
   public Instant getDeletedAt() {
     return deletedAt;
+  }
+
+  public int getFailedLoginAttempts() {
+    return failedLoginAttempts;
+  }
+
+  public Instant getLockedUntil() {
+    return lockedUntil;
+  }
+
+  public Instant getPasswordResetRequestedAt() {
+    return passwordResetRequestedAt;
   }
 
   public long getVersion() {

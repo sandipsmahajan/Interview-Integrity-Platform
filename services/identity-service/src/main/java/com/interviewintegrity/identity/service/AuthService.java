@@ -9,6 +9,7 @@ import com.interviewintegrity.identity.domain.PasswordHistory;
 import com.interviewintegrity.identity.domain.Role;
 import com.interviewintegrity.identity.domain.SessionStatus;
 import com.interviewintegrity.identity.domain.User;
+import com.interviewintegrity.identity.domain.UserSession;
 import com.interviewintegrity.identity.domain.UserStatus;
 import com.interviewintegrity.identity.repository.PasswordHistoryRepository;
 import com.interviewintegrity.identity.repository.PermissionRepository;
@@ -36,6 +37,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * Authentication and organization onboarding flows.
@@ -128,14 +130,19 @@ public final class AuthService {
   }
 
   private Mono<User> createAdmin(UUID organizationId, RegisterOrganizationRequest request) {
-    User admin =
-        new User(
-            organizationId,
-            request.adminEmail().toLowerCase(Locale.ROOT),
-            passwordEncoder.encode(request.adminPassword()),
-            request.adminDisplayName());
-    admin.activate();
-    return userRepository.save(admin);
+    return Mono.fromCallable(() -> passwordEncoder.encode(request.adminPassword()))
+        .subscribeOn(Schedulers.boundedElastic())
+        .flatMap(
+            encoded -> {
+              User admin =
+                  new User(
+                      organizationId,
+                      request.adminEmail().toLowerCase(Locale.ROOT),
+                      encoded,
+                      request.adminDisplayName());
+              admin.activate();
+              return userRepository.save(admin);
+            });
   }
 
   private Mono<Void> publishWelcomeEmails(User user) {
@@ -230,11 +237,11 @@ public final class AuthService {
 
   private Mono<LoginResult> authenticate(
       User user, String rawPassword, String deviceId, String ipAddress, String userAgent) {
-    if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
-      return Mono.error(new AuthenticationFailedException("Invalid credentials"));
-    }
     if (user.getStatus() == UserStatus.LOCKED) {
       return Mono.error(new AuthenticationFailedException("Account is locked"));
+    }
+    if (user.isLockedOut()) {
+      return Mono.error(new AuthenticationFailedException("Account is temporarily locked"));
     }
     if (user.getStatus() == UserStatus.DISABLED) {
       return Mono.error(new AuthenticationFailedException("Account is disabled"));
@@ -242,23 +249,37 @@ public final class AuthService {
     if (user.getStatus() != UserStatus.ACTIVE) {
       return Mono.error(new AuthenticationFailedException("Account is not active"));
     }
-    return mfaService
-        .hasVerifiedDevice(user.getId())
+    return Mono.fromCallable(() -> passwordEncoder.matches(rawPassword, user.getPasswordHash()))
+        .subscribeOn(Schedulers.boundedElastic())
         .flatMap(
-            hasMfa -> {
-              if (!hasMfa) {
-                return grantTokens(user, deviceId, ipAddress, userAgent);
+            matches -> {
+              if (!matches) {
+                return recordFailedLogin(user)
+                    .then(Mono.error(new AuthenticationFailedException("Invalid credentials")));
               }
               return mfaService
-                  .isTrustedDevice(user.getId(), deviceId)
+                  .hasVerifiedDevice(user.getId())
                   .flatMap(
-                      trusted ->
-                          trusted
-                              ? grantTokens(user, deviceId, ipAddress, userAgent)
-                              : mfaService
-                                  .generateChallenge(user)
-                                  .map(LoginResult.MfaRequired::new));
+                      hasMfa -> {
+                        if (!hasMfa) {
+                          return grantTokens(user, deviceId, ipAddress, userAgent);
+                        }
+                        return mfaService
+                            .isTrustedDevice(user.getId(), deviceId)
+                            .flatMap(
+                                trusted ->
+                                    trusted
+                                        ? grantTokens(user, deviceId, ipAddress, userAgent)
+                                        : mfaService
+                                            .generateChallenge(user)
+                                            .map(LoginResult.MfaRequired::new));
+                      });
             });
+  }
+
+  private Mono<Void> recordFailedLogin(User user) {
+    user.recordFailedLogin(authProperties.maxLoginAttempts(), authProperties.loginLockout());
+    return userRepository.save(user).then();
   }
 
   private Mono<LoginResult> grantTokens(
@@ -280,8 +301,10 @@ public final class AuthService {
             session -> {
               if (session.getStatus() == SessionStatus.REVOKED
                   || session.getStatus() == SessionStatus.EXPIRED) {
-                return Mono.error(
-                    new AuthenticationFailedException("Refresh token no longer valid"));
+                return onRefreshTokenReuse(session)
+                    .then(
+                        Mono.error(
+                            new AuthenticationFailedException("Refresh token no longer valid")));
               }
               if (session.getExpiresAt().isBefore(Instant.now())) {
                 session.expire();
@@ -306,6 +329,16 @@ public final class AuthService {
                                       session.getIpAddress(),
                                       session.getUserAgent())));
             });
+  }
+
+  /**
+   * Detects refresh token reuse.
+   *
+   * <p>Presenting an already revoked or rotated token indicates the token was stolen, so every live
+   * session of the user is revoked to evict the attacker before the error is surfaced.
+   */
+  private Mono<Void> onRefreshTokenReuse(UserSession session) {
+    return sessionRepository.revokeAllActiveByUser(session.getUserId(), Instant.now()).then();
   }
 
   /** Revokes the session associated with the given refresh token. */
@@ -342,25 +375,34 @@ public final class AuthService {
                 return Mono.just(new PasswordResetResponse(null, 0L));
               }
               User user = users.get(0);
+              if (user.recentlyRequestedReset(authProperties.resetRequestInterval())) {
+                return Mono.just(new PasswordResetResponse(null, 0L));
+              }
               String token =
                   jwtTokenService.issuePurposeToken(PURPOSE_RESET, user.getId(), RESET_TOKEN_TTL);
               String resetUrl = authProperties.frontendBaseUrl() + "/reset-password?token=" + token;
-              return emailEventPublisher
-                  .publish(
-                      new IdentityEmailEvent(
-                          user.getId(),
-                          user.getOrganizationId(),
-                          user.getEmail(),
-                          user.getDisplayName(),
-                          DEFAULT_LOCALE,
-                          "password-reset",
-                          Map.of(
-                              "resetUrl",
-                              resetUrl,
-                              "expiresInMinutes",
-                              String.valueOf(RESET_TOKEN_TTL.toMinutes())),
-                          Instant.now()))
-                  .thenReturn(new PasswordResetResponse(token, RESET_TOKEN_TTL.toSeconds()));
+              user.recordPasswordResetRequest();
+              return userRepository
+                  .save(user)
+                  .then(
+                      emailEventPublisher.publish(
+                          new IdentityEmailEvent(
+                              user.getId(),
+                              user.getOrganizationId(),
+                              user.getEmail(),
+                              user.getDisplayName(),
+                              DEFAULT_LOCALE,
+                              "password-reset",
+                              Map.of(
+                                  "resetUrl",
+                                  resetUrl,
+                                  "expiresInMinutes",
+                                  String.valueOf(RESET_TOKEN_TTL.toMinutes())),
+                              Instant.now())))
+                  .thenReturn(
+                      authProperties.exposeResetToken()
+                          ? new PasswordResetResponse(token, RESET_TOKEN_TTL.toSeconds())
+                          : new PasswordResetResponse(null, RESET_TOKEN_TTL.toSeconds()));
             });
   }
 
@@ -371,7 +413,9 @@ public final class AuthService {
             user ->
                 passwordHistoryRepository
                     .save(new PasswordHistory(user.getId(), user.getPasswordHash(), user.getId()))
-                    .then(Mono.fromCallable(() -> passwordEncoder.encode(request.newPassword())))
+                    .then(
+                        Mono.fromCallable(() -> passwordEncoder.encode(request.newPassword()))
+                            .subscribeOn(Schedulers.boundedElastic()))
                     .flatMap(
                         newHash -> {
                           user.changePassword(newHash, user.getId());
