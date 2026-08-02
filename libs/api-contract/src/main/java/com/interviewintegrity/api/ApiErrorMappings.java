@@ -9,6 +9,7 @@ import com.interviewintegrity.exception.RateLimitException;
 import com.interviewintegrity.exception.ValidationFailedException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
@@ -59,6 +60,18 @@ public final class ApiErrorMappings {
 
   /** Returns field violations for validation errors, empty otherwise. */
   public static List<FieldViolation> violations(Throwable throwable) {
+    if (throwable instanceof ValidationFailedException validationException) {
+      return validationException.violations().stream()
+          .map(violation -> new FieldViolation(violation.field(), violation.message()))
+          .toList();
+    }
+    if (throwable instanceof WebExchangeBindException bindException) {
+      return bindException.getFieldErrors().stream()
+          .map(
+              fieldError ->
+                  new FieldViolation(fieldError.getField(), fieldError.getDefaultMessage()))
+          .toList();
+    }
     return List.of();
   }
 }

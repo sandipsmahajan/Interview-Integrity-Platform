@@ -1,6 +1,8 @@
 package com.interviewintegrity.validation;
 
 import com.interviewintegrity.exception.ValidationFailedException;
+import com.interviewintegrity.exception.Violation;
+import java.util.List;
 
 /** Defensive checks that raise {@link ValidationFailedException} when a precondition fails. */
 public final class Assert {
@@ -9,14 +11,16 @@ public final class Assert {
   /** Verifies the value is not {@code null}. */
   public static void notNull(Object value, String field) {
     if (value == null) {
-      throw new ValidationFailedException(field + " must not be null");
+      throw new ValidationFailedException(
+          field + " must not be null", List.of(new Violation(field, "must not be null")));
     }
   }
 
   /** Verifies the value is not {@code null} and contains at least one non-whitespace character. */
   public static void notBlank(String value, String field) {
     if (value == null || value.isBlank()) {
-      throw new ValidationFailedException(field + " must not be blank");
+      throw new ValidationFailedException(
+          field + " must not be blank", List.of(new Violation(field, "must not be blank")));
     }
   }
 

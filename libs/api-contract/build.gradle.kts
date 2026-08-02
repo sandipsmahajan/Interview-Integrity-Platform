@@ -11,4 +11,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-autoconfigure")
     implementation("tools.jackson.core:jackson-databind")
     errorprone(libs.errorprone.core)
+
+    testImplementation(libs.spring.boot.starter.test)
 }
