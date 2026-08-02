@@ -1,6 +1,6 @@
 package com.interviewintegrity.recruiter.web;
 
-import com.interviewintegrity.recruiter.domain.RecruiterNote;
+import com.interviewintegrity.recruiter.service.RecruiterMapper;
 import com.interviewintegrity.recruiter.service.RecruiterNoteService;
 import com.interviewintegrity.recruiter.web.dto.CreateNoteRequest;
 import com.interviewintegrity.recruiter.web.dto.RecruiterNoteResponse;
@@ -31,10 +31,12 @@ import reactor.core.publisher.Mono;
 public final class RecruiterNoteController {
 
   private final RecruiterNoteService noteService;
+  private final RecruiterMapper mapper;
 
-  /** Creates the controller bound to the note service. */
-  public RecruiterNoteController(RecruiterNoteService noteService) {
+  /** Creates the controller bound to the note service and mapper. */
+  public RecruiterNoteController(RecruiterNoteService noteService, RecruiterMapper mapper) {
     this.noteService = noteService;
+    this.mapper = mapper;
   }
 
   /** Creates a note for a candidate. */
@@ -51,7 +53,7 @@ public final class RecruiterNoteController {
             candidateId,
             request.body().trim(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the notes of a candidate. */
@@ -61,7 +63,7 @@ public final class RecruiterNoteController {
       Authentication authentication, @PathVariable UUID candidateId) {
     return noteService
         .list(SecurityPrincipals.organizationId(authentication), candidateId)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates a note. */
@@ -77,7 +79,7 @@ public final class RecruiterNoteController {
             SecurityPrincipals.organizationId(authentication),
             request.body().trim(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a note. */
@@ -89,15 +91,5 @@ public final class RecruiterNoteController {
         noteId,
         SecurityPrincipals.organizationId(authentication),
         SecurityPrincipals.userId(authentication));
-  }
-
-  private RecruiterNoteResponse toResponse(RecruiterNote note) {
-    return new RecruiterNoteResponse(
-        note.getId(),
-        note.getRecruiterId(),
-        note.getCandidateId(),
-        note.getBody(),
-        note.getCreatedAt(),
-        note.getUpdatedAt());
   }
 }

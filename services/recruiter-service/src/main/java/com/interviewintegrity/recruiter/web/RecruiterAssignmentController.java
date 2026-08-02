@@ -1,7 +1,7 @@
 package com.interviewintegrity.recruiter.web;
 
-import com.interviewintegrity.recruiter.domain.RecruiterAssignment;
 import com.interviewintegrity.recruiter.service.RecruiterAssignmentService;
+import com.interviewintegrity.recruiter.service.RecruiterMapper;
 import com.interviewintegrity.recruiter.web.dto.AssignRecruiterRequest;
 import com.interviewintegrity.recruiter.web.dto.ChangeAssignmentRoleRequest;
 import com.interviewintegrity.recruiter.web.dto.RecruiterAssignmentResponse;
@@ -30,10 +30,13 @@ import reactor.core.publisher.Mono;
 public final class RecruiterAssignmentController {
 
   private final RecruiterAssignmentService assignmentService;
+  private final RecruiterMapper mapper;
 
-  /** Creates the controller bound to the assignment service. */
-  public RecruiterAssignmentController(RecruiterAssignmentService assignmentService) {
+  /** Creates the controller bound to the assignment service and mapper. */
+  public RecruiterAssignmentController(
+      RecruiterAssignmentService assignmentService, RecruiterMapper mapper) {
     this.assignmentService = assignmentService;
+    this.mapper = mapper;
   }
 
   /** Assigns a recruiter to a candidate. */
@@ -51,7 +54,7 @@ public final class RecruiterAssignmentController {
             candidateId,
             request.role().trim(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the assignments of a candidate. */
@@ -61,7 +64,7 @@ public final class RecruiterAssignmentController {
       Authentication authentication, @PathVariable UUID candidateId) {
     return assignmentService
         .list(SecurityPrincipals.organizationId(authentication), candidateId)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Changes the role of an active assignment. */
@@ -74,7 +77,7 @@ public final class RecruiterAssignmentController {
     return assignmentService
         .changeRole(
             assignmentId, SecurityPrincipals.organizationId(authentication), request.role().trim())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Ends an active assignment. */
@@ -84,16 +87,6 @@ public final class RecruiterAssignmentController {
       Authentication authentication, @PathVariable UUID assignmentId) {
     return assignmentService
         .end(assignmentId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
-  }
-
-  private RecruiterAssignmentResponse toResponse(RecruiterAssignment assignment) {
-    return new RecruiterAssignmentResponse(
-        assignment.getId(),
-        assignment.getRecruiterId(),
-        assignment.getCandidateId(),
-        assignment.getRole(),
-        assignment.getAssignedAt(),
-        assignment.getEndedAt());
+        .map(mapper::toResponse);
   }
 }

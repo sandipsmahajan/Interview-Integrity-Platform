@@ -1,7 +1,7 @@
 package com.interviewintegrity.recruiter.web;
 
-import com.interviewintegrity.recruiter.domain.Recruiter;
 import com.interviewintegrity.recruiter.domain.RecruiterStatus;
+import com.interviewintegrity.recruiter.service.RecruiterMapper;
 import com.interviewintegrity.recruiter.service.RecruiterService;
 import com.interviewintegrity.recruiter.web.dto.ChangeRecruiterStatusRequest;
 import com.interviewintegrity.recruiter.web.dto.CreateRecruiterRequest;
@@ -34,10 +34,12 @@ import reactor.core.publisher.Mono;
 public final class RecruiterController {
 
   private final RecruiterService recruiterService;
+  private final RecruiterMapper mapper;
 
-  /** Creates the controller bound to the recruiter service. */
-  public RecruiterController(RecruiterService recruiterService) {
+  /** Creates the controller bound to the recruiter service and mapper. */
+  public RecruiterController(RecruiterService recruiterService, RecruiterMapper mapper) {
     this.recruiterService = recruiterService;
+    this.mapper = mapper;
   }
 
   /** Creates a recruiter profile. */
@@ -55,7 +57,7 @@ public final class RecruiterController {
             request.email().trim(),
             request.title(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the recruiters of the organization, optionally filtered by status. */
@@ -65,7 +67,7 @@ public final class RecruiterController {
       Authentication authentication, @RequestParam(required = false) RecruiterStatus status) {
     return recruiterService
         .list(SecurityPrincipals.organizationId(authentication), status)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns the recruiter profile linked to the caller. */
@@ -76,7 +78,7 @@ public final class RecruiterController {
         .getByUser(
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single recruiter. */
@@ -84,7 +86,7 @@ public final class RecruiterController {
   @Operation(summary = "Get a recruiter")
   public Mono<RecruiterResponse> get(
       Authentication authentication, @PathVariable UUID recruiterId) {
-    return recruiterService.getById(recruiterId).map(this::toResponse);
+    return recruiterService.getById(recruiterId).map(mapper::toResponse);
   }
 
   /** Updates a recruiter profile. */
@@ -102,7 +104,7 @@ public final class RecruiterController {
             request.email().trim(),
             request.title(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Changes the working status of a recruiter. */
@@ -118,7 +120,7 @@ public final class RecruiterController {
             SecurityPrincipals.organizationId(authentication),
             request.status(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a recruiter profile. */
@@ -130,17 +132,5 @@ public final class RecruiterController {
         recruiterId,
         SecurityPrincipals.organizationId(authentication),
         SecurityPrincipals.userId(authentication));
-  }
-
-  private RecruiterResponse toResponse(Recruiter recruiter) {
-    return new RecruiterResponse(
-        recruiter.getId(),
-        recruiter.getOrganizationId(),
-        recruiter.getUserId(),
-        recruiter.getFullName(),
-        recruiter.getEmail(),
-        recruiter.getTitle(),
-        recruiter.getStatus(),
-        recruiter.getCreatedAt());
   }
 }

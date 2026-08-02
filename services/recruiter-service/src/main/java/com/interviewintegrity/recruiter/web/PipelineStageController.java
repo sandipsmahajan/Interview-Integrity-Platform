@@ -1,7 +1,7 @@
 package com.interviewintegrity.recruiter.web;
 
-import com.interviewintegrity.recruiter.domain.PipelineStage;
 import com.interviewintegrity.recruiter.service.PipelineService;
+import com.interviewintegrity.recruiter.service.RecruiterMapper;
 import com.interviewintegrity.recruiter.web.dto.CandidatePipelineResponse;
 import com.interviewintegrity.recruiter.web.dto.CreatePipelineStageRequest;
 import com.interviewintegrity.recruiter.web.dto.PipelineStageResponse;
@@ -32,10 +32,12 @@ import reactor.core.publisher.Mono;
 public final class PipelineStageController {
 
   private final PipelineService pipelineService;
+  private final RecruiterMapper mapper;
 
-  /** Creates the controller bound to the pipeline service. */
-  public PipelineStageController(PipelineService pipelineService) {
+  /** Creates the controller bound to the pipeline service and mapper. */
+  public PipelineStageController(PipelineService pipelineService, RecruiterMapper mapper) {
     this.pipelineService = pipelineService;
+    this.mapper = mapper;
   }
 
   /** Creates a pipeline stage. */
@@ -51,7 +53,7 @@ public final class PipelineStageController {
             request.name().trim(),
             request.orderIndex(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the stages of the organization. */
@@ -60,7 +62,7 @@ public final class PipelineStageController {
   public Flux<PipelineStageResponse> list(Authentication authentication) {
     return pipelineService
         .listStages(SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates a stage. */
@@ -77,7 +79,7 @@ public final class PipelineStageController {
             request.name().trim(),
             request.orderIndex(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a stage. */
@@ -98,26 +100,6 @@ public final class PipelineStageController {
       Authentication authentication, @PathVariable UUID stageId) {
     return pipelineService
         .listStageCandidates(SecurityPrincipals.organizationId(authentication), stageId)
-        .map(
-            entry ->
-                new CandidatePipelineResponse(
-                    entry.getId(),
-                    entry.getCandidateId(),
-                    entry.getRecruiterId(),
-                    entry.getStageId(),
-                    entry.getPosition(),
-                    entry.getStatus(),
-                    entry.getEnteredAt(),
-                    entry.getExitedAt()));
-  }
-
-  private PipelineStageResponse toResponse(PipelineStage stage) {
-    return new PipelineStageResponse(
-        stage.getId(),
-        stage.getOrganizationId(),
-        stage.getCode(),
-        stage.getName(),
-        stage.getOrderIndex(),
-        stage.getCreatedAt());
+        .map(mapper::toResponse);
   }
 }

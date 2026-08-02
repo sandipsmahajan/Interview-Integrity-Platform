@@ -2,6 +2,7 @@ package com.interviewintegrity.recruiter.config;
 
 import com.interviewintegrity.recruiter.service.PipelineService;
 import com.interviewintegrity.recruiter.service.RecruiterAssignmentService;
+import com.interviewintegrity.recruiter.service.RecruiterMapper;
 import com.interviewintegrity.recruiter.service.RecruiterNoteService;
 import com.interviewintegrity.recruiter.service.RecruiterProfileService;
 import com.interviewintegrity.recruiter.service.RecruiterService;
@@ -25,40 +26,44 @@ public class ApiConfiguration {
 
   /** Exposes the recruiter controller. */
   @Bean
-  public RecruiterController recruiterController(RecruiterService recruiterService) {
-    return new RecruiterController(recruiterService);
+  public RecruiterController recruiterController(
+      RecruiterService recruiterService, RecruiterMapper mapper) {
+    return new RecruiterController(recruiterService, mapper);
   }
 
   /** Exposes the recruiter profile controller. */
   @Bean
   public RecruiterProfileController recruiterProfileController(
-      RecruiterProfileService profileService) {
-    return new RecruiterProfileController(profileService);
+      RecruiterProfileService profileService, RecruiterMapper mapper) {
+    return new RecruiterProfileController(profileService, mapper);
   }
 
   /** Exposes the pipeline stage controller. */
   @Bean
-  public PipelineStageController pipelineStageController(PipelineService pipelineService) {
-    return new PipelineStageController(pipelineService);
+  public PipelineStageController pipelineStageController(
+      PipelineService pipelineService, RecruiterMapper mapper) {
+    return new PipelineStageController(pipelineService, mapper);
   }
 
   /** Exposes the candidate pipeline controller. */
   @Bean
-  public CandidatePipelineController candidatePipelineController(PipelineService pipelineService) {
-    return new CandidatePipelineController(pipelineService);
+  public CandidatePipelineController candidatePipelineController(
+      PipelineService pipelineService, RecruiterMapper mapper) {
+    return new CandidatePipelineController(pipelineService, mapper);
   }
 
   /** Exposes the note controller. */
   @Bean
-  public RecruiterNoteController recruiterNoteController(RecruiterNoteService noteService) {
-    return new RecruiterNoteController(noteService);
+  public RecruiterNoteController recruiterNoteController(
+      RecruiterNoteService noteService, RecruiterMapper mapper) {
+    return new RecruiterNoteController(noteService, mapper);
   }
 
   /** Exposes the assignment controller. */
   @Bean
   public RecruiterAssignmentController recruiterAssignmentController(
-      RecruiterAssignmentService assignmentService) {
-    return new RecruiterAssignmentController(assignmentService);
+      RecruiterAssignmentService assignmentService, RecruiterMapper mapper) {
+    return new RecruiterAssignmentController(assignmentService, mapper);
   }
 
   /** Describes the OpenAPI document for the recruiter service. */

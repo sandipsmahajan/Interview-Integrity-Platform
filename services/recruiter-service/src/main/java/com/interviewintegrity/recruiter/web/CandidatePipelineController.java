@@ -1,7 +1,7 @@
 package com.interviewintegrity.recruiter.web;
 
-import com.interviewintegrity.recruiter.domain.CandidatePipeline;
 import com.interviewintegrity.recruiter.service.PipelineService;
+import com.interviewintegrity.recruiter.service.RecruiterMapper;
 import com.interviewintegrity.recruiter.web.dto.CandidatePipelineResponse;
 import com.interviewintegrity.recruiter.web.dto.EnterStageRequest;
 import com.interviewintegrity.recruiter.web.dto.ExitStageRequest;
@@ -29,10 +29,12 @@ import reactor.core.publisher.Mono;
 public final class CandidatePipelineController {
 
   private final PipelineService pipelineService;
+  private final RecruiterMapper mapper;
 
-  /** Creates the controller bound to the pipeline service. */
-  public CandidatePipelineController(PipelineService pipelineService) {
+  /** Creates the controller bound to the pipeline service and mapper. */
+  public CandidatePipelineController(PipelineService pipelineService, RecruiterMapper mapper) {
     this.pipelineService = pipelineService;
+    this.mapper = mapper;
   }
 
   /** Enters a candidate into a stage. */
@@ -50,7 +52,7 @@ public final class CandidatePipelineController {
             SecurityPrincipals.userId(authentication),
             request.stageId(),
             request.position())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the pipeline history of a candidate. */
@@ -60,7 +62,7 @@ public final class CandidatePipelineController {
       Authentication authentication, @PathVariable UUID candidateId) {
     return pipelineService
         .listByCandidate(SecurityPrincipals.organizationId(authentication), candidateId)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Moves a candidate out of the current stage. */
@@ -73,18 +75,6 @@ public final class CandidatePipelineController {
     return pipelineService
         .exitStage(
             SecurityPrincipals.organizationId(authentication), candidateId, request.stageId())
-        .map(this::toResponse);
-  }
-
-  private CandidatePipelineResponse toResponse(CandidatePipeline entry) {
-    return new CandidatePipelineResponse(
-        entry.getId(),
-        entry.getCandidateId(),
-        entry.getRecruiterId(),
-        entry.getStageId(),
-        entry.getPosition(),
-        entry.getStatus(),
-        entry.getEnteredAt(),
-        entry.getExitedAt());
+        .map(mapper::toResponse);
   }
 }

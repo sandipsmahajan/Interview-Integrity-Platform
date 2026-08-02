@@ -1,6 +1,6 @@
 package com.interviewintegrity.recruiter.web;
 
-import com.interviewintegrity.recruiter.domain.RecruiterProfile;
+import com.interviewintegrity.recruiter.service.RecruiterMapper;
 import com.interviewintegrity.recruiter.service.RecruiterProfileService;
 import com.interviewintegrity.recruiter.web.dto.RecruiterProfileResponse;
 import com.interviewintegrity.recruiter.web.dto.UpdateRecruiterProfileRequest;
@@ -8,8 +8,6 @@ import com.interviewintegrity.security.SecurityPrincipals;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,10 +25,13 @@ import reactor.core.publisher.Mono;
 public final class RecruiterProfileController {
 
   private final RecruiterProfileService profileService;
+  private final RecruiterMapper mapper;
 
-  /** Creates the controller bound to the profile service. */
-  public RecruiterProfileController(RecruiterProfileService profileService) {
+  /** Creates the controller bound to the profile service and mapper. */
+  public RecruiterProfileController(
+      RecruiterProfileService profileService, RecruiterMapper mapper) {
     this.profileService = profileService;
+    this.mapper = mapper;
   }
 
   /** Returns the extended profile of a recruiter. */
@@ -40,7 +41,7 @@ public final class RecruiterProfileController {
       Authentication authentication, @PathVariable UUID recruiterId) {
     return profileService
         .getOrCreate(recruiterId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Replaces the extended profile of a recruiter. */
@@ -58,18 +59,6 @@ public final class RecruiterProfileController {
             request.specialties(),
             request.linkedinUrl(),
             request.availability())
-        .map(this::toResponse);
-  }
-
-  private RecruiterProfileResponse toResponse(RecruiterProfile profile) {
-    List<String> specialties = Arrays.asList(profile.getSpecialties());
-    return new RecruiterProfileResponse(
-        profile.getId(),
-        profile.getRecruiterId(),
-        profile.getBio(),
-        specialties,
-        profile.getLinkedinUrl(),
-        profile.getAvailability(),
-        profile.getCreatedAt());
+        .map(mapper::toResponse);
   }
 }
