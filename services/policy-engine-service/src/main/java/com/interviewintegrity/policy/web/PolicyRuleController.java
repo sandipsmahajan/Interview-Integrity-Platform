@@ -1,6 +1,6 @@
 package com.interviewintegrity.policy.web;
 
-import com.interviewintegrity.policy.domain.PolicyRule;
+import com.interviewintegrity.policy.service.PolicyMapper;
 import com.interviewintegrity.policy.service.PolicyRuleService;
 import com.interviewintegrity.policy.web.dto.CreateRuleRequest;
 import com.interviewintegrity.policy.web.dto.RuleResponse;
@@ -31,10 +31,12 @@ import reactor.core.publisher.Mono;
 public final class PolicyRuleController {
 
   private final PolicyRuleService ruleService;
+  private final PolicyMapper mapper;
 
-  /** Creates the controller bound to the rule service. */
-  public PolicyRuleController(PolicyRuleService ruleService) {
+  /** Creates the controller bound to the rule service and mapper. */
+  public PolicyRuleController(PolicyRuleService ruleService, PolicyMapper mapper) {
     this.ruleService = ruleService;
+    this.mapper = mapper;
   }
 
   /** Adds a rule to a policy. */
@@ -56,7 +58,7 @@ public final class PolicyRuleController {
             request.weight(),
             request.orderIndex(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the rules of a policy. */
@@ -65,7 +67,7 @@ public final class PolicyRuleController {
   public Flux<RuleResponse> list(Authentication authentication, @PathVariable UUID policyId) {
     return ruleService
         .list(SecurityPrincipals.organizationId(authentication), policyId)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates the editable attributes of a rule. */
@@ -88,7 +90,7 @@ public final class PolicyRuleController {
             request.orderIndex(),
             request.enabled(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a rule. */
@@ -101,21 +103,5 @@ public final class PolicyRuleController {
         SecurityPrincipals.organizationId(authentication),
         ruleId,
         SecurityPrincipals.userId(authentication));
-  }
-
-  private RuleResponse toResponse(PolicyRule rule) {
-    return new RuleResponse(
-        rule.getId(),
-        rule.getPolicyId(),
-        rule.getRuleCode(),
-        rule.getDescription(),
-        rule.getCondition(),
-        rule.getSeverity(),
-        rule.getWeight(),
-        rule.getOrderIndex(),
-        rule.isEnabled(),
-        rule.getCreatedAt(),
-        rule.getUpdatedAt(),
-        rule.getVersion());
   }
 }

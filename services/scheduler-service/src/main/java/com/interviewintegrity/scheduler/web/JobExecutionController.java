@@ -1,7 +1,7 @@
 package com.interviewintegrity.scheduler.web;
 
-import com.interviewintegrity.scheduler.domain.JobExecution;
 import com.interviewintegrity.scheduler.service.JobExecutionService;
+import com.interviewintegrity.scheduler.service.SchedulerMapper;
 import com.interviewintegrity.scheduler.web.dto.FinishExecutionRequest;
 import com.interviewintegrity.scheduler.web.dto.JobExecutionResponse;
 import com.interviewintegrity.scheduler.web.dto.StartExecutionRequest;
@@ -30,10 +30,12 @@ import reactor.core.publisher.Mono;
 public final class JobExecutionController {
 
   private final JobExecutionService executionService;
+  private final SchedulerMapper mapper;
 
-  /** Creates the controller bound to the execution service. */
-  public JobExecutionController(JobExecutionService executionService) {
+  /** Creates the controller bound to the execution service and mapper. */
+  public JobExecutionController(JobExecutionService executionService, SchedulerMapper mapper) {
     this.executionService = executionService;
+    this.mapper = mapper;
   }
 
   /** Starts an execution for a job. */
@@ -47,7 +49,7 @@ public final class JobExecutionController {
             SecurityPrincipals.organizationId(authentication),
             request.jobId(),
             request.workerId().trim())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Completes an execution successfully. */
@@ -60,7 +62,7 @@ public final class JobExecutionController {
     return executionService
         .completeExecution(
             executionId, SecurityPrincipals.organizationId(authentication), request.exitCode())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Fails an execution with an error detail. */
@@ -76,7 +78,7 @@ public final class JobExecutionController {
             SecurityPrincipals.organizationId(authentication),
             request.exitCode(),
             request.errorMessage())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Marks an execution as timed out. */
@@ -86,7 +88,7 @@ public final class JobExecutionController {
       Authentication authentication, @PathVariable UUID executionId) {
     return executionService
         .timeoutExecution(executionId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Marks an execution as skipped with a reason. */
@@ -99,7 +101,7 @@ public final class JobExecutionController {
     return executionService
         .skipExecution(
             executionId, SecurityPrincipals.organizationId(authentication), request.errorMessage())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the executions of a job. */
@@ -108,21 +110,6 @@ public final class JobExecutionController {
   public Flux<JobExecutionResponse> list(Authentication authentication, @RequestParam UUID jobId) {
     return executionService
         .listByJob(jobId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
-  }
-
-  private JobExecutionResponse toResponse(JobExecution execution) {
-    return new JobExecutionResponse(
-        execution.getId(),
-        execution.getOrganizationId(),
-        execution.getJobId(),
-        execution.getStatus(),
-        execution.getStartedAt(),
-        execution.getFinishedAt(),
-        execution.getExitCode(),
-        execution.getErrorMessage(),
-        execution.getDurationMs(),
-        execution.getWorkerId(),
-        execution.getCreatedAt());
+        .map(mapper::toResponse);
   }
 }

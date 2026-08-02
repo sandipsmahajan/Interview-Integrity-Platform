@@ -1,9 +1,8 @@
 package com.interviewintegrity.policy.web;
 
-import com.interviewintegrity.policy.domain.PolicyRule;
-import com.interviewintegrity.policy.domain.Violation;
 import com.interviewintegrity.policy.service.EvaluationEvent;
 import com.interviewintegrity.policy.service.PolicyEvaluationService;
+import com.interviewintegrity.policy.service.PolicyMapper;
 import com.interviewintegrity.policy.web.dto.EvaluateEventRequest;
 import com.interviewintegrity.policy.web.dto.RuleResponse;
 import com.interviewintegrity.policy.web.dto.ViolationResponse;
@@ -27,10 +26,13 @@ import reactor.core.publisher.Flux;
 public final class PolicyEvaluationController {
 
   private final PolicyEvaluationService evaluationService;
+  private final PolicyMapper mapper;
 
-  /** Creates the controller bound to the evaluation service. */
-  public PolicyEvaluationController(PolicyEvaluationService evaluationService) {
+  /** Creates the controller bound to the evaluation service and mapper. */
+  public PolicyEvaluationController(
+      PolicyEvaluationService evaluationService, PolicyMapper mapper) {
     this.evaluationService = evaluationService;
+    this.mapper = mapper;
   }
 
   /** Returns the rules of a policy that match the given event. */
@@ -45,7 +47,7 @@ public final class PolicyEvaluationController {
             SecurityPrincipals.organizationId(authentication),
             policyId,
             new EvaluationEvent(request.eventType(), request.data()))
-        .map(this::toRuleResponse);
+        .map(mapper::toResponse);
   }
 
   /** Evaluates an event and records a violation for every matching rule. */
@@ -61,38 +63,6 @@ public final class PolicyEvaluationController {
             policyId,
             new EvaluationEvent(request.eventType(), request.data()),
             SecurityPrincipals.userId(authentication))
-        .map(this::toViolationResponse);
-  }
-
-  private RuleResponse toRuleResponse(PolicyRule rule) {
-    return new RuleResponse(
-        rule.getId(),
-        rule.getPolicyId(),
-        rule.getRuleCode(),
-        rule.getDescription(),
-        rule.getCondition(),
-        rule.getSeverity(),
-        rule.getWeight(),
-        rule.getOrderIndex(),
-        rule.isEnabled(),
-        rule.getCreatedAt(),
-        rule.getUpdatedAt(),
-        rule.getVersion());
-  }
-
-  private ViolationResponse toViolationResponse(Violation violation) {
-    return new ViolationResponse(
-        violation.getId(),
-        violation.getSessionId(),
-        violation.getInterviewId(),
-        violation.getPolicyId(),
-        violation.getRuleCode(),
-        violation.getSeverity(),
-        violation.getMessage(),
-        violation.getStatus(),
-        violation.getEvidence(),
-        violation.getOccurredAt(),
-        violation.getDetectedBy(),
-        violation.getCreatedAt());
+        .map(mapper::toResponse);
   }
 }

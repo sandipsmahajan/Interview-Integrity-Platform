@@ -1,6 +1,6 @@
 package com.interviewintegrity.policy.web;
 
-import com.interviewintegrity.policy.domain.Policy;
+import com.interviewintegrity.policy.service.PolicyMapper;
 import com.interviewintegrity.policy.service.PolicyService;
 import com.interviewintegrity.policy.web.dto.ChangePolicyStatusRequest;
 import com.interviewintegrity.policy.web.dto.CreatePolicyRequest;
@@ -32,10 +32,12 @@ import reactor.core.publisher.Mono;
 public final class PolicyController {
 
   private final PolicyService policyService;
+  private final PolicyMapper mapper;
 
-  /** Creates the controller bound to the policy service. */
-  public PolicyController(PolicyService policyService) {
+  /** Creates the controller bound to the policy service and mapper. */
+  public PolicyController(PolicyService policyService, PolicyMapper mapper) {
     this.policyService = policyService;
+    this.mapper = mapper;
   }
 
   /** Creates a new draft policy. */
@@ -53,7 +55,7 @@ public final class PolicyController {
             request.defaultSeverity(),
             request.priority(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the policies of the organization. */
@@ -62,7 +64,7 @@ public final class PolicyController {
   public Flux<PolicyResponse> list(Authentication authentication) {
     return policyService
         .list(SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single policy. */
@@ -71,7 +73,7 @@ public final class PolicyController {
   public Mono<PolicyResponse> get(Authentication authentication, @PathVariable UUID policyId) {
     return policyService
         .get(SecurityPrincipals.organizationId(authentication), policyId)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates the editable attributes of a policy. */
@@ -91,7 +93,7 @@ public final class PolicyController {
             request.priority(),
             request.enabled(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Transitions a policy lifecycle state. */
@@ -107,7 +109,7 @@ public final class PolicyController {
             policyId,
             request.status(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a policy. */
@@ -119,21 +121,5 @@ public final class PolicyController {
         SecurityPrincipals.organizationId(authentication),
         policyId,
         SecurityPrincipals.userId(authentication));
-  }
-
-  private PolicyResponse toResponse(Policy policy) {
-    return new PolicyResponse(
-        policy.getId(),
-        policy.getOrganizationId(),
-        policy.getCode(),
-        policy.getName(),
-        policy.getDescription(),
-        policy.getStatus(),
-        policy.getDefaultSeverity(),
-        policy.getPriority(),
-        policy.isEnabled(),
-        policy.getCreatedAt(),
-        policy.getUpdatedAt(),
-        policy.getVersion());
   }
 }

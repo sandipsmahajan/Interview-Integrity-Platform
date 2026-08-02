@@ -1,8 +1,8 @@
 package com.interviewintegrity.scheduler.web;
 
 import com.interviewintegrity.scheduler.domain.JobStatus;
-import com.interviewintegrity.scheduler.domain.ScheduledJob;
 import com.interviewintegrity.scheduler.service.ScheduledJobService;
+import com.interviewintegrity.scheduler.service.SchedulerMapper;
 import com.interviewintegrity.scheduler.web.dto.CreateScheduledJobRequest;
 import com.interviewintegrity.scheduler.web.dto.ScheduledJobResponse;
 import com.interviewintegrity.scheduler.web.dto.UpdateScheduledJobRequest;
@@ -33,10 +33,12 @@ import reactor.core.publisher.Mono;
 public final class ScheduledJobController {
 
   private final ScheduledJobService jobService;
+  private final SchedulerMapper mapper;
 
-  /** Creates the controller bound to the job service. */
-  public ScheduledJobController(ScheduledJobService jobService) {
+  /** Creates the controller bound to the job service and mapper. */
+  public ScheduledJobController(ScheduledJobService jobService, SchedulerMapper mapper) {
     this.jobService = jobService;
+    this.mapper = mapper;
   }
 
   /** Creates a scheduled job. */
@@ -56,7 +58,7 @@ public final class ScheduledJobController {
             request.maxRetries(),
             request.timeoutSeconds(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the jobs of the organization, optionally filtered by status. */
@@ -66,7 +68,7 @@ public final class ScheduledJobController {
       Authentication authentication, @RequestParam(required = false) JobStatus status) {
     return jobService
         .listJobs(SecurityPrincipals.organizationId(authentication), status)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single scheduled job. */
@@ -75,7 +77,7 @@ public final class ScheduledJobController {
   public Mono<ScheduledJobResponse> get(Authentication authentication, @PathVariable UUID jobId) {
     return jobService
         .getJob(jobId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates a scheduled job. */
@@ -95,7 +97,7 @@ public final class ScheduledJobController {
             request.maxRetries(),
             request.timeoutSeconds(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Pauses a scheduled job. */
@@ -107,7 +109,7 @@ public final class ScheduledJobController {
             jobId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Resumes a paused scheduled job. */
@@ -120,7 +122,7 @@ public final class ScheduledJobController {
             jobId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Disables a scheduled job. */
@@ -133,7 +135,7 @@ public final class ScheduledJobController {
             jobId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Enables a disabled scheduled job. */
@@ -146,7 +148,7 @@ public final class ScheduledJobController {
             jobId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the enabled jobs of the organization whose next run is due. */
@@ -155,7 +157,7 @@ public final class ScheduledJobController {
   public Flux<ScheduledJobResponse> due(Authentication authentication) {
     return jobService
         .listDue(SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Advances the due jobs of the organization under distributed locks. */
@@ -164,7 +166,7 @@ public final class ScheduledJobController {
   public Flux<ScheduledJobResponse> runDue(Authentication authentication) {
     return jobService
         .runDue(SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a scheduled job. */
@@ -176,27 +178,5 @@ public final class ScheduledJobController {
         jobId,
         SecurityPrincipals.organizationId(authentication),
         SecurityPrincipals.userId(authentication));
-  }
-
-  private ScheduledJobResponse toResponse(ScheduledJob job) {
-    return new ScheduledJobResponse(
-        job.getId(),
-        job.getOrganizationId(),
-        job.getName(),
-        job.getJobType(),
-        job.getCronExpression(),
-        job.getHandler(),
-        job.getPayload(),
-        job.getStatus(),
-        job.getMaxRetries(),
-        job.getTimeoutSeconds(),
-        job.getRetryCount(),
-        job.getLastRunAt(),
-        job.getLastRunStatus(),
-        job.getNextRunAt(),
-        job.getCreatedBy(),
-        job.getCreatedAt(),
-        job.getUpdatedBy(),
-        job.getUpdatedAt());
   }
 }

@@ -3,6 +3,7 @@ package com.interviewintegrity.scheduler.config;
 import com.interviewintegrity.scheduler.service.JobExecutionService;
 import com.interviewintegrity.scheduler.service.JobLockService;
 import com.interviewintegrity.scheduler.service.ScheduledJobService;
+import com.interviewintegrity.scheduler.service.SchedulerMapper;
 import com.interviewintegrity.scheduler.web.JobExecutionController;
 import com.interviewintegrity.scheduler.web.JobLockController;
 import com.interviewintegrity.scheduler.web.ScheduledJobController;
@@ -20,14 +21,16 @@ public class ApiConfiguration {
 
   /** Exposes the scheduled job controller. */
   @Bean
-  public ScheduledJobController scheduledJobController(ScheduledJobService jobService) {
-    return new ScheduledJobController(jobService);
+  public ScheduledJobController scheduledJobController(
+      ScheduledJobService jobService, SchedulerMapper mapper) {
+    return new ScheduledJobController(jobService, mapper);
   }
 
   /** Exposes the job execution controller. */
   @Bean
-  public JobExecutionController jobExecutionController(JobExecutionService executionService) {
-    return new JobExecutionController(executionService);
+  public JobExecutionController jobExecutionController(
+      JobExecutionService executionService, SchedulerMapper mapper) {
+    return new JobExecutionController(executionService, mapper);
   }
 
   /** Exposes the job lock controller. */

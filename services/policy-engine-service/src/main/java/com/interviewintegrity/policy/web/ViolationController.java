@@ -1,8 +1,8 @@
 package com.interviewintegrity.policy.web;
 
-import com.interviewintegrity.policy.domain.Violation;
 import com.interviewintegrity.policy.domain.ViolationSeverity;
 import com.interviewintegrity.policy.domain.ViolationStatus;
+import com.interviewintegrity.policy.service.PolicyMapper;
 import com.interviewintegrity.policy.service.ViolationService;
 import com.interviewintegrity.policy.web.dto.ReviewViolationRequest;
 import com.interviewintegrity.policy.web.dto.ViolationResponse;
@@ -29,10 +29,12 @@ import reactor.core.publisher.Mono;
 public final class ViolationController {
 
   private final ViolationService violationService;
+  private final PolicyMapper mapper;
 
-  /** Creates the controller bound to the violation service. */
-  public ViolationController(ViolationService violationService) {
+  /** Creates the controller bound to the violation service and mapper. */
+  public ViolationController(ViolationService violationService, PolicyMapper mapper) {
     this.violationService = violationService;
+    this.mapper = mapper;
   }
 
   /** Lists the violations of the organization with optional filters. */
@@ -44,7 +46,7 @@ public final class ViolationController {
       @RequestParam(required = false) ViolationSeverity severity) {
     return violationService
         .list(SecurityPrincipals.organizationId(authentication), status, severity)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single violation. */
@@ -54,7 +56,7 @@ public final class ViolationController {
       Authentication authentication, @PathVariable UUID violationId) {
     return violationService
         .get(SecurityPrincipals.organizationId(authentication), violationId)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Records a human review decision on a violation. */
@@ -72,22 +74,6 @@ public final class ViolationController {
             request.action(),
             request.comment(),
             request.escalatedTo())
-        .map(this::toResponse);
-  }
-
-  private ViolationResponse toResponse(Violation violation) {
-    return new ViolationResponse(
-        violation.getId(),
-        violation.getSessionId(),
-        violation.getInterviewId(),
-        violation.getPolicyId(),
-        violation.getRuleCode(),
-        violation.getSeverity(),
-        violation.getMessage(),
-        violation.getStatus(),
-        violation.getEvidence(),
-        violation.getOccurredAt(),
-        violation.getDetectedBy(),
-        violation.getCreatedAt());
+        .map(mapper::toResponse);
   }
 }

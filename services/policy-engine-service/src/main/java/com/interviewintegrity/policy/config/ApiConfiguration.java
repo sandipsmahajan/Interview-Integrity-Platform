@@ -1,6 +1,7 @@
 package com.interviewintegrity.policy.config;
 
 import com.interviewintegrity.policy.service.PolicyEvaluationService;
+import com.interviewintegrity.policy.service.PolicyMapper;
 import com.interviewintegrity.policy.service.PolicyRuleService;
 import com.interviewintegrity.policy.service.PolicyService;
 import com.interviewintegrity.policy.service.ViolationService;
@@ -22,27 +23,29 @@ public class ApiConfiguration {
 
   /** Exposes the policy controller. */
   @Bean
-  public PolicyController policyController(PolicyService policyService) {
-    return new PolicyController(policyService);
+  public PolicyController policyController(PolicyService policyService, PolicyMapper mapper) {
+    return new PolicyController(policyService, mapper);
   }
 
   /** Exposes the rule controller. */
   @Bean
-  public PolicyRuleController policyRuleController(PolicyRuleService ruleService) {
-    return new PolicyRuleController(ruleService);
+  public PolicyRuleController policyRuleController(
+      PolicyRuleService ruleService, PolicyMapper mapper) {
+    return new PolicyRuleController(ruleService, mapper);
   }
 
   /** Exposes the violation controller. */
   @Bean
-  public ViolationController violationController(ViolationService violationService) {
-    return new ViolationController(violationService);
+  public ViolationController violationController(
+      ViolationService violationService, PolicyMapper mapper) {
+    return new ViolationController(violationService, mapper);
   }
 
   /** Exposes the evaluation controller. */
   @Bean
   public PolicyEvaluationController policyEvaluationController(
-      PolicyEvaluationService evaluationService) {
-    return new PolicyEvaluationController(evaluationService);
+      PolicyEvaluationService evaluationService, PolicyMapper mapper) {
+    return new PolicyEvaluationController(evaluationService, mapper);
   }
 
   /** Describes the OpenAPI document for the policy engine service. */
