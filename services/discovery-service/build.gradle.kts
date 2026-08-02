@@ -17,6 +17,7 @@ dependencies {
     implementation(project(":libs:logging"))
     implementation(project(":libs:observability"))
     implementation(project(":libs:security"))
+    implementation(project(":libs:api-contract"))
     implementation(libs.spring.boot.starter.webflux)
     implementation(libs.springdoc.openapi.starter.webflux.ui)
 

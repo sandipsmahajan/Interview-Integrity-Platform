@@ -1,5 +1,5 @@
 backend:
-  image: interview-integrity/backend:0.1.0
+  image: interview-integrity/api-gateway:0.1.0
   replicas: 3
   port: 8080
 ingress:
