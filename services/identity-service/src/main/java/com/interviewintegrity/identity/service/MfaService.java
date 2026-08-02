@@ -48,6 +48,7 @@ public final class MfaService {
   private final OtpService otpService;
   private final MfaChallengeAttemptRepository challengeAttemptRepository;
   private final AuthProperties authProperties;
+  private final IdentityMapper mapper;
 
   /** Creates the MFA service with its collaborators. */
   public MfaService(
@@ -59,7 +60,8 @@ public final class MfaService {
       JwtTokenService jwtTokenService,
       OtpService otpService,
       MfaChallengeAttemptRepository challengeAttemptRepository,
-      AuthProperties authProperties) {
+      AuthProperties authProperties,
+      IdentityMapper mapper) {
     this.mfaDeviceRepository = mfaDeviceRepository;
     this.recoveryCodeRepository = recoveryCodeRepository;
     this.trustedDeviceRepository = trustedDeviceRepository;
@@ -68,6 +70,7 @@ public final class MfaService {
     this.jwtTokenService = jwtTokenService;
     this.otpService = otpService;
     this.challengeAttemptRepository = challengeAttemptRepository;
+    this.mapper = mapper;
     this.authProperties = authProperties;
   }
 
@@ -199,16 +202,7 @@ public final class MfaService {
 
   /** Lists the MFA devices of the user. */
   public Mono<List<MfaDeviceResponse>> listDevices(UUID userId) {
-    return mfaDeviceRepository
-        .listLiveByUserId(userId)
-        .map(
-            device ->
-                new MfaDeviceResponse(
-                    device.getId(),
-                    device.getKind(),
-                    device.getVerifiedAt(),
-                    device.getLastUsedAt()))
-        .collectList();
+    return mfaDeviceRepository.listLiveByUserId(userId).map(mapper::toResponse).collectList();
   }
 
   /** Removes an MFA device of the user. */
@@ -230,16 +224,7 @@ public final class MfaService {
 
   /** Lists the trusted devices of the user. */
   public Mono<List<TrustedDeviceResponse>> listTrustedDevices(UUID userId) {
-    return trustedDeviceRepository
-        .listByUser(userId)
-        .map(
-            device ->
-                new TrustedDeviceResponse(
-                    device.getId(),
-                    device.getDeviceId(),
-                    device.getDeviceName(),
-                    device.getLastSeenAt()))
-        .collectList();
+    return trustedDeviceRepository.listByUser(userId).map(mapper::toResponse).collectList();
   }
 
   /** Removes a trusted device of the user. */

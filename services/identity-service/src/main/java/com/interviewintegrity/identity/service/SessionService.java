@@ -1,6 +1,5 @@
 package com.interviewintegrity.identity.service;
 
-import com.interviewintegrity.identity.domain.UserSession;
 import com.interviewintegrity.identity.repository.UserSessionRepository;
 import com.interviewintegrity.identity.web.dto.SessionResponse;
 import java.util.UUID;
@@ -11,15 +10,17 @@ import reactor.core.publisher.Mono;
 public final class SessionService {
 
   private final UserSessionRepository sessionRepository;
+  private final IdentityMapper mapper;
 
   /** Creates the session service bound to the session repository. */
-  public SessionService(UserSessionRepository sessionRepository) {
+  public SessionService(UserSessionRepository sessionRepository, IdentityMapper mapper) {
     this.sessionRepository = sessionRepository;
+    this.mapper = mapper;
   }
 
   /** Lists the sessions of a user, newest first. */
   public Flux<SessionResponse> listUserSessions(UUID userId) {
-    return sessionRepository.listByUser(userId, 100, 0).map(SessionService::toResponse);
+    return sessionRepository.listByUser(userId, 100, 0).map(mapper::toResponse);
   }
 
   /** Revokes a single session of a user. */
@@ -39,17 +40,5 @@ public final class SessionService {
   /** Revokes all active sessions of a user. */
   public Mono<Void> revokeAllSessions(UUID userId) {
     return sessionRepository.revokeAllActiveByUser(userId, java.time.Instant.now()).then();
-  }
-
-  private static SessionResponse toResponse(UserSession session) {
-    return new SessionResponse(
-        session.getId(),
-        session.getDeviceId(),
-        session.getIpAddress(),
-        session.getUserAgent(),
-        session.getStatus().name(),
-        session.getIssuedAt(),
-        session.getExpiresAt(),
-        session.getLastUsedAt());
   }
 }

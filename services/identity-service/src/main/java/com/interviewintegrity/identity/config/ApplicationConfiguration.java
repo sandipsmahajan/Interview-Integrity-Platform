@@ -15,6 +15,7 @@ import com.interviewintegrity.identity.repository.UserSessionRepository;
 import com.interviewintegrity.identity.service.AuthService;
 import com.interviewintegrity.identity.service.AuthorityResolver;
 import com.interviewintegrity.identity.service.EmailEventPublisher;
+import com.interviewintegrity.identity.service.IdentityMapper;
 import com.interviewintegrity.identity.service.KafkaEmailEventPublisher;
 import com.interviewintegrity.identity.service.KafkaUserEventPublisher;
 import com.interviewintegrity.identity.service.MfaService;
@@ -91,14 +92,16 @@ public class ApplicationConfiguration {
 
   /** Provides the permission catalog service. */
   @Bean
-  public PermissionService permissionService(PermissionRepository permissionRepository) {
-    return new PermissionService(permissionRepository);
+  public PermissionService permissionService(
+      PermissionRepository permissionRepository, IdentityMapper mapper) {
+    return new PermissionService(permissionRepository, mapper);
   }
 
   /** Provides the session management service. */
   @Bean
-  public SessionService sessionService(UserSessionRepository sessionRepository) {
-    return new SessionService(sessionRepository);
+  public SessionService sessionService(
+      UserSessionRepository sessionRepository, IdentityMapper mapper) {
+    return new SessionService(sessionRepository, mapper);
   }
 
   /** Provides the event publisher for user lifecycle events. */
@@ -160,7 +163,8 @@ public class ApplicationConfiguration {
       JwtTokenService jwtTokenService,
       OtpService otpService,
       MfaChallengeAttemptRepository challengeAttemptRepository,
-      AuthProperties authProperties) {
+      AuthProperties authProperties,
+      IdentityMapper mapper) {
     return new MfaService(
         mfaDeviceRepository,
         recoveryCodeRepository,
@@ -170,7 +174,8 @@ public class ApplicationConfiguration {
         jwtTokenService,
         otpService,
         challengeAttemptRepository,
-        authProperties);
+        authProperties,
+        mapper);
   }
 
   /** Provides the authentication service. */
