@@ -3,6 +3,7 @@ package com.interviewintegrity.candidate.config;
 import com.interviewintegrity.candidate.service.AssessmentService;
 import com.interviewintegrity.candidate.service.CandidateConsentService;
 import com.interviewintegrity.candidate.service.CandidateDocumentService;
+import com.interviewintegrity.candidate.service.CandidateMapper;
 import com.interviewintegrity.candidate.service.CandidateNoteService;
 import com.interviewintegrity.candidate.service.CandidateProfileService;
 import com.interviewintegrity.candidate.service.CandidateService;
@@ -29,53 +30,57 @@ public class ApiConfiguration {
 
   /** Exposes the candidate controller. */
   @Bean
-  public CandidateController candidateController(CandidateService candidateService) {
-    return new CandidateController(candidateService);
+  public CandidateController candidateController(
+      CandidateService candidateService, CandidateMapper mapper) {
+    return new CandidateController(candidateService, mapper);
   }
 
   /** Exposes the candidate profile controller. */
   @Bean
   public CandidateProfileController candidateProfileController(
-      CandidateProfileService profileService) {
-    return new CandidateProfileController(profileService);
+      CandidateProfileService profileService, CandidateMapper mapper) {
+    return new CandidateProfileController(profileService, mapper);
   }
 
   /** Exposes the candidate document controller. */
   @Bean
   public CandidateDocumentController candidateDocumentController(
-      CandidateDocumentService documentService) {
-    return new CandidateDocumentController(documentService);
+      CandidateDocumentService documentService, CandidateMapper mapper) {
+    return new CandidateDocumentController(documentService, mapper);
   }
 
   /** Exposes the candidate note controller. */
   @Bean
-  public CandidateNoteController candidateNoteController(CandidateNoteService noteService) {
-    return new CandidateNoteController(noteService);
+  public CandidateNoteController candidateNoteController(
+      CandidateNoteService noteService, CandidateMapper mapper) {
+    return new CandidateNoteController(noteService, mapper);
   }
 
   /** Exposes the assessment controller. */
   @Bean
-  public AssessmentController assessmentController(AssessmentService assessmentService) {
-    return new AssessmentController(assessmentService);
+  public AssessmentController assessmentController(
+      AssessmentService assessmentService, CandidateMapper mapper) {
+    return new AssessmentController(assessmentService, mapper);
   }
 
   /** Exposes the candidate consent controller. */
   @Bean
   public CandidateConsentController candidateConsentController(
-      CandidateConsentService consentService) {
-    return new CandidateConsentController(consentService);
+      CandidateConsentService consentService, CandidateMapper mapper) {
+    return new CandidateConsentController(consentService, mapper);
   }
 
   /** Exposes the tag controller. */
   @Bean
-  public TagController tagController(TagService tagService) {
-    return new TagController(tagService);
+  public TagController tagController(TagService tagService, CandidateMapper mapper) {
+    return new TagController(tagService, mapper);
   }
 
   /** Exposes the candidate tag controller. */
   @Bean
-  public CandidateTagController candidateTagController(TagService tagService) {
-    return new CandidateTagController(tagService);
+  public CandidateTagController candidateTagController(
+      TagService tagService, CandidateMapper mapper) {
+    return new CandidateTagController(tagService, mapper);
   }
 
   /** Describes the OpenAPI document for the candidate service. */

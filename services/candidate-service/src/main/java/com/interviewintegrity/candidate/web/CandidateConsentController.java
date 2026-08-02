@@ -1,7 +1,7 @@
 package com.interviewintegrity.candidate.web;
 
-import com.interviewintegrity.candidate.domain.CandidateConsent;
 import com.interviewintegrity.candidate.service.CandidateConsentService;
+import com.interviewintegrity.candidate.service.CandidateMapper;
 import com.interviewintegrity.candidate.web.dto.CandidateConsentResponse;
 import com.interviewintegrity.candidate.web.dto.GrantConsentRequest;
 import com.interviewintegrity.security.SecurityPrincipals;
@@ -28,10 +28,13 @@ import reactor.core.publisher.Mono;
 public final class CandidateConsentController {
 
   private final CandidateConsentService consentService;
+  private final CandidateMapper mapper;
 
-  /** Creates the controller bound to the consent service. */
-  public CandidateConsentController(CandidateConsentService consentService) {
+  /** Creates the controller bound to the consent service and mapper. */
+  public CandidateConsentController(
+      CandidateConsentService consentService, CandidateMapper mapper) {
     this.consentService = consentService;
+    this.mapper = mapper;
   }
 
   /** Grants a consent to a candidate. */
@@ -49,7 +52,7 @@ public final class CandidateConsentController {
             request.consentType().trim(),
             request.consentVersion(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the consents of a candidate. */
@@ -59,7 +62,7 @@ public final class CandidateConsentController {
       Authentication authentication, @PathVariable UUID candidateId) {
     return consentService
         .list(SecurityPrincipals.organizationId(authentication), candidateId)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Withdraws a consent. */
@@ -72,19 +75,6 @@ public final class CandidateConsentController {
             consentId,
             SecurityPrincipals.organizationId(authentication),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
-  }
-
-  private CandidateConsentResponse toResponse(CandidateConsent consent) {
-    return new CandidateConsentResponse(
-        consent.getId(),
-        consent.getCandidateId(),
-        consent.getConsentType(),
-        consent.getStatus(),
-        consent.getGrantedAt(),
-        consent.getGrantedBy(),
-        consent.getRevokedAt(),
-        consent.getRevokedBy(),
-        consent.getConsentVersion());
+        .map(mapper::toResponse);
   }
 }

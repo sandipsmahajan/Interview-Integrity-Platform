@@ -1,6 +1,6 @@
 package com.interviewintegrity.candidate.web;
 
-import com.interviewintegrity.candidate.domain.Tag;
+import com.interviewintegrity.candidate.service.CandidateMapper;
 import com.interviewintegrity.candidate.service.TagService;
 import com.interviewintegrity.candidate.web.dto.CreateTagRequest;
 import com.interviewintegrity.candidate.web.dto.TagResponse;
@@ -25,10 +25,12 @@ import reactor.core.publisher.Mono;
 public final class TagController {
 
   private final TagService tagService;
+  private final CandidateMapper mapper;
 
-  /** Creates the controller bound to the tag service. */
-  public TagController(TagService tagService) {
+  /** Creates the controller bound to the tag service and mapper. */
+  public TagController(TagService tagService, CandidateMapper mapper) {
     this.tagService = tagService;
+    this.mapper = mapper;
   }
 
   /** Creates a tag. */
@@ -42,18 +44,15 @@ public final class TagController {
             SecurityPrincipals.organizationId(authentication),
             request.code().trim(),
             request.name().trim())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the tags of the organization. */
   @GetMapping
   @Operation(summary = "List tags")
   public Flux<TagResponse> list(Authentication authentication) {
-    return tagService.list(SecurityPrincipals.organizationId(authentication)).map(this::toResponse);
-  }
-
-  private TagResponse toResponse(Tag tag) {
-    return new TagResponse(
-        tag.getId(), tag.getOrganizationId(), tag.getCode(), tag.getName(), tag.getCreatedAt());
+    return tagService
+        .list(SecurityPrincipals.organizationId(authentication))
+        .map(mapper::toResponse);
   }
 }

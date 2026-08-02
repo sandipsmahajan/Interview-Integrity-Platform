@@ -1,6 +1,6 @@
 package com.interviewintegrity.candidate.web;
 
-import com.interviewintegrity.candidate.domain.Tag;
+import com.interviewintegrity.candidate.service.CandidateMapper;
 import com.interviewintegrity.candidate.service.TagService;
 import com.interviewintegrity.candidate.web.dto.AttachTagRequest;
 import com.interviewintegrity.candidate.web.dto.TagResponse;
@@ -30,10 +30,12 @@ import reactor.core.publisher.Mono;
 public final class CandidateTagController {
 
   private final TagService tagService;
+  private final CandidateMapper mapper;
 
-  /** Creates the controller bound to the tag service. */
-  public CandidateTagController(TagService tagService) {
+  /** Creates the controller bound to the tag service and mapper. */
+  public CandidateTagController(TagService tagService, CandidateMapper mapper) {
     this.tagService = tagService;
+    this.mapper = mapper;
   }
 
   /** Applies a tag to a candidate. */
@@ -50,7 +52,7 @@ public final class CandidateTagController {
             candidateId,
             request.tagId(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the tags applied to a candidate. */
@@ -59,7 +61,7 @@ public final class CandidateTagController {
   public Flux<TagResponse> list(Authentication authentication, @PathVariable UUID candidateId) {
     return tagService
         .listByCandidate(SecurityPrincipals.organizationId(authentication), candidateId)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Removes a tag from a candidate. */
@@ -69,10 +71,5 @@ public final class CandidateTagController {
   public Mono<Void> detach(
       Authentication authentication, @PathVariable UUID candidateId, @PathVariable UUID tagId) {
     return tagService.detach(SecurityPrincipals.organizationId(authentication), candidateId, tagId);
-  }
-
-  private TagResponse toResponse(Tag tag) {
-    return new TagResponse(
-        tag.getId(), tag.getOrganizationId(), tag.getCode(), tag.getName(), tag.getCreatedAt());
   }
 }

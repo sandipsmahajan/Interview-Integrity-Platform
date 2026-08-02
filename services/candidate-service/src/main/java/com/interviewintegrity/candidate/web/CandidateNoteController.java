@@ -1,6 +1,6 @@
 package com.interviewintegrity.candidate.web;
 
-import com.interviewintegrity.candidate.domain.CandidateNote;
+import com.interviewintegrity.candidate.service.CandidateMapper;
 import com.interviewintegrity.candidate.service.CandidateNoteService;
 import com.interviewintegrity.candidate.web.dto.CandidateNoteResponse;
 import com.interviewintegrity.candidate.web.dto.CreateCandidateNoteRequest;
@@ -32,10 +32,12 @@ import reactor.core.publisher.Mono;
 public final class CandidateNoteController {
 
   private final CandidateNoteService noteService;
+  private final CandidateMapper mapper;
 
-  /** Creates the controller bound to the note service. */
-  public CandidateNoteController(CandidateNoteService noteService) {
+  /** Creates the controller bound to the note service and mapper. */
+  public CandidateNoteController(CandidateNoteService noteService, CandidateMapper mapper) {
     this.noteService = noteService;
+    this.mapper = mapper;
   }
 
   /** Creates a note for a candidate. */
@@ -52,7 +54,7 @@ public final class CandidateNoteController {
             candidateId,
             request.body().trim(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the notes of a candidate. */
@@ -62,7 +64,7 @@ public final class CandidateNoteController {
       Authentication authentication, @PathVariable UUID candidateId) {
     return noteService
         .list(SecurityPrincipals.organizationId(authentication), candidateId)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates a note. */
@@ -79,7 +81,7 @@ public final class CandidateNoteController {
             SecurityPrincipals.organizationId(authentication),
             request.body().trim(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Pins or unpins a note. */
@@ -96,7 +98,7 @@ public final class CandidateNoteController {
             SecurityPrincipals.organizationId(authentication),
             request.pinned(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a note. */
@@ -109,16 +111,5 @@ public final class CandidateNoteController {
         noteId,
         SecurityPrincipals.organizationId(authentication),
         SecurityPrincipals.userId(authentication));
-  }
-
-  private CandidateNoteResponse toResponse(CandidateNote note) {
-    return new CandidateNoteResponse(
-        note.getId(),
-        note.getCandidateId(),
-        note.getAuthorId(),
-        note.getBody(),
-        note.isPinned(),
-        note.getCreatedAt(),
-        note.getUpdatedAt());
   }
 }

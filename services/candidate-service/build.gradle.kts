@@ -29,8 +29,15 @@ dependencies {
     implementation(project(":libs:dto"))
     implementation(project(":libs:event"))
     implementation(project(":libs:validation"))
+    implementation(libs.mapstruct)
+
+    annotationProcessor(libs.mapstruct.processor)
 
     errorprone(libs.errorprone.core)
+
+    tasks.withType<JavaCompile>().configureEach {
+        options.compilerArgs.add("-Xlint:-processing")
+    }
 
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(libs.reactor.test)

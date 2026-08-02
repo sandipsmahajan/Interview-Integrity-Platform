@@ -1,7 +1,7 @@
 package com.interviewintegrity.candidate.web;
 
-import com.interviewintegrity.candidate.domain.Assessment;
 import com.interviewintegrity.candidate.service.AssessmentService;
+import com.interviewintegrity.candidate.service.CandidateMapper;
 import com.interviewintegrity.candidate.web.dto.AssessmentResponse;
 import com.interviewintegrity.candidate.web.dto.CompleteAssessmentRequest;
 import com.interviewintegrity.candidate.web.dto.CreateAssessmentRequest;
@@ -29,10 +29,12 @@ import reactor.core.publisher.Mono;
 public final class AssessmentController {
 
   private final AssessmentService assessmentService;
+  private final CandidateMapper mapper;
 
-  /** Creates the controller bound to the assessment service. */
-  public AssessmentController(AssessmentService assessmentService) {
+  /** Creates the controller bound to the assessment service and mapper. */
+  public AssessmentController(AssessmentService assessmentService, CandidateMapper mapper) {
     this.assessmentService = assessmentService;
+    this.mapper = mapper;
   }
 
   /** Assigns an assessment to a candidate. */
@@ -50,7 +52,7 @@ public final class AssessmentController {
             request.assessmentType(),
             request.expiresAt(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the assessments of a candidate. */
@@ -60,7 +62,7 @@ public final class AssessmentController {
       Authentication authentication, @PathVariable UUID candidateId) {
     return assessmentService
         .list(SecurityPrincipals.organizationId(authentication), candidateId)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Starts an assigned assessment. */
@@ -70,7 +72,7 @@ public final class AssessmentController {
       Authentication authentication, @PathVariable UUID assessmentId) {
     return assessmentService
         .start(assessmentId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Completes an assessment with an optional score. */
@@ -82,7 +84,7 @@ public final class AssessmentController {
       @Valid @RequestBody CompleteAssessmentRequest request) {
     return assessmentService
         .complete(assessmentId, SecurityPrincipals.organizationId(authentication), request.score())
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Expires an assessment. */
@@ -92,20 +94,6 @@ public final class AssessmentController {
       Authentication authentication, @PathVariable UUID assessmentId) {
     return assessmentService
         .expire(assessmentId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
-  }
-
-  private AssessmentResponse toResponse(Assessment assessment) {
-    return new AssessmentResponse(
-        assessment.getId(),
-        assessment.getCandidateId(),
-        assessment.getAssessmentType(),
-        assessment.getStatus(),
-        assessment.getScore(),
-        assessment.getAssignedBy(),
-        assessment.getAssignedAt(),
-        assessment.getStartedAt(),
-        assessment.getCompletedAt(),
-        assessment.getExpiresAt());
+        .map(mapper::toResponse);
   }
 }

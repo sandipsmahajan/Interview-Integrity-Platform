@@ -1,7 +1,7 @@
 package com.interviewintegrity.candidate.web;
 
-import com.interviewintegrity.candidate.domain.CandidateDocument;
 import com.interviewintegrity.candidate.service.CandidateDocumentService;
+import com.interviewintegrity.candidate.service.CandidateMapper;
 import com.interviewintegrity.candidate.web.dto.CandidateDocumentResponse;
 import com.interviewintegrity.candidate.web.dto.CreateCandidateDocumentRequest;
 import com.interviewintegrity.security.SecurityPrincipals;
@@ -29,10 +29,13 @@ import reactor.core.publisher.Mono;
 public final class CandidateDocumentController {
 
   private final CandidateDocumentService documentService;
+  private final CandidateMapper mapper;
 
-  /** Creates the controller bound to the document service. */
-  public CandidateDocumentController(CandidateDocumentService documentService) {
+  /** Creates the controller bound to the document service and mapper. */
+  public CandidateDocumentController(
+      CandidateDocumentService documentService, CandidateMapper mapper) {
     this.documentService = documentService;
+    this.mapper = mapper;
   }
 
   /** Registers an uploaded document against a candidate. */
@@ -52,7 +55,7 @@ public final class CandidateDocumentController {
             request.contentType(),
             request.sizeBytes(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the documents of a candidate. */
@@ -62,7 +65,7 @@ public final class CandidateDocumentController {
       Authentication authentication, @PathVariable UUID candidateId) {
     return documentService
         .list(SecurityPrincipals.organizationId(authentication), candidateId)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a document. */
@@ -74,17 +77,5 @@ public final class CandidateDocumentController {
         documentId,
         SecurityPrincipals.organizationId(authentication),
         SecurityPrincipals.userId(authentication));
-  }
-
-  private CandidateDocumentResponse toResponse(CandidateDocument document) {
-    return new CandidateDocumentResponse(
-        document.getId(),
-        document.getCandidateId(),
-        document.getStorageObjectId(),
-        document.getName(),
-        document.getContentType(),
-        document.getSizeBytes(),
-        document.getUploadedBy(),
-        document.getUploadedAt());
   }
 }

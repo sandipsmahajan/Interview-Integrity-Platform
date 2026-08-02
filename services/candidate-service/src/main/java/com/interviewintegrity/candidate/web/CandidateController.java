@@ -1,7 +1,7 @@
 package com.interviewintegrity.candidate.web;
 
-import com.interviewintegrity.candidate.domain.Candidate;
 import com.interviewintegrity.candidate.domain.CandidateStatus;
+import com.interviewintegrity.candidate.service.CandidateMapper;
 import com.interviewintegrity.candidate.service.CandidateService;
 import com.interviewintegrity.candidate.web.dto.CandidateResponse;
 import com.interviewintegrity.candidate.web.dto.ChangeCandidateStatusRequest;
@@ -34,10 +34,12 @@ import reactor.core.publisher.Mono;
 public final class CandidateController {
 
   private final CandidateService candidateService;
+  private final CandidateMapper mapper;
 
-  /** Creates the controller bound to the candidate service. */
-  public CandidateController(CandidateService candidateService) {
+  /** Creates the controller bound to the candidate service and mapper. */
+  public CandidateController(CandidateService candidateService, CandidateMapper mapper) {
     this.candidateService = candidateService;
+    this.mapper = mapper;
   }
 
   /** Creates a candidate. */
@@ -55,7 +57,7 @@ public final class CandidateController {
             request.phone(),
             request.source(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Lists the candidates of the organization, optionally filtered by status. */
@@ -65,7 +67,7 @@ public final class CandidateController {
       Authentication authentication, @RequestParam(required = false) CandidateStatus status) {
     return candidateService
         .list(SecurityPrincipals.organizationId(authentication), status)
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Returns a single candidate. */
@@ -75,7 +77,7 @@ public final class CandidateController {
       Authentication authentication, @PathVariable UUID candidateId) {
     return candidateService
         .getById(candidateId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Updates a candidate. */
@@ -93,7 +95,7 @@ public final class CandidateController {
             request.phone(),
             request.source(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Changes the status of a candidate. */
@@ -109,7 +111,7 @@ public final class CandidateController {
             SecurityPrincipals.organizationId(authentication),
             request.status(),
             SecurityPrincipals.userId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Soft deletes a candidate. */
@@ -121,19 +123,5 @@ public final class CandidateController {
         candidateId,
         SecurityPrincipals.organizationId(authentication),
         SecurityPrincipals.userId(authentication));
-  }
-
-  private CandidateResponse toResponse(Candidate candidate) {
-    return new CandidateResponse(
-        candidate.getId(),
-        candidate.getOrganizationId(),
-        candidate.getUserId(),
-        candidate.getEmail(),
-        candidate.getFullName(),
-        candidate.getPhone(),
-        candidate.getStatus(),
-        candidate.getSource(),
-        candidate.getCreatedAt(),
-        candidate.getUpdatedAt());
   }
 }

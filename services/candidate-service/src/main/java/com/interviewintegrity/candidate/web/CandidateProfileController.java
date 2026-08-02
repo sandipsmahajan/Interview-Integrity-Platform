@@ -1,6 +1,6 @@
 package com.interviewintegrity.candidate.web;
 
-import com.interviewintegrity.candidate.domain.CandidateProfile;
+import com.interviewintegrity.candidate.service.CandidateMapper;
 import com.interviewintegrity.candidate.service.CandidateProfileService;
 import com.interviewintegrity.candidate.web.dto.CandidateProfileResponse;
 import com.interviewintegrity.candidate.web.dto.UpdateCandidateProfileRequest;
@@ -8,8 +8,6 @@ import com.interviewintegrity.security.SecurityPrincipals;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,10 +25,13 @@ import reactor.core.publisher.Mono;
 public final class CandidateProfileController {
 
   private final CandidateProfileService profileService;
+  private final CandidateMapper mapper;
 
-  /** Creates the controller bound to the profile service. */
-  public CandidateProfileController(CandidateProfileService profileService) {
+  /** Creates the controller bound to the profile service and mapper. */
+  public CandidateProfileController(
+      CandidateProfileService profileService, CandidateMapper mapper) {
     this.profileService = profileService;
+    this.mapper = mapper;
   }
 
   /** Returns the extended profile of a candidate, creating an empty one on first access. */
@@ -40,7 +41,7 @@ public final class CandidateProfileController {
       Authentication authentication, @PathVariable UUID candidateId) {
     return profileService
         .getOrCreate(candidateId, SecurityPrincipals.organizationId(authentication))
-        .map(this::toResponse);
+        .map(mapper::toResponse);
   }
 
   /** Replaces the extended profile of a candidate. */
@@ -64,25 +65,6 @@ public final class CandidateProfileController {
             request.skills(),
             request.experienceYears(),
             request.attributes())
-        .map(this::toResponse);
-  }
-
-  private CandidateProfileResponse toResponse(CandidateProfile profile) {
-    List<String> skills = Arrays.asList(profile.getSkills());
-    return new CandidateProfileResponse(
-        profile.getId(),
-        profile.getCandidateId(),
-        profile.getHeadline(),
-        profile.getBio(),
-        profile.getLocation(),
-        profile.getTimezone(),
-        profile.getResumeSummary(),
-        profile.getLinkedinUrl(),
-        profile.getGithubUrl(),
-        skills,
-        profile.getExperienceYears(),
-        profile.getAttributes(),
-        profile.getCreatedAt(),
-        profile.getUpdatedAt());
+        .map(mapper::toResponse);
   }
 }
