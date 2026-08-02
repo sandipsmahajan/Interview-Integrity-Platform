@@ -18,6 +18,7 @@ public class MailProperties {
   private int maxAttempts = 3;
   private Duration retryBaseDelay = Duration.ofMinutes(1);
   private Duration workerInterval = Duration.ofSeconds(30);
+  private Duration claimLease = Duration.ofMinutes(5);
 
   /** Returns the From address used for outbound email. */
   public String getFrom() {
@@ -57,5 +58,15 @@ public class MailProperties {
   /** Sets how often the retry worker scans for pending emails. */
   public void setWorkerInterval(Duration workerInterval) {
     this.workerInterval = workerInterval;
+  }
+
+  /** Returns how long a dispatch claim stays valid before another worker may retry it. */
+  public Duration getClaimLease() {
+    return claimLease;
+  }
+
+  /** Sets how long a dispatch claim stays valid before another worker may retry it. */
+  public void setClaimLease(Duration claimLease) {
+    this.claimLease = claimLease;
   }
 }

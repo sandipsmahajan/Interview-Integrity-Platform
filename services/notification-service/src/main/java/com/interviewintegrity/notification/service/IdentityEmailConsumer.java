@@ -10,6 +10,8 @@ import java.util.Locale;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
+import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.kafka.receiver.KafkaReceiver;
 import tools.jackson.databind.ObjectMapper;
@@ -21,7 +23,7 @@ import tools.jackson.databind.ObjectMapper;
  * or platform template, stored as a notification and dispatched immediately. Malformed messages are
  * logged and skipped; one failing message never stops the consumer.
  */
-public final class IdentityEmailConsumer {
+public final class IdentityEmailConsumer implements DisposableBean {
 
   private static final Logger log = LoggerFactory.getLogger(IdentityEmailConsumer.class);
 
@@ -31,6 +33,7 @@ public final class IdentityEmailConsumer {
   private final NotificationService notificationService;
   private final NotificationPreferenceRepository preferenceRepository;
   private final ObjectMapper objectMapper;
+  private volatile Disposable subscription;
 
   /** Creates a consumer bound to the given receiver and services. */
   public IdentityEmailConsumer(
@@ -49,23 +52,33 @@ public final class IdentityEmailConsumer {
 
   /** Subscribes to the identity email topic and starts processing records. */
   public void start() {
-    receiver
-        .receive()
-        .subscribe(
-            record ->
-                handle(record)
-                    .doOnSuccess(ignored -> record.receiverOffset().acknowledge())
-                    .subscribe(
-                        ignored -> {},
-                        error ->
-                            log.error(
-                                "Failed to process email record at partition {} offset {}: {}",
-                                record.partition(),
-                                record.offset(),
-                                error.getMessage(),
-                                error)),
-            error -> log.error("Email consumer terminated: {}", error.getMessage(), error));
+    subscription =
+        receiver
+            .receive()
+            .subscribe(
+                record ->
+                    handle(record)
+                        .doOnSuccess(ignored -> record.receiverOffset().acknowledge())
+                        .subscribe(
+                            ignored -> {},
+                            error ->
+                                log.error(
+                                    "Failed to process email record at partition {} offset {}: {}",
+                                    record.partition(),
+                                    record.offset(),
+                                    error.getMessage(),
+                                    error)),
+                error -> log.error("Email consumer terminated: {}", error.getMessage(), error));
     log.info("Email consumer subscribed to topic {}", KafkaTopics.IDENTITY_EMAIL);
+  }
+
+  @Override
+  public void destroy() {
+    Disposable active = subscription;
+    if (active != null) {
+      active.dispose();
+    }
+    log.info("Email consumer stopped");
   }
 
   Mono<Void> handle(ConsumerRecord<String, String> record) {

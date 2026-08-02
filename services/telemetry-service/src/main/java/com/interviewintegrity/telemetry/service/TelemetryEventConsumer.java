@@ -7,6 +7,8 @@ import java.util.UUID;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
+import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.kafka.receiver.KafkaReceiver;
 import tools.jackson.databind.ObjectMapper;
@@ -17,7 +19,7 @@ import tools.jackson.databind.ObjectMapper;
  * <p>A single message refreshes the session (lifecycle fields) and stores the carried event batch.
  * Malformed messages are logged and skipped; one failing message never stops the consumer.
  */
-public final class TelemetryEventConsumer {
+public final class TelemetryEventConsumer implements DisposableBean {
 
   private static final Logger log = LoggerFactory.getLogger(TelemetryEventConsumer.class);
 
@@ -25,6 +27,7 @@ public final class TelemetryEventConsumer {
   private final ObjectMapper objectMapper;
   private final TelemetrySessionService sessionService;
   private final TelemetryEventService eventService;
+  private volatile Disposable subscription;
 
   /** Creates a consumer bound to the given receiver and services. */
   public TelemetryEventConsumer(
@@ -39,23 +42,33 @@ public final class TelemetryEventConsumer {
 
   /** Subscribes to the telemetry topic and starts processing records. */
   public void start() {
-    receiver
-        .receive()
-        .subscribe(
-            record ->
-                handle(record)
-                    .doOnSuccess(ignored -> record.receiverOffset().acknowledge())
-                    .subscribe(
-                        ignored -> {},
-                        error ->
-                            log.error(
-                                "Failed to process telemetry record at partition {} offset {}: {}",
-                                record.partition(),
-                                record.offset(),
-                                error.getMessage(),
-                                error)),
-            error -> log.error("Telemetry consumer terminated: {}", error.getMessage(), error));
+    subscription =
+        receiver
+            .receive()
+            .subscribe(
+                record ->
+                    handle(record)
+                        .doOnSuccess(ignored -> record.receiverOffset().acknowledge())
+                        .subscribe(
+                            ignored -> {},
+                            error ->
+                                log.error(
+                                    "Failed to process telemetry record at partition {} offset {}: {}",
+                                    record.partition(),
+                                    record.offset(),
+                                    error.getMessage(),
+                                    error)),
+                error -> log.error("Telemetry consumer terminated: {}", error.getMessage(), error));
     log.info("Telemetry consumer subscribed to topic {}", KafkaTopics.TELEMETRY_RECEIVED);
+  }
+
+  @Override
+  public void destroy() {
+    Disposable active = subscription;
+    if (active != null) {
+      active.dispose();
+    }
+    log.info("Telemetry consumer stopped");
   }
 
   Mono<Void> handle(ConsumerRecord<String, String> record) {

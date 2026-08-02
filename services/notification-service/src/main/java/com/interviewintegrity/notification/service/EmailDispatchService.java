@@ -37,11 +37,7 @@ public final class EmailDispatchService {
 
   /** Dispatches a freshly created notification, recording the attempt outcome. */
   public Mono<Void> dispatch(Notification notification) {
-    return dispatchAttempt(
-            notification,
-            notification.getBody(),
-            EmailTemplateEngine.toPlainText(notification.getBody()))
-        .then();
+    return claimThenRelease(notification, () -> dispatchAttempt(notification).then());
   }
 
   /** Scans for pending emails that are due for dispatch and retries them. */
@@ -54,6 +50,21 @@ public final class EmailDispatchService {
                 isDue(notification, now)
                     .flatMap(due -> due ? Mono.just(notification) : Mono.empty()))
         .concatMap(this::dispatch)
+        .then();
+  }
+
+  /**
+   * Claims the notification atomically, runs the given dispatch action only when the claim was won
+   * and releases the claim afterwards so a crashed worker's lease does not block retries forever.
+   */
+  private Mono<Void> claimThenRelease(
+      Notification notification, java.util.function.Supplier<Mono<Void>> dispatchAction) {
+    Instant now = Instant.now();
+    Instant leaseExpiry = now.minus(mailProperties.getClaimLease());
+    return notificationService
+        .claimForDispatch(notification.getId(), now, leaseExpiry)
+        .flatMap(claimed -> claimed ? dispatchAction.get() : Mono.empty())
+        .doFinally(signal -> notificationService.releaseClaim(notification.getId()).subscribe())
         .then();
   }
 
@@ -83,10 +94,13 @@ public final class EmailDispatchService {
             });
   }
 
-  private Mono<Notification> dispatchAttempt(
-      Notification notification, String htmlBody, String plainText) {
+  private Mono<Notification> dispatchAttempt(Notification notification) {
     return emailDispatcher
-        .send(notification.getRecipient(), notification.getSubject(), htmlBody, plainText)
+        .send(
+            notification.getRecipient(),
+            notification.getSubject(),
+            notification.getBody(),
+            EmailTemplateEngine.toPlainText(notification.getBody()))
         .flatMap(
             messageId ->
                 notificationService.markSent(

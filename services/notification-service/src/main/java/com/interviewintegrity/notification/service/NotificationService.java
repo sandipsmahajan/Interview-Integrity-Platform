@@ -85,6 +85,25 @@ public class NotificationService {
     return notificationRepository.listPendingEmailDue(now, limit);
   }
 
+  /**
+   * Atomically claims a pending notification for dispatch, returning true when this worker won the
+   * claim.
+   */
+  @Transactional
+  public Mono<Boolean> claimForDispatch(
+      UUID notificationId, Instant claimedAt, Instant leaseExpiry) {
+    return notificationRepository
+        .claimForDispatch(notificationId, claimedAt, leaseExpiry)
+        .map(affected -> affected > 0)
+        .defaultIfEmpty(false);
+  }
+
+  /** Releases a dispatch claim so the notification can be retried by another worker. */
+  @Transactional
+  public Mono<Void> releaseClaim(UUID notificationId) {
+    return notificationRepository.releaseClaim(notificationId).then();
+  }
+
   /** Records a failed dispatch attempt while leaving the notification pending for retry. */
   @Transactional
   public Mono<NotificationDelivery> recordFailedAttempt(

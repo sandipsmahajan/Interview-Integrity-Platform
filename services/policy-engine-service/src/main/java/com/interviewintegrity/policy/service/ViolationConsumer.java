@@ -8,6 +8,8 @@ import java.util.UUID;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
+import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.kafka.receiver.KafkaReceiver;
 import tools.jackson.databind.ObjectMapper;
@@ -18,13 +20,14 @@ import tools.jackson.databind.ObjectMapper;
  * <p>Each signal is deduplicated on its natural fingerprint and stored as an open violation.
  * Malformed messages are logged and skipped; one failing message never stops the consumer.
  */
-public final class ViolationConsumer {
+public final class ViolationConsumer implements DisposableBean {
 
   private static final Logger log = LoggerFactory.getLogger(ViolationConsumer.class);
 
   private final KafkaReceiver<String, String> receiver;
   private final ObjectMapper objectMapper;
   private final ViolationService violationService;
+  private volatile Disposable subscription;
 
   /** Creates a consumer bound to the given receiver and service. */
   public ViolationConsumer(
@@ -36,23 +39,33 @@ public final class ViolationConsumer {
 
   /** Subscribes to the violation topic and starts processing records. */
   public void start() {
-    receiver
-        .receive()
-        .subscribe(
-            record ->
-                handle(record)
-                    .doOnSuccess(ignored -> record.receiverOffset().acknowledge())
-                    .subscribe(
-                        ignored -> {},
-                        error ->
-                            log.error(
-                                "Failed to process violation record at partition {} offset {}: {}",
-                                record.partition(),
-                                record.offset(),
-                                error.getMessage(),
-                                error)),
-            error -> log.error("Violation consumer terminated: {}", error.getMessage(), error));
+    subscription =
+        receiver
+            .receive()
+            .subscribe(
+                record ->
+                    handle(record)
+                        .doOnSuccess(ignored -> record.receiverOffset().acknowledge())
+                        .subscribe(
+                            ignored -> {},
+                            error ->
+                                log.error(
+                                    "Failed to process violation record at partition {} offset {}: {}",
+                                    record.partition(),
+                                    record.offset(),
+                                    error.getMessage(),
+                                    error)),
+                error -> log.error("Violation consumer terminated: {}", error.getMessage(), error));
     log.info("Violation consumer subscribed to topic {}", KafkaTopics.POLICY_VIOLATION);
+  }
+
+  @Override
+  public void destroy() {
+    Disposable active = subscription;
+    if (active != null) {
+      active.dispose();
+    }
+    log.info("Violation consumer stopped");
   }
 
   Mono<Void> handle(ConsumerRecord<String, String> record) {
