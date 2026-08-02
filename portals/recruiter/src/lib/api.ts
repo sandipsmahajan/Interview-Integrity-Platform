@@ -338,14 +338,14 @@ export const api = {
     return data;
   },
   async listMySessions(): Promise<SessionResponse[]> {
-    const { data } = await http.get<SessionResponse[]>('/v1/sessions');
+    const { data } = await http.get<SessionResponse[]>('/v1/auth/sessions');
     return data;
   },
   async revokeSession(id: string): Promise<void> {
-    await http.delete(`/v1/sessions/${id}`);
+    await http.delete(`/v1/auth/sessions/${id}`);
   },
   async revokeAllSessions(): Promise<void> {
-    await http.delete('/v1/sessions');
+    await http.delete('/v1/auth/sessions');
   }
 };
 

@@ -19,7 +19,7 @@ import reactor.core.publisher.Mono;
 
 /** Endpoints to inspect and revoke the caller's own sessions. */
 @RestController
-@RequestMapping("/api/v1/sessions")
+@RequestMapping("/api/v1/auth/sessions")
 @Tag(name = "Sessions", description = "Manage the caller's active sessions")
 public final class SessionController {
 

@@ -11,9 +11,11 @@ import org.springframework.context.annotation.Configuration;
  * Declares the gateway routes for every microservice.
  *
  * <p>Routes are matched in declaration order, so the recruiter sub-routes under {@code
- * /api/v1/candidates/**} are declared before the candidate catch-all. The {@code
- * /api/v1/sessions/**} prefix is ambiguous between identity session management and the telemetry
- * sessions; the DELETE method is routed to identity and everything else to telemetry.
+ * /api/v1/candidates/**} are declared before the candidate catch-all. The caller's own login
+ * sessions are managed by identity under {@code /api/v1/auth/sessions/**}; interview session
+ * lifecycle transitions under {@code /api/v1/sessions/**} for the pause, resume, complete and
+ * abnormal operations are routed to interview; the remaining {@code /api/v1/sessions/**} prefix
+ * belongs to telemetry sessions.
  */
 @Configuration
 public class GatewayRoutingConfiguration {
@@ -51,7 +53,20 @@ public class GatewayRoutingConfiguration {
                     .uri("http://localhost:8081"))
         .route(
             "identity-sessions",
-            r -> r.method("DELETE").and().path("/api/v1/sessions/**").uri("http://localhost:8081"))
+            r -> r.path("/api/v1/auth/sessions/**").uri("http://localhost:8081"))
+        .route(
+            "interview-session-lifecycle",
+            r ->
+                r.path(
+                        "/api/v1/sessions/*/pause",
+                        "/api/v1/sessions/*/resume",
+                        "/api/v1/sessions/*/complete",
+                        "/api/v1/sessions/*/abnormal")
+                    .filters(
+                        f ->
+                            f.requestRateLimiter(
+                                c -> c.setRateLimiter(rateLimiter).setKeyResolver(keyResolver)))
+                    .uri("http://localhost:8085"))
         .route(
             "organization",
             r ->
