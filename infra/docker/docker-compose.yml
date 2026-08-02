@@ -12,8 +12,18 @@
 name: interview-integrity
 
 services:
+  # Relational store shared by every service. The init script mounted into
+  # /docker-entrypoint-initdb.d creates one database per service on first boot.
+  # The entrypoint override strips any CR bytes the script may carry from a
+  # Windows checkout before the postgres entrypoint executes it.
   postgres:
     image: postgres:16
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        sed -i 's/\r$//' /docker-entrypoint-initdb.d/init-databases.sh
+        exec /usr/local/bin/docker-entrypoint.sh postgres
     environment:
       POSTGRES_DB: interview_integrity
       POSTGRES_USER: integrity
@@ -21,17 +31,19 @@ services:
     ports: ["5432:5432"]
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+      - ./init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U integrity"]
       interval: 5s
       timeout: 5s
       retries: 10
 
+  # In-memory cache used for rate limiting and short-lived tokens.
   redis:
     image: redis:7
     ports: ["6379:6379"]
 
+  # Event bus for cross-service events (audit, notifications, integrations).
   kafka:
     image: apache/kafka:3.9.1
     ports:
@@ -49,6 +61,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
 
+  # S3-compatible object storage for files and documents.
   minio:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
@@ -59,6 +72,7 @@ services:
     volumes:
       - minio-data:/data
 
+  # Single entry point for all HTTP traffic; routes /api paths to services.
   api-gateway:
     build: { context: ../.., dockerfile: services/api-gateway/Dockerfile }
     network_mode: host
@@ -66,6 +80,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # In-memory service registry used while no external discovery server exists.
   discovery-service:
     build: { context: ../.., dockerfile: services/discovery-service/Dockerfile }
     network_mode: host
@@ -73,6 +88,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Console client that mirrors calendar events for interviews.
   desktop-client-service:
     build: { context: ../.., dockerfile: services/desktop-client-service/Dockerfile }
     network_mode: host
@@ -80,6 +96,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Authentication, authorization, sessions, MFA and trusted devices.
   identity-service:
     build: { context: ../.., dockerfile: services/identity-service/Dockerfile }
     network_mode: host
@@ -91,6 +108,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Tenant organizations, plans, subscriptions, departments and teams.
   organization-service:
     build: { context: ../.., dockerfile: services/organization-service/Dockerfile }
     network_mode: host
@@ -102,6 +120,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Recruiter candidate pipeline and hiring workflows.
   recruiter-service:
     build: { context: ../.., dockerfile: services/recruiter-service/Dockerfile }
     network_mode: host
@@ -111,6 +130,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Candidate profiles, assessments, notes and consent records.
   candidate-service:
     build: { context: ../.., dockerfile: services/candidate-service/Dockerfile }
     network_mode: host
@@ -122,6 +142,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Interview scheduling, sessions, panels and feedback.
   interview-service:
     build: { context: ../.., dockerfile: services/interview-service/Dockerfile }
     network_mode: host
@@ -133,6 +154,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Telemetry event ingestion and session tracking.
   telemetry-service:
     build: { context: ../.., dockerfile: services/telemetry-service/Dockerfile }
     network_mode: host
@@ -144,6 +166,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Policy definition, rules and violation detection.
   policy-engine-service:
     build: { context: ../.., dockerfile: services/policy-engine-service/Dockerfile }
     network_mode: host
@@ -155,6 +178,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Scheduled and recurring report generation.
   report-service:
     build: { context: ../.., dockerfile: services/report-service/Dockerfile }
     network_mode: host
@@ -166,6 +190,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Outbound notifications, preferences and templates.
   notification-service:
     build: { context: ../.., dockerfile: services/notification-service/Dockerfile }
     network_mode: host
@@ -175,6 +200,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Analytics aggregation summaries and job run tracking.
   analytics-service:
     build: { context: ../.., dockerfile: services/analytics-service/Dockerfile }
     network_mode: host
@@ -184,6 +210,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Audit trail of API and domain events.
   audit-service:
     build: { context: ../.., dockerfile: services/audit-service/Dockerfile }
     network_mode: host
@@ -193,6 +220,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Object storage metadata, signed URLs and versions.
   storage-service:
     build: { context: ../.., dockerfile: services/storage-service/Dockerfile }
     network_mode: host
@@ -202,6 +230,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Feature flag evaluation and experiment targeting.
   feature-flag-service:
     build: { context: ../.., dockerfile: services/feature-flag-service/Dockerfile }
     network_mode: host
@@ -211,6 +240,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Cron-style job scheduling and execution records.
   scheduler-service:
     build: { context: ../.., dockerfile: services/scheduler-service/Dockerfile }
     network_mode: host
@@ -220,6 +250,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Third-party integrations, webhooks and sync logs.
   integration-service:
     build: { context: ../.., dockerfile: services/integration-service/Dockerfile }
     network_mode: host
@@ -229,6 +260,7 @@ services:
     environment:
       JWT_SECRET: local-development-change-me-32-bytes-minimum
 
+  # Application configuration values and schemas.
   configuration-service:
     build: { context: ../.., dockerfile: services/configuration-service/Dockerfile }
     network_mode: host
