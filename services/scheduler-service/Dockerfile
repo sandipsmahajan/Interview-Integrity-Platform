@@ -1,7 +1,8 @@
-FROM eclipse-temurin:21-jdk AS build
+FROM gradle:9.3.0-jdk21 AS build
+USER root
 WORKDIR /workspace
 COPY . .
-RUN sed -i 's/\r$//' gradlew && chmod +x gradlew && ./gradlew :services:scheduler-service:bootJar --no-daemon -x test -x check
+RUN gradle :services:scheduler-service:bootJar --no-daemon -x test -x check
 
 FROM eclipse-temurin:21-jre
 RUN useradd --system --uid 10001 --create-home appuser
