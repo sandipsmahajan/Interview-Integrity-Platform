@@ -18,6 +18,7 @@ dependencies {
     implementation(project(":libs:observability"))
     implementation(project(":libs:security"))
     implementation(platform("org.springframework.cloud:spring-cloud-dependencies:${libs.versions.spring.cloud.get()}"))
+    implementation(libs.spring.cloud.starter.netflix.eureka.client)
     implementation(libs.spring.cloud.starter.gateway.server.webflux)
     implementation(libs.spring.cloud.starter.circuitbreaker.reactor.resilience4j)
     implementation(libs.spring.boot.starter.oauth2.resource.server)

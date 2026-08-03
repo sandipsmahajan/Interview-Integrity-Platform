@@ -17,6 +17,8 @@ dependencies {
     implementation(project(":libs:logging"))
     implementation(project(":libs:observability"))
     implementation(project(":libs:security"))
+    implementation(platform("org.springframework.cloud:spring-cloud-dependencies:${libs.versions.spring.cloud.get()}"))
+    implementation(libs.spring.cloud.starter.netflix.eureka.client)
     implementation(libs.spring.boot.starter.data.r2dbc)
     implementation(libs.spring.boot.starter.flyway)
     implementation(libs.spring.boot.starter.mail)
