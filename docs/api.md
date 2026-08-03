@@ -250,6 +250,6 @@ rejected; the relay applies backpressure to protect the client connection.
 - Routes use the `lb://` scheme so targets resolve through the service registry (Eureka) by
   `spring.application.name`, never hardcoded host/port.
 - Every route is guarded by a Redis rate limiter and a circuit breaker with a fallback to
-  `/fallback/{routeId}`.
+  `/fallback` (the `FallbackController` returns the platform 503 error contract).
 - The gateway does not publish its own OpenAPI document; each service exposes
   `/v3/api-docs` and `/swagger-ui.html` on its own port.
