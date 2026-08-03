@@ -14,12 +14,19 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.kafka.receiver.KafkaReceiver;
+import reactor.kafka.sender.KafkaSender;
+import reactor.kafka.sender.SenderRecord;
+import reactor.kafka.sender.SenderResult;
 import reactor.test.StepVerifier;
 import tools.jackson.databind.ObjectMapper;
 
@@ -31,6 +38,9 @@ class TelemetryEventConsumerTest {
   @SuppressWarnings("unchecked")
   private final KafkaReceiver<String, String> receiver = Mockito.mock(KafkaReceiver.class);
 
+  @SuppressWarnings("unchecked")
+  private final KafkaSender<String, String> sender = Mockito.mock(KafkaSender.class);
+
   private final TelemetrySessionService sessionService =
       Mockito.mock(TelemetrySessionService.class);
   private final TelemetryEventService eventService = Mockito.mock(TelemetryEventService.class);
@@ -39,7 +49,7 @@ class TelemetryEventConsumerTest {
 
   @BeforeEach
   void setUp() {
-    consumer = new TelemetryEventConsumer(receiver, sessionService, eventService);
+    consumer = new TelemetryEventConsumer(receiver, sender, sessionService, eventService);
   }
 
   private String envelope(String payload) throws Exception {
@@ -188,5 +198,84 @@ class TelemetryEventConsumerTest {
 
     StepVerifier.create(consumer.handle(record)).verifyComplete();
     verify(sessionService, never()).ensureSession(any(), any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void handlePropagatesProcessingFailure() throws Exception {
+    UUID organizationId = UUID.randomUUID();
+    UUID sessionId = UUID.randomUUID();
+    TelemetryBatchPayload payload =
+        new TelemetryBatchPayload(
+            sessionId, UUID.randomUUID(), null, "device", "1.0", 5, "ACTIVE", Instant.now(), null);
+    TelemetrySession session =
+        new TelemetrySession(
+            sessionId,
+            organizationId,
+            UUID.randomUUID(),
+            null,
+            "device",
+            "1.0",
+            TelemetrySessionStatus.ACTIVE,
+            5,
+            Instant.now(),
+            null,
+            Instant.now(),
+            Instant.now(),
+            1);
+    when(sessionService.ensureSession(
+            eq(organizationId), eq(sessionId), any(), any(), any(), any(), any()))
+        .thenReturn(Mono.just(session));
+    when(sessionService.changeStatus(eq(organizationId), eq(sessionId), any(), any()))
+        .thenReturn(Mono.error(new RuntimeException("database unavailable")));
+
+    ConsumerRecord<String, String> record =
+        new ConsumerRecord<>(
+            KafkaTopics.TELEMETRY_RECEIVED,
+            0,
+            0L,
+            organizationId.toString(),
+            envelope(objectMapper.writeValueAsString(payload)));
+
+    StepVerifier.create(consumer.handle(record))
+        .expectErrorMessage("database unavailable")
+        .verify();
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void routeToDeadLetterPublishesAndAcknowledges() throws Exception {
+    UUID organizationId = UUID.randomUUID();
+    RecordMetadata metadata = Mockito.mock(RecordMetadata.class);
+    when(metadata.topic()).thenReturn(KafkaTopics.TELEMETRY_RECEIVED_DLQ);
+    SenderResult<String> senderResult = Mockito.mock(SenderResult.class);
+    when(senderResult.recordMetadata()).thenReturn(metadata);
+    when(sender.send(ArgumentMatchers.<Publisher<SenderRecord<String, String, String>>>any()))
+        .thenReturn(Flux.just(senderResult));
+    Runnable acknowledge = Mockito.mock(Runnable.class);
+    ConsumerRecord<String, String> record =
+        new ConsumerRecord<>(
+            KafkaTopics.TELEMETRY_RECEIVED, 0, 0L, organizationId.toString(), envelope("{}"));
+
+    StepVerifier.create(
+            consumer.routeToDeadLetter(record, acknowledge, new IllegalStateException("boom")))
+        .verifyComplete();
+
+    ArgumentCaptor<Publisher<SenderRecord<String, String, String>>> captor =
+        ArgumentCaptor.forClass(Publisher.class);
+    verify(sender).send(captor.capture());
+    StepVerifier.create(Mono.from(captor.getValue()))
+        .assertNext(
+            senderRecord -> {
+              org.junit.jupiter.api.Assertions.assertEquals(
+                  KafkaTopics.TELEMETRY_RECEIVED_DLQ,
+                  senderRecord.topic(),
+                  "dead-letter topic should be used");
+              org.junit.jupiter.api.Assertions.assertEquals(
+                  organizationId.toString(),
+                  senderRecord.key(),
+                  "dead-letter record should keep the organization key");
+            })
+        .verifyComplete();
+    verify(acknowledge).run();
   }
 }

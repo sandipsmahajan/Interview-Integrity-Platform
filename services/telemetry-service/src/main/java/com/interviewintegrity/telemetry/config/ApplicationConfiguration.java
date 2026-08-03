@@ -85,10 +85,11 @@ public class ApplicationConfiguration {
   @Bean
   public TelemetryEventConsumer telemetryEventConsumer(
       KafkaReceiver<String, String> receiver,
+      KafkaSender<String, String> sender,
       TelemetrySessionService sessionService,
       TelemetryEventService eventService) {
     TelemetryEventConsumer consumer =
-        new TelemetryEventConsumer(receiver, sessionService, eventService);
+        new TelemetryEventConsumer(receiver, sender, sessionService, eventService);
     consumer.start();
     return consumer;
   }

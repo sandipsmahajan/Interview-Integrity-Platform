@@ -52,7 +52,9 @@ public class KafkaConfiguration {
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
             StringDeserializer.class,
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
-            "earliest");
+            "earliest",
+            ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG,
+            false);
     ReceiverOptions<String, String> options =
         ReceiverOptions.<String, String>create(consumerProperties)
             .subscription(List.of(KafkaTopics.TELEMETRY_RECEIVED));

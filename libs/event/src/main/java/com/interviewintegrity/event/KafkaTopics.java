@@ -12,6 +12,7 @@ public final class KafkaTopics {
   public static final String INTERVIEW_STARTED = "interview.started.v1";
   public static final String INTERVIEW_COMPLETED = "interview.completed.v1";
   public static final String TELEMETRY_RECEIVED = "telemetry.received.v1";
+  public static final String TELEMETRY_RECEIVED_DLQ = "telemetry.received.dlq.v1";
   public static final String POLICY_VIOLATION = "policy.violation.v1";
   public static final String REPORT_GENERATED = "report.generated.v1";
   public static final String IDENTITY_EMAIL = "identity.email.v1";

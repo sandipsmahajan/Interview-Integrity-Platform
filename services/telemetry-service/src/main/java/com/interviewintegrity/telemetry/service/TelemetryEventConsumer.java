@@ -4,27 +4,36 @@ import com.interviewintegrity.event.EventEnvelope;
 import com.interviewintegrity.event.KafkaTopics;
 import com.interviewintegrity.observability.MdcCorrelation;
 import com.interviewintegrity.telemetry.domain.TelemetrySessionStatus;
+import java.time.Duration;
 import java.util.UUID;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.kafka.receiver.KafkaReceiver;
+import reactor.kafka.sender.KafkaSender;
+import reactor.kafka.sender.SenderRecord;
+import reactor.util.retry.Retry;
 import tools.jackson.databind.ObjectMapper;
 
 /**
  * Consumes {@code telemetry.received.v1} events from the telemetry clients.
  *
  * <p>A single message refreshes the session (lifecycle fields) and stores the carried event batch.
- * Malformed messages are logged and skipped; one failing message never stops the consumer.
+ * Transient processing failures are retried with bounded backoff; records that exhaust retries are
+ * routed to the dead-letter topic so a poison message cannot stall the partition. Malformed
+ * messages are logged and skipped; one failing message never stops the consumer.
  */
 public final class TelemetryEventConsumer implements DisposableBean {
 
   private static final Logger log = LoggerFactory.getLogger(TelemetryEventConsumer.class);
+  private static final int MAX_RETRIES = 3;
 
   private final KafkaReceiver<String, String> receiver;
+  private final KafkaSender<String, String> sender;
   private final ObjectMapper objectMapper;
   private final TelemetrySessionService sessionService;
   private final TelemetryEventService eventService;
@@ -33,9 +42,11 @@ public final class TelemetryEventConsumer implements DisposableBean {
   /** Creates a consumer bound to the given receiver and services. */
   public TelemetryEventConsumer(
       KafkaReceiver<String, String> receiver,
+      KafkaSender<String, String> sender,
       TelemetrySessionService sessionService,
       TelemetryEventService eventService) {
     this.receiver = receiver;
+    this.sender = sender;
     this.sessionService = sessionService;
     this.eventService = eventService;
     this.objectMapper = new ObjectMapper();
@@ -50,6 +61,20 @@ public final class TelemetryEventConsumer implements DisposableBean {
                 record ->
                     handle(record)
                         .doOnSuccess(ignored -> record.receiverOffset().acknowledge())
+                        .retryWhen(
+                            Retry.backoff(MAX_RETRIES, Duration.ofMillis(200))
+                                .maxBackoff(Duration.ofSeconds(2))
+                                .doBeforeRetry(
+                                    retrySignal ->
+                                        log.warn(
+                                            "Retrying telemetry record at partition {} offset {} after attempt {}",
+                                            record.partition(),
+                                            record.offset(),
+                                            retrySignal.totalRetries() + 1)))
+                        .onErrorResume(
+                            error ->
+                                routeToDeadLetter(
+                                    record, record.receiverOffset()::acknowledge, error))
                         .subscribe(
                             ignored -> {},
                             error ->
@@ -70,6 +95,31 @@ public final class TelemetryEventConsumer implements DisposableBean {
       active.dispose();
     }
     log.info("Telemetry consumer stopped");
+  }
+
+  /**
+   * Forwards a record that exhausted its retries to the dead-letter topic, then acknowledges the
+   * original offset so the poison message does not stall the partition.
+   */
+  Mono<Void> routeToDeadLetter(
+      ConsumerRecord<String, String> record, Runnable acknowledge, Throwable error) {
+    ProducerRecord<String, String> deadLetter =
+        new ProducerRecord<>(KafkaTopics.TELEMETRY_RECEIVED_DLQ, record.key(), record.value());
+    return sender
+        .send(Mono.just(SenderRecord.create(deadLetter, record.key())))
+        .doOnNext(
+            result -> {
+              if (log.isErrorEnabled()) {
+                log.error(
+                    "Routed telemetry record at partition {} offset {} to dead-letter topic {}: {}",
+                    record.partition(),
+                    record.offset(),
+                    result.recordMetadata().topic(),
+                    error.getMessage(),
+                    error);
+              }
+            })
+        .then(Mono.fromRunnable(acknowledge));
   }
 
   Mono<Void> handle(ConsumerRecord<String, String> record) {
