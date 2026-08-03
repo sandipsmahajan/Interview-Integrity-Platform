@@ -3,6 +3,7 @@ package com.interviewintegrity.gateway.config;
 import com.interviewintegrity.security.JwtProperties;
 import com.interviewintegrity.security.PlatformCors;
 import com.interviewintegrity.security.PlatformJwtAuthenticationConverter;
+import com.interviewintegrity.security.PublicAuthPaths;
 import java.util.List;
 import java.util.stream.Stream;
 import org.springframework.context.annotation.Bean;
@@ -28,13 +29,15 @@ public class GatewaySecurityConfiguration {
     List<String> permitAll =
         Stream.concat(
                 jwtProperties.getPermitAll().stream(),
-                Stream.of(
-                    "/v3/api-docs/**",
-                    "/swagger-ui.html",
-                    "/swagger-ui/**",
-                    "/webjars/**",
-                    "/favicon.ico",
-                    "/fallback/**"))
+                Stream.concat(
+                    PublicAuthPaths.PATHS.stream(),
+                    Stream.of(
+                        "/v3/api-docs/**",
+                        "/swagger-ui.html",
+                        "/swagger-ui/**",
+                        "/webjars/**",
+                        "/favicon.ico",
+                        "/fallback/**")))
             .toList();
     return http.csrf(ServerHttpSecurity.CsrfSpec::disable)
         .cors(spec -> spec.configurationSource(PlatformCors.from(jwtProperties)))
@@ -43,7 +46,8 @@ public class GatewaySecurityConfiguration {
                 exchange
                     .pathMatchers(permitAll.toArray(String[]::new))
                     .permitAll()
-                    .pathMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus")
+                    .pathMatchers(
+                        "/actuator/health/readiness", "/actuator/health/liveness", "/actuator/info")
                     .permitAll()
                     .anyExchange()
                     .authenticated())

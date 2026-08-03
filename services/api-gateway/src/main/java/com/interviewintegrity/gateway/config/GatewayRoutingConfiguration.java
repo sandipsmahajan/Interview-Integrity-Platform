@@ -35,10 +35,7 @@ public class GatewayRoutingConfiguration {
         .route(
             "recruiter-candidates",
             r ->
-                r.path(
-                        "/api/v1/candidates/*/pipeline/**",
-                        "/api/v1/candidates/*/notes/**",
-                        "/api/v1/candidates/*/assignments/**")
+                r.path("/api/v1/candidates/*/pipeline/**", "/api/v1/candidates/*/assignments/**")
                     .filters(f -> routeFilters(f, rateLimiter, keyResolver, "recruiter-candidates"))
                     .uri("lb://recruiter-service"))
         .route(
@@ -50,12 +47,6 @@ public class GatewayRoutingConfiguration {
                         "/api/v1/roles/**",
                         "/api/v1/permissions/**")
                     .filters(f -> routeFilters(f, rateLimiter, keyResolver, "identity"))
-                    .uri("lb://identity-service"))
-        .route(
-            "identity-sessions",
-            r ->
-                r.path("/api/v1/auth/sessions/**")
-                    .filters(f -> routeFilters(f, rateLimiter, keyResolver, "identity-sessions"))
                     .uri("lb://identity-service"))
         .route(
             "interview-session-lifecycle",
@@ -140,13 +131,13 @@ public class GatewayRoutingConfiguration {
         .route(
             "storage",
             r ->
-                r.path("/api/v1/buckets/**")
+                r.path("/api/v1/buckets/**", "/api/v1/objects/**", "/api/v1/signed-urls/**")
                     .filters(f -> routeFilters(f, rateLimiter, keyResolver, "storage"))
                     .uri("lb://storage-service"))
         .route(
             "feature-flag",
             r ->
-                r.path("/api/v1/features/**", "/api/v1/experiments/**")
+                r.path("/api/v1/features/**", "/api/v1/experiments/**", "/api/v1/flags/**")
                     .filters(f -> routeFilters(f, rateLimiter, keyResolver, "feature-flag"))
                     .uri("lb://feature-flag-service"))
         .route(
