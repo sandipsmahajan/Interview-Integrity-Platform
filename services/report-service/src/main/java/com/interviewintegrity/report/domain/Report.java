@@ -36,6 +36,9 @@ public class Report {
   @Column("requested_by")
   private UUID requestedBy;
 
+  @Column("updated_by")
+  private UUID updatedBy;
+
   @Column("requested_at")
   private Instant requestedAt;
 
@@ -155,6 +158,10 @@ public class Report {
 
   public UUID getRequestedBy() {
     return requestedBy;
+  }
+
+  public UUID getUpdatedBy() {
+    return updatedBy;
   }
 
   public Instant getRequestedAt() {

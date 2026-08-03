@@ -42,6 +42,9 @@ public class StorageObject {
   @Column("uploaded_by")
   private UUID uploadedBy;
 
+  @Column("updated_by")
+  private UUID updatedBy;
+
   @Column("uploaded_at")
   private Instant uploadedAt;
 
@@ -90,7 +93,7 @@ public class StorageObject {
     this.contentType = contentType;
     this.storageClass = storageClass == null ? StorageClass.STANDARD : storageClass;
     this.metadata = metadata == null ? "{}" : metadata;
-    this.uploadedBy = byUser;
+    this.updatedBy = byUser;
     this.uploadedAt = Instant.now();
   }
 
@@ -142,6 +145,10 @@ public class StorageObject {
 
   public UUID getUploadedBy() {
     return uploadedBy;
+  }
+
+  public UUID getUpdatedBy() {
+    return updatedBy;
   }
 
   public Instant getUploadedAt() {
