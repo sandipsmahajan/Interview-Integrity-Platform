@@ -7,10 +7,10 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
-import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 
@@ -32,7 +32,8 @@ public class SecurityAutoConfiguration {
   /** Provides the shared HMAC JWT token service used to issue and validate access tokens. */
   @Bean
   @ConditionalOnMissingBean(JwtTokenService.class)
-  public JwtTokenService jwtTokenService(JwtProperties properties) {
+  public JwtTokenService jwtTokenService(JwtProperties properties, Environment environment) {
+    SecretKeys.validateForDeployment(properties.getSecret(), environment);
     return new HmacJwtTokenService(properties);
   }
 
@@ -41,12 +42,13 @@ public class SecurityAutoConfiguration {
    */
   @Bean
   @ConditionalOnMissingBean(ReactiveJwtDecoder.class)
-  public ReactiveJwtDecoder reactiveJwtDecoder(JwtProperties properties) {
+  public ReactiveJwtDecoder reactiveJwtDecoder(JwtProperties properties, Environment environment) {
+    SecretKeys.validateForDeployment(properties.getSecret(), environment);
     SecretKey key =
         new SecretKeySpec(properties.getSecret().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
     NimbusReactiveJwtDecoder decoder =
         NimbusReactiveJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build();
-    decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(properties.getIssuer()));
+    decoder.setJwtValidator(SecretKeys.defaultValidator(properties));
     return decoder;
   }
 

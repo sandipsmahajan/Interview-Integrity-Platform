@@ -16,7 +16,6 @@ import java.util.UUID;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
 /**
@@ -41,10 +40,11 @@ public final class HmacJwtTokenService implements JwtTokenService {
   /** Creates a service bound to the given properties. */
   public HmacJwtTokenService(JwtProperties properties) {
     this.properties = properties;
+    SecretKeys.validate(properties.getSecret());
     this.secretKey =
         new SecretKeySpec(properties.getSecret().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
     NimbusJwtDecoder newDecoder = NimbusJwtDecoder.withSecretKey(secretKey).build();
-    newDecoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(properties.getIssuer()));
+    newDecoder.setJwtValidator(SecretKeys.defaultValidator(properties));
     this.decoder = newDecoder;
   }
 
@@ -81,10 +81,7 @@ public final class HmacJwtTokenService implements JwtTokenService {
     }
     try {
       Jwt jwt = decoder.decode(token);
-      if (!properties.getAudience().equals(jwt.getAudience().stream().findFirst().orElse(null))) {
-        throw new AuthenticationFailedException("Invalid access token audience");
-      }
-      return toPrincipal(jwt);
+      return PlatformPrincipalFactory.from(jwt);
     } catch (AuthenticationFailedException e) {
       throw e;
     } catch (org.springframework.security.oauth2.jwt.JwtException e) {
@@ -133,23 +130,6 @@ public final class HmacJwtTokenService implements JwtTokenService {
       return signedJwt.serialize();
     } catch (JOSEException e) {
       throw new IllegalStateException("Unable to sign purpose token", e);
-    }
-  }
-
-  private PlatformPrincipal toPrincipal(Jwt jwt) {
-    String subject = jwt.getSubject();
-    String organization = jwt.getClaimAsString(CLAIM_ORGANIZATION);
-    String email = jwt.getClaimAsString(CLAIM_EMAIL);
-    String displayName = jwt.getClaimAsString(CLAIM_DISPLAY_NAME);
-    if (subject == null || organization == null) {
-      throw new AuthenticationFailedException("Access token is missing required claims");
-    }
-    try {
-      List<String> authorities = jwt.getClaimAsStringList(CLAIM_AUTHORITIES);
-      return new PlatformPrincipal(
-          UUID.fromString(subject), UUID.fromString(organization), email, displayName, authorities);
-    } catch (IllegalArgumentException e) {
-      throw new AuthenticationFailedException("Access token contains invalid identifiers", e);
     }
   }
 }
