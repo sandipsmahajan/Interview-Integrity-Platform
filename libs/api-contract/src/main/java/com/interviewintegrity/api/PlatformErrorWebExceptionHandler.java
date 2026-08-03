@@ -22,7 +22,14 @@ public final class PlatformErrorWebExceptionHandler implements ErrorWebException
 
   private static final Logger log = LoggerFactory.getLogger(PlatformErrorWebExceptionHandler.class);
 
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private static final String GENERIC_SERVER_ERROR =
+      "An unexpected internal error occurred. Contact support with the trace id.";
+
+  private final ObjectMapper objectMapper;
+
+  public PlatformErrorWebExceptionHandler(ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
 
   @Override
   public Mono<Void> handle(ServerWebExchange exchange, Throwable throwable) {
@@ -48,6 +55,10 @@ public final class PlatformErrorWebExceptionHandler implements ErrorWebException
   }
 
   private String safeMessage(Throwable throwable) {
+    HttpStatus status = ApiErrorMappings.status(throwable);
+    if (status.is5xxServerError()) {
+      return GENERIC_SERVER_ERROR;
+    }
     String message = throwable.getMessage();
     return message == null ? throwable.getClass().getSimpleName() : message;
   }
