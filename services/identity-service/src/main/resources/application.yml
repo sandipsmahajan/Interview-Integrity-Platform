@@ -31,6 +31,7 @@ security:
     corsAllowedOrigins: ${JWT_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
 
 app:
+  timezone: ${APP_TIMEZONE:UTC}
   auth:
     app-name: ${APP_NAME:Integrity Pro}
     frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
