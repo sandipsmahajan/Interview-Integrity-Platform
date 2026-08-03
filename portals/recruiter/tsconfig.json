@@ -1,13 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@app/*": ["src/*"],
-      "@shared-ui": ["../shared/ui/src"],
-      "@shared-components": ["../shared/components/src"],
-      "@shared-utils": ["../shared/utils/src"]
-    }
+    "baseUrl": "."
   },
   "include": ["src", "vite.config.ts"]
 }

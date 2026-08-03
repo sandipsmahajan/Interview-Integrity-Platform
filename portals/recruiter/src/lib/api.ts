@@ -31,9 +31,14 @@ import type {
   ViolationResponse
 } from './types';
 
-export interface ApiError {
-  message: string;
-  status?: number;
+export class ApiError extends Error {
+  readonly status?: number;
+
+  constructor(message: string, status?: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
 }
 
 const http = axios.create({
@@ -90,13 +95,39 @@ http.interceptors.response.use(
 
 function toApiError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
-    const data = error.response?.data as { message?: string; detail?: string } | undefined;
-    return {
-      message: data?.message ?? data?.detail ?? error.message,
-      status: error.response?.status
-    };
+    return new ApiError(readServerMessage(error), error.response?.status);
   }
-  return { message: error instanceof Error ? error.message : 'Unexpected error' };
+  return new ApiError(error instanceof Error ? error.message : 'Unexpected error');
+}
+
+function readServerMessage(error: AxiosError): string {
+  const data = error.response?.data;
+  if (typeof data === 'string') {
+    const trimmed = data.trim();
+    if (trimmed.length > 0 && trimmed.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(trimmed) as { message?: unknown; detail?: unknown };
+        return firstMessage(parsed.message, parsed.detail) ?? error.message;
+      } catch {
+        // fall through to the generic message
+      }
+    }
+    return trimmed.length > 0 ? trimmed : error.message;
+  }
+  if (data && typeof data === 'object') {
+    const record = data as { message?: unknown; detail?: unknown };
+    return firstMessage(record.message, record.detail) ?? error.message;
+  }
+  return error.message;
+}
+
+function firstMessage(...candidates: unknown[]): string | null {
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim().length > 0) {
+      return candidate;
+    }
+  }
+  return null;
 }
 
 export const api = {

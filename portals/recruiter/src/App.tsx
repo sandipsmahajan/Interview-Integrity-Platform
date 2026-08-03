@@ -10,9 +10,10 @@ import { RegisterPage } from './pages/auth/RegisterPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
-import { DashboardPage } from './pages/DashboardPage';
 import BoxLoader from './components/BoxLoader';
+import ErrorBoundary from './components/ErrorBoundary';
 
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage').then((m) => ({ default: m.OnboardingPage })));
 const InterviewsPage = lazy(() => import('./pages/InterviewsPage').then((m) => ({ default: m.InterviewsPage })));
 const InterviewDetailPage = lazy(() => import('./pages/InterviewDetailPage').then((m) => ({ default: m.InterviewDetailPage })));
@@ -111,16 +112,18 @@ export function App() {
     <ThemeProvider theme={theme}>
       <AuthProvider>
         <BrowserRouter>
-          <Routes>
-            <Route
-              path="*"
-              element={
-                <>
-                  <PublicRoutes mode={mode} onToggleMode={() => setMode(mode === 'dark' ? 'light' : 'dark')} />
-                </>
-              }
-            />
-          </Routes>
+          <ErrorBoundary>
+            <Routes>
+              <Route
+                path="*"
+                element={
+                  <>
+                    <PublicRoutes mode={mode} onToggleMode={() => setMode(mode === 'dark' ? 'light' : 'dark')} />
+                  </>
+                }
+              />
+            </Routes>
+          </ErrorBoundary>
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>
