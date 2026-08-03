@@ -39,13 +39,13 @@ docker compose up -d
 
 # From the repository root, run the services the portal needs.
 # The api-gateway (8080) is the single entry point the portal talks to.
-./gradlew :services:api-gateway:bootRun --no-configuration-cache
+./gradlew :services:api-gateway:bootRun
 ```
 
 Any backend API the portal pages call must be running (identity-service for
 auth, recruiter/candidate/interview services, etc.). See
 `docs/architecture.md` for the service inventory and ports. Run the remaining
-`./gradlew :services:<name>:bootRun --no-configuration-cache` tasks in separate
+`./gradlew :services:<name>:bootRun` tasks in separate
 terminals, or use the IntelliJ run configurations described in
 `docs/local-development-intellij.md`.
 

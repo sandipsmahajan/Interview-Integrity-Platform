@@ -29,13 +29,13 @@ docker compose -f infra/docker/docker-compose.yml up -d
 Run all checks:
 
 ```bash
-./gradlew check --no-configuration-cache
+./gradlew check
 ```
 
 Run a single service check (for example the identity service):
 
 ```bash
-./gradlew :services:identity-service:check --no-configuration-cache
+./gradlew :services:identity-service:check
 ```
 
 For running the full stack locally in IntelliJ, see

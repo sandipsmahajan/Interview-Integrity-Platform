@@ -32,19 +32,18 @@ infrastructure is needed beyond Docker for PostgreSQL, Kafka and Redis.
 
 ## 3. Build the project
 
-The root `gradle.properties` enables the Gradle configuration cache, which currently fails when the
-root `build` task compiles. Build with the flag disabled. From IntelliJ's built-in terminal:
+The root `gradle.properties` enables the Gradle configuration cache. From IntelliJ's built-in
+terminal:
 
 ```bash
-./gradlew build --no-configuration-cache
+./gradlew build
 ```
 
 Alternatives:
 
 - IntelliJ menu `Build > Build Project` uses IntelliJ's own compiler and is unaffected by the
   configuration cache; it is enough for running services from run configurations.
-- In the Gradle tool window, add a run configuration for `build` and put
-  `--no-configuration-cache` in its `Arguments` field.
+- In the Gradle tool window, add a run configuration for `build`.
 
 Expected result: `BUILD SUCCESSFUL` after compiling the 10 shared libraries and 19 services.
 
@@ -168,20 +167,19 @@ curl http://localhost:8080/api/v1/organizations \
 From the Gradle tool window select the module and run `check`, or from the terminal:
 
 ```bash
-./gradlew :services:<service>:check --no-configuration-cache
+./gradlew :services:<service>:check
 ```
 
 Run the whole suite:
 
 ```bash
-./gradlew check --no-configuration-cache
+./gradlew check
 ```
 
 ## Troubleshooting
 
-- **`Timeout waiting to lock` / `Configuration cache` errors**: always pass
-  `--no-configuration-cache` on Gradle CLI invocations, or run the services via Application run
-  configurations instead of Gradle tasks.
+- **`Timeout waiting to lock` / `Configuration cache` errors**: retry the Gradle invocation, or run
+  the services via Application run configurations instead of Gradle tasks.
 - **`FlywayException: ... database does not exist`**: the per-service database is missing. Ensure
   the init script ran, or create the database manually (see step 4).
 - **Connection refused on `localhost:5432` / `localhost:9092`**: the infrastructure containers are

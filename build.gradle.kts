@@ -22,8 +22,15 @@ val checkstyleVersion = libs.versions.checkstyle.get()
 val pmdVersion = libs.versions.pmd.get()
 val spotbugsVersion = libs.versions.spotbugs.tool.get()
 val jacocoVersion = libs.versions.jacoco.get()
+val junitPlatformLauncher = libs.junit.platform.launcher.get()
 
 subprojects {
+    // Skip virtual container projects (libs/, services/) that group child
+    // modules but have no build file of their own.
+    if (!project.buildFile.exists()) {
+        return@subprojects
+    }
+
     apply(plugin = "java")
     apply(plugin = "io.spring.dependency-management")
     apply(plugin = "checkstyle")
@@ -97,7 +104,7 @@ subprojects {
     }
 
     dependencies {
-        testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+        testRuntimeOnly(junitPlatformLauncher)
     }
 
     jacoco {

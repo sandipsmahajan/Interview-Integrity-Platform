@@ -79,7 +79,7 @@ tracked in the candidate service (`candidate_consents`) and enforced by the poli
 ## Building
 
 ```bash
-JAVA_HOME=/opt/java/jdk-21 ./gradlew build --no-configuration-cache
+JAVA_HOME=/opt/java/jdk-21 ./gradlew build
 ```
 
 Docker Compose brings up the infrastructure and every service with per-service databases
