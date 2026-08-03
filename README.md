@@ -87,6 +87,6 @@ configured interview policies.
 ## Current Phase
 
 This is the initial production scaffold covering phases 1-9 from architecture through
-testing/documentation foundations. OS-native telemetry, signed JWT issuance, WebSocket fanout, PDF
-rendering and cloud object storage adapters are represented by stable module boundaries ready for
-implementation.
+testing/documentation foundations. OS-native telemetry, signed JWT issuance, WebSocket relay,
+PDF rendering and cloud object storage adapters are implemented behind stable module boundaries,
+ready for further hardening and production deployment.

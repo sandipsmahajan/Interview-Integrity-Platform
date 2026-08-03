@@ -17,3 +17,11 @@ Kafka events.
 Every tenant-scoped table carries `organization_id` and is protected by row
 level security. The service reads the tenant from the authenticated context
 and never trusts tenant id values in the request body.
+
+## ADR-0004: Manual offset commit with retry and dead-letter routing
+
+The consumer disables Kafka auto-commit so an offset only advances on an explicit acknowledge
+after the batch is persisted. Transient processing failures are retried with bounded exponential
+backoff; records that exhaust retries are published to `telemetry.received.dlq.v1` and the source
+offset is acknowledged, so a poison message cannot stall the partition.
+

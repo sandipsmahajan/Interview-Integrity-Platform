@@ -11,7 +11,7 @@ platform, implemented as a set of reactive microservices sharing common librarie
   - `event` — Kafka topic constants (`KafkaTopics`) and the platform event records
     (`UserRegisteredEvent`, `OrganizationRegisteredEvent`, `InterviewCreatedEvent`,
     `InterviewStartedEvent`, `InterviewCompletedEvent`, `InterviewScheduledEvent`,
-    `ReportGeneratedEvent`) plus the `EventEnvelope` transport record.
+    `ReportGeneratedEvent`, `IdentityEmailEvent`) plus the `EventEnvelope` transport record.
   - `observability` — `CorrelationIdWebFilter` that propagates `X-Request-Id`.
   - `exception`, `validation`, `logging`, `dto`, `common`, `config`, `api-contract` —
     shared error contract, validation assertions, structured logging and API conventions.
@@ -63,13 +63,16 @@ membership in business logic (defense in depth) in addition to the database RLS 
 ## Event Flow
 
 1. Identity/organization events announce new users and tenants (`identity.user-registered.v1`,
-   `organization.registered.v1`).
+   `organization.registered.v1`); the notification service consumes `identity.email.v1` to render
+   and dispatch email, deduplicating on the source `eventId`.
 2. The interview service publishes lifecycle events (`interview.created/scheduled/started/
    completed.v1`).
 3. Telemetry ingested through WebFlux APIs and desktop relay is persisted and published
    (`telemetry.received.v1`); the policy engine evaluates it and emits `policy.violation.v1`.
-4. The desktop relay broadcasts platform topics to connected clients over WebSocket; the report
-   service publishes `report.generated.v1` for downstream consumption.
+   Telemetry consumers commit offsets manually, retry with bounded backoff and route poison
+   messages to `telemetry.received.dlq.v1`.
+4. The desktop relay broadcasts platform topics to connected clients over WebSocket (`/ws/desktop`);
+   the report service publishes `report.generated.v1` for downstream consumption.
 
 ## Privacy And Consent
 
