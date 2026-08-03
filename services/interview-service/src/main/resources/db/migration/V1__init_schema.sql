@@ -3,6 +3,8 @@
 -- Owning service: interview-service
 -- Designed for millions of interviews: tenant-first composite indexes,
 -- partial indexes on soft-deleted rows, JSONB metadata.
+-- Baseline      : squashed from the original development migrations
+--                  V1__init_schema + V2__unique_active_session.
 -- =============================================================================
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -219,6 +221,13 @@ CREATE INDEX idx_interview_sessions_interview ON interview_sessions (interview_i
 CREATE INDEX idx_interview_sessions_org ON interview_sessions (organization_id, started_at DESC);
 CREATE INDEX idx_interview_sessions_token ON interview_sessions (session_token_hash);
 CREATE INDEX idx_interview_sessions_active ON interview_sessions (status) WHERE status IN ('ACTIVE', 'PAUSED');
+
+-- One active monitoring session per interview run, enforced at the database:
+-- a concurrent second start of an ACTIVE/PAUSED session fails with a duplicate
+-- key violation instead of silently creating a duplicate session.
+CREATE UNIQUE INDEX uq_interview_sessions_active
+    ON interview_sessions (interview_id)
+    WHERE status IN ('ACTIVE', 'PAUSED');
 
 CREATE INDEX idx_interviewers_org ON interviewers (organization_id, lower(email)) WHERE deleted_at IS NULL;
 

@@ -3,6 +3,9 @@
 -- Owning service: storage-service
 -- Tracks objects, buckets, versions and pre-signed URL grants. The binary
 -- payload lives in the object store; this database holds the metadata.
+-- Baseline      : squashed from the original development migrations
+--                  V1__init_schema + V2__fix_audit_triggers (missing updated_by
+--                  column added and the audit trigger repaired).
 -- =============================================================================
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -60,6 +63,7 @@ CREATE TABLE storage_objects (
     metadata        JSONB NOT NULL DEFAULT '{}'::jsonb,
     uploaded_by     UUID,
     uploaded_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_by      UUID,
     deleted_by      UUID,
     deleted_at      TIMESTAMPTZ,
     version         BIGINT NOT NULL DEFAULT 1,
@@ -68,6 +72,7 @@ CREATE TABLE storage_objects (
 );
 
 COMMENT ON TABLE storage_objects IS 'Metadata for every stored object. storage_ref points at the object-store key (S3/MinIO).';
+COMMENT ON COLUMN storage_objects.updated_by IS 'Actor who last updated the object. Falls back to uploaded_by or the configured app.user_id in audit history.';
 
 CREATE TABLE object_versions (
     id              BIGSERIAL PRIMARY KEY,
@@ -126,7 +131,8 @@ RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO storage_objects_history(history_action, changed_by, id, organization_id, bucket_id,
                                         key, size_bytes, content_type, storage_class, version)
-    VALUES (TG_OP, COALESCE(NEW.updated_by, current_setting('app.user_id', true)::uuid),
+    VALUES (TG_OP, COALESCE(NEW.updated_by, NEW.uploaded_by,
+                            current_setting('app.user_id', true)::uuid),
             NEW.id, NEW.organization_id, NEW.bucket_id, NEW.key, NEW.size_bytes,
             NEW.content_type, NEW.storage_class, NEW.version);
     RETURN NEW;

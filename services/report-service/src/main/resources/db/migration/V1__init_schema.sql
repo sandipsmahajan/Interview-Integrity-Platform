@@ -1,6 +1,9 @@
 -- =============================================================================
 -- report_db - Report requests, definitions, schedules and generated artifacts
 -- Owning service: report-service
+-- Baseline      : squashed from the original development migrations
+--                  V1__init_schema + V2__fix_audit_triggers (missing updated_by
+--                  column added and the audit trigger repaired).
 -- =============================================================================
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -45,11 +48,13 @@ CREATE TABLE reports (
     storage_object_id UUID,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_by      UUID,
     version         BIGINT NOT NULL DEFAULT 1,
     CONSTRAINT chk_report_score CHECK (score IS NULL OR score BETWEEN 0 AND 100)
 );
 
 COMMENT ON TABLE reports IS 'Generated report artifacts. storage_object_id soft-references storage_db.storage_objects.';
+COMMENT ON COLUMN reports.updated_by IS 'Actor who last updated the report. Falls back to requested_by or the configured app.user_id in audit history.';
 
 CREATE TABLE report_sections (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -127,7 +132,8 @@ RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO reports_history(history_action, changed_by, id, organization_id, type, title,
                                 status, format, score, version)
-    VALUES (TG_OP, COALESCE(NEW.updated_by, current_setting('app.user_id', true)::uuid),
+    VALUES (TG_OP, COALESCE(NEW.updated_by, NEW.requested_by,
+                            current_setting('app.user_id', true)::uuid),
             NEW.id, NEW.organization_id, NEW.type, NEW.title, NEW.status, NEW.format,
             NEW.score, NEW.version);
     RETURN NEW;
