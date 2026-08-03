@@ -4,21 +4,18 @@ spring:
   application:
     name: discovery-service
 
-discovery:
-  heartbeat-timeout-seconds: ${DISCOVERY_HEARTBEAT_TIMEOUT_SECONDS:60}
-
-security:
-  jwt:
-    secret: ${JWT_SECRET:local-development-change-me-32-bytes-minimum}
-    issuer: ${JWT_ISSUER:interview-integrity}
-    audience: ${JWT_AUDIENCE:interview-integrity-api}
-    accessTokenTtl: ${JWT_ACCESS_TOKEN_TTL:15m}
-    permitAll: ${JWT_PERMIT_ALL:/actuator/health,/actuator/info}
-    corsAllowedOrigins: ${JWT_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
-
 server:
   port: ${SERVER_PORT:8761}
   shutdown: graceful
+
+eureka:
+  server:
+    enable-self-preservation: ${EUREKA_ENABLE_SELF_PRESERVATION:false}
+    eviction-interval-timer-in-ms: ${EUREKA_EVICTION_INTERVAL_MS:5000}
+    wait-time-in-ms-when-sync-empty: 0
+  client:
+    register-with-eureka: false
+    fetch-registry: false
 
 management:
   endpoints:
@@ -32,12 +29,6 @@ management:
   metrics:
     tags:
       application: discovery-service
-
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-  swagger-ui:
-    path: /swagger-ui.html
 
 logging:
   level:
