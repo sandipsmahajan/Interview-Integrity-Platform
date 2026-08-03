@@ -1,5 +1,6 @@
 package com.interviewintegrity.policy.repository;
 
+import com.interviewintegrity.common.R2dbcBindings;
 import com.interviewintegrity.policy.domain.Policy;
 import com.interviewintegrity.policy.domain.PolicyStatus;
 import com.interviewintegrity.policy.domain.ViolationSeverity;
@@ -46,8 +47,8 @@ public final class PolicyRepository {
             .bind("defaultSeverity", policy.getDefaultSeverity().name())
             .bind("priority", policy.getPriority())
             .bind("enabled", policy.isEnabled());
-    spec = bindOrNull(spec, "description", policy.getDescription(), String.class);
-    spec = bindOrNull(spec, "createdBy", policy.getCreatedBy(), UUID.class);
+    spec = R2dbcBindings.bindOrNull(spec, "description", policy.getDescription(), String.class);
+    spec = R2dbcBindings.bindOrNull(spec, "createdBy", policy.getCreatedBy(), UUID.class);
     return spec.map((row, metadata) -> map(row)).one();
   }
 
@@ -101,8 +102,8 @@ public final class PolicyRepository {
             .bind("defaultSeverity", defaultSeverity.name())
             .bind("priority", priority)
             .bind("enabled", enabled);
-    spec = bindOrNull(spec, "description", description, String.class);
-    spec = bindOrNull(spec, "updatedBy", updatedBy, UUID.class);
+    spec = R2dbcBindings.bindOrNull(spec, "description", description, String.class);
+    spec = R2dbcBindings.bindOrNull(spec, "updatedBy", updatedBy, UUID.class);
     return spec.map((row, metadata) -> map(row)).one();
   }
 
@@ -119,7 +120,7 @@ public final class PolicyRepository {
             .bind("id", id)
             .bind(BIND_ORGANIZATION_ID, organizationId)
             .bind(BIND_STATUS, status.name());
-    return bindOrNull(spec, "updatedBy", updatedBy, UUID.class)
+    return R2dbcBindings.bindOrNull(spec, "updatedBy", updatedBy, UUID.class)
         .map((row, metadata) -> map(row))
         .one();
   }
@@ -134,7 +135,7 @@ public final class PolicyRepository {
                     + "AND deleted_at IS NULL")
             .bind("id", id)
             .bind(BIND_ORGANIZATION_ID, organizationId);
-    return bindOrNull(spec, "deletedBy", deletedBy, UUID.class).then();
+    return R2dbcBindings.bindOrNull(spec, "deletedBy", deletedBy, UUID.class).then();
   }
 
   private Policy map(Row row) {
@@ -158,13 +159,5 @@ public final class PolicyRepository {
         row.get("deleted_by", UUID.class),
         row.get("deleted_at", Instant.class),
         version == null ? 1L : version);
-  }
-
-  private static DatabaseClient.GenericExecuteSpec bindOrNull(
-      DatabaseClient.GenericExecuteSpec spec, String name, Object value, Class<?> type) {
-    if (value == null) {
-      return spec.bindNull(name, type);
-    }
-    return spec.bind(name, value);
   }
 }

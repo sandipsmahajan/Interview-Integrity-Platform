@@ -1,5 +1,6 @@
 package com.interviewintegrity.policy.repository;
 
+import com.interviewintegrity.common.R2dbcBindings;
 import com.interviewintegrity.policy.domain.PolicyStatus;
 import com.interviewintegrity.policy.domain.PolicyVersion;
 import io.r2dbc.spi.Row;
@@ -40,7 +41,7 @@ public final class PolicyVersionRepository {
             .bind("definition", version.getDefinition())
             .bind("status", version.getStatus().name())
             .bind("publishedAt", version.getPublishedAt());
-    return bindOrNull(spec, "publishedBy", version.getPublishedBy(), UUID.class)
+    return R2dbcBindings.bindOrNull(spec, "publishedBy", version.getPublishedBy(), UUID.class)
         .map((row, metadata) -> map(row))
         .one();
   }
@@ -81,13 +82,5 @@ public final class PolicyVersionRepository {
         row.get("published_by", UUID.class),
         row.get("published_at", Instant.class),
         row.get("created_at", Instant.class));
-  }
-
-  private static DatabaseClient.GenericExecuteSpec bindOrNull(
-      DatabaseClient.GenericExecuteSpec spec, String name, Object value, Class<?> type) {
-    if (value == null) {
-      return spec.bindNull(name, type);
-    }
-    return spec.bind(name, value);
   }
 }

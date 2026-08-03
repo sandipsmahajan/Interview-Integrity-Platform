@@ -1,5 +1,6 @@
 package com.interviewintegrity.policy.repository;
 
+import com.interviewintegrity.common.R2dbcBindings;
 import com.interviewintegrity.policy.domain.PolicyRule;
 import com.interviewintegrity.policy.domain.ViolationSeverity;
 import io.r2dbc.spi.Row;
@@ -46,8 +47,8 @@ public final class PolicyRuleRepository {
             .bind("weight", rule.getWeight())
             .bind("orderIndex", rule.getOrderIndex())
             .bind("enabled", rule.isEnabled());
-    spec = bindOrNull(spec, "description", rule.getDescription(), String.class);
-    spec = bindOrNull(spec, "createdBy", rule.getCreatedBy(), UUID.class);
+    spec = R2dbcBindings.bindOrNull(spec, "description", rule.getDescription(), String.class);
+    spec = R2dbcBindings.bindOrNull(spec, "createdBy", rule.getCreatedBy(), UUID.class);
     return spec.map((row, metadata) -> map(row)).one();
   }
 
@@ -108,8 +109,8 @@ public final class PolicyRuleRepository {
             .bind("weight", weight)
             .bind("orderIndex", orderIndex)
             .bind("enabled", enabled);
-    spec = bindOrNull(spec, "description", description, String.class);
-    spec = bindOrNull(spec, "updatedBy", updatedBy, UUID.class);
+    spec = R2dbcBindings.bindOrNull(spec, "description", description, String.class);
+    spec = R2dbcBindings.bindOrNull(spec, "updatedBy", updatedBy, UUID.class);
     return spec.map((row, metadata) -> map(row)).one();
   }
 
@@ -123,7 +124,7 @@ public final class PolicyRuleRepository {
                     + "AND deleted_at IS NULL")
             .bind("id", id)
             .bind(BIND_ORGANIZATION_ID, organizationId);
-    return bindOrNull(spec, "deletedBy", deletedBy, UUID.class).then();
+    return R2dbcBindings.bindOrNull(spec, "deletedBy", deletedBy, UUID.class).then();
   }
 
   private PolicyRule map(Row row) {
@@ -149,13 +150,5 @@ public final class PolicyRuleRepository {
         row.get("deleted_by", UUID.class),
         row.get("deleted_at", Instant.class),
         version == null ? 1L : version);
-  }
-
-  private static DatabaseClient.GenericExecuteSpec bindOrNull(
-      DatabaseClient.GenericExecuteSpec spec, String name, Object value, Class<?> type) {
-    if (value == null) {
-      return spec.bindNull(name, type);
-    }
-    return spec.bind(name, value);
   }
 }

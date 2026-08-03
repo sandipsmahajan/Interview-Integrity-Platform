@@ -1,5 +1,6 @@
 package com.interviewintegrity.policy.repository;
 
+import com.interviewintegrity.common.R2dbcBindings;
 import com.interviewintegrity.policy.domain.Violation;
 import com.interviewintegrity.policy.domain.ViolationSeverity;
 import com.interviewintegrity.policy.domain.ViolationStatus;
@@ -47,10 +48,10 @@ public final class ViolationRepository {
             .bind("message", violation.getMessage())
             .bind(BIND_STATUS, violation.getStatus().name())
             .bind("occurredAt", violation.getOccurredAt());
-    spec = bindOrNull(spec, "interviewId", violation.getInterviewId(), UUID.class);
-    spec = bindOrNull(spec, "policyId", violation.getPolicyId(), UUID.class);
-    spec = bindOrNull(spec, "evidence", violation.getEvidence(), String.class);
-    spec = bindOrNull(spec, "detectedBy", violation.getDetectedBy(), String.class);
+    spec = R2dbcBindings.bindOrNull(spec, "interviewId", violation.getInterviewId(), UUID.class);
+    spec = R2dbcBindings.bindOrNull(spec, "policyId", violation.getPolicyId(), UUID.class);
+    spec = R2dbcBindings.bindOrNull(spec, "evidence", violation.getEvidence(), String.class);
+    spec = R2dbcBindings.bindOrNull(spec, "detectedBy", violation.getDetectedBy(), String.class);
     return spec.map((row, metadata) -> map(row)).one();
   }
 
@@ -133,13 +134,5 @@ public final class ViolationRepository {
         row.get("created_at", Instant.class),
         row.get("updated_at", Instant.class),
         version == null ? 1L : version);
-  }
-
-  private static DatabaseClient.GenericExecuteSpec bindOrNull(
-      DatabaseClient.GenericExecuteSpec spec, String name, Object value, Class<?> type) {
-    if (value == null) {
-      return spec.bindNull(name, type);
-    }
-    return spec.bind(name, value);
   }
 }

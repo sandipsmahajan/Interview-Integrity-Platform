@@ -1,5 +1,6 @@
 package com.interviewintegrity.telemetry.repository;
 
+import com.interviewintegrity.common.R2dbcBindings;
 import com.interviewintegrity.telemetry.domain.TelemetrySession;
 import com.interviewintegrity.telemetry.domain.TelemetrySessionStatus;
 import io.r2dbc.spi.Row;
@@ -50,9 +51,10 @@ public final class TelemetrySessionRepository {
             .bind(BIND_STATUS, session.getStatus().name())
             .bind("heartbeatCadence", session.getHeartbeatCadenceSeconds())
             .bind("startedAt", session.getStartedAt());
-    spec = bindOrNull(spec, "candidateId", session.getCandidateId(), UUID.class);
-    spec = bindOrNull(spec, "deviceId", session.getDeviceId(), String.class);
-    spec = bindOrNull(spec, "clientVersion", session.getClientVersion(), String.class);
+    spec = R2dbcBindings.bindOrNull(spec, "candidateId", session.getCandidateId(), UUID.class);
+    spec = R2dbcBindings.bindOrNull(spec, "deviceId", session.getDeviceId(), String.class);
+    spec =
+        R2dbcBindings.bindOrNull(spec, "clientVersion", session.getClientVersion(), String.class);
     return spec.map((row, metadata) -> map(row)).one();
   }
 
@@ -74,9 +76,10 @@ public final class TelemetrySessionRepository {
             .bind(BIND_STATUS, session.getStatus().name())
             .bind("heartbeatCadence", session.getHeartbeatCadenceSeconds())
             .bind("startedAt", session.getStartedAt());
-    spec = bindOrNull(spec, "candidateId", session.getCandidateId(), UUID.class);
-    spec = bindOrNull(spec, "deviceId", session.getDeviceId(), String.class);
-    spec = bindOrNull(spec, "clientVersion", session.getClientVersion(), String.class);
+    spec = R2dbcBindings.bindOrNull(spec, "candidateId", session.getCandidateId(), UUID.class);
+    spec = R2dbcBindings.bindOrNull(spec, "deviceId", session.getDeviceId(), String.class);
+    spec =
+        R2dbcBindings.bindOrNull(spec, "clientVersion", session.getClientVersion(), String.class);
     return spec.map((row, metadata) -> map(row)).one();
   }
 
@@ -115,7 +118,7 @@ public final class TelemetrySessionRepository {
             .bind("id", id)
             .bind(BIND_ORGANIZATION_ID, organizationId)
             .bind(BIND_STATUS, status.name());
-    return bindOrNull(spec, "endedAt", endedAt, Instant.class)
+    return R2dbcBindings.bindOrNull(spec, "endedAt", endedAt, Instant.class)
         .map((row, metadata) -> map(row))
         .one();
   }
@@ -137,8 +140,8 @@ public final class TelemetrySessionRepository {
             .bind("id", id)
             .bind(BIND_ORGANIZATION_ID, organizationId)
             .bind(BIND_STATUS, status.name());
-    spec = bindOrNull(spec, "deviceId", deviceId, String.class);
-    spec = bindOrNull(spec, "clientVersion", clientVersion, String.class);
+    spec = R2dbcBindings.bindOrNull(spec, "deviceId", deviceId, String.class);
+    spec = R2dbcBindings.bindOrNull(spec, "clientVersion", clientVersion, String.class);
     return spec.map((row, metadata) -> map(row)).one();
   }
 
@@ -159,13 +162,5 @@ public final class TelemetrySessionRepository {
         row.get("created_at", Instant.class),
         row.get("updated_at", Instant.class),
         version == null ? 1L : version);
-  }
-
-  private static DatabaseClient.GenericExecuteSpec bindOrNull(
-      DatabaseClient.GenericExecuteSpec spec, String name, Object value, Class<?> type) {
-    if (value == null) {
-      return spec.bindNull(name, type);
-    }
-    return spec.bind(name, value);
   }
 }

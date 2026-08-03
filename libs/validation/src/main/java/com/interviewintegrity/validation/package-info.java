@@ -1,2 +1,2 @@
-/** Reusable validation utilities and validation results. */
+/** Reusable validation utilities. */
 package com.interviewintegrity.validation;

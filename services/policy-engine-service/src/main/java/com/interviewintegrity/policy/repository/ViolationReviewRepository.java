@@ -1,5 +1,6 @@
 package com.interviewintegrity.policy.repository;
 
+import com.interviewintegrity.common.R2dbcBindings;
 import com.interviewintegrity.policy.domain.ReviewAction;
 import com.interviewintegrity.policy.domain.ViolationReview;
 import io.r2dbc.spi.Row;
@@ -37,7 +38,7 @@ public final class ViolationReviewRepository {
             .bind("violationId", review.getViolationId())
             .bind("reviewerId", review.getReviewerId())
             .bind("action", review.getAction().name());
-    return bindOrNull(spec, "comment", review.getComment(), String.class)
+    return R2dbcBindings.bindOrNull(spec, "comment", review.getComment(), String.class)
         .map((row, metadata) -> map(row))
         .one();
   }
@@ -64,13 +65,5 @@ public final class ViolationReviewRepository {
         ReviewAction.valueOf(row.get("action", String.class)),
         row.get("comment", String.class),
         row.get("reviewed_at", Instant.class));
-  }
-
-  private static DatabaseClient.GenericExecuteSpec bindOrNull(
-      DatabaseClient.GenericExecuteSpec spec, String name, Object value, Class<?> type) {
-    if (value == null) {
-      return spec.bindNull(name, type);
-    }
-    return spec.bind(name, value);
   }
 }

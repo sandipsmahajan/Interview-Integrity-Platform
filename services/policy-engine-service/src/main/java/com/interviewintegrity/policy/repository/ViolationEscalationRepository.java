@@ -1,5 +1,6 @@
 package com.interviewintegrity.policy.repository;
 
+import com.interviewintegrity.common.R2dbcBindings;
 import com.interviewintegrity.policy.domain.ViolationEscalation;
 import io.r2dbc.spi.Row;
 import java.time.Instant;
@@ -35,8 +36,8 @@ public final class ViolationEscalationRepository {
             .bind("organizationId", escalation.getOrganizationId())
             .bind("violationId", escalation.getViolationId())
             .bind("escalatedTo", escalation.getEscalatedTo());
-    spec = bindOrNull(spec, "reason", escalation.getReason(), String.class);
-    spec = bindOrNull(spec, "escalatedBy", escalation.getEscalatedBy(), UUID.class);
+    spec = R2dbcBindings.bindOrNull(spec, "reason", escalation.getReason(), String.class);
+    spec = R2dbcBindings.bindOrNull(spec, "escalatedBy", escalation.getEscalatedBy(), UUID.class);
     return spec.map((row, metadata) -> map(row)).one();
   }
 
@@ -65,13 +66,5 @@ public final class ViolationEscalationRepository {
         row.get("escalated_at", Instant.class),
         row.get("resolved_at", Instant.class),
         row.get("resolution", String.class));
-  }
-
-  private static DatabaseClient.GenericExecuteSpec bindOrNull(
-      DatabaseClient.GenericExecuteSpec spec, String name, Object value, Class<?> type) {
-    if (value == null) {
-      return spec.bindNull(name, type);
-    }
-    return spec.bind(name, value);
   }
 }

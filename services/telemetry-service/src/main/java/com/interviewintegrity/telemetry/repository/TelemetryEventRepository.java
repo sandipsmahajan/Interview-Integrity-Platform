@@ -1,5 +1,6 @@
 package com.interviewintegrity.telemetry.repository;
 
+import com.interviewintegrity.common.R2dbcBindings;
 import com.interviewintegrity.telemetry.domain.TelemetryEvent;
 import io.r2dbc.spi.Row;
 import java.time.Instant;
@@ -57,8 +58,8 @@ public final class TelemetryEventRepository {
             .bind("seq", seq)
             .bind("occurredAt", occurredAt)
             .bind("payload", payload);
-    spec = bindOrNull(spec, "interviewId", interviewId, UUID.class);
-    spec = bindOrNull(spec, "clientOccurredAt", clientOccurredAt, Instant.class);
+    spec = R2dbcBindings.bindOrNull(spec, "interviewId", interviewId, UUID.class);
+    spec = R2dbcBindings.bindOrNull(spec, "clientOccurredAt", clientOccurredAt, Instant.class);
     return spec.then();
   }
 
@@ -118,13 +119,5 @@ public final class TelemetryEventRepository {
         row.get("occurred_at", Instant.class),
         row.get("client_occurred_at", Instant.class),
         row.get("payload", String.class));
-  }
-
-  private static DatabaseClient.GenericExecuteSpec bindOrNull(
-      DatabaseClient.GenericExecuteSpec spec, String name, Object value, Class<?> type) {
-    if (value == null) {
-      return spec.bindNull(name, type);
-    }
-    return spec.bind(name, value);
   }
 }
