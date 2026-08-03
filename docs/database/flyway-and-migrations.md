@@ -27,7 +27,8 @@ is no cross-database migration.
   reference-data inserts are written as idempotent `INSERT ... SELECT ...
   WHERE NOT EXISTS` upserts.
 - Examples: permission codes (identity), subscription plans (organization),
-  telemetry event types (telemetry).
+  telemetry event types (telemetry), platform default email templates
+  (notification).
 
 ## Seed data
 
@@ -36,6 +37,7 @@ is no cross-database migration.
 | identity_db | 23 permission codes | reference data |
 | organization_db | 3 subscription plans | reference data |
 | telemetry_db | 17 event types with retention | reference data |
+| notification_db | 4 platform default email templates | reference data |
 
 Seed data is reference data (stable, low cardinality). Environment-specific or
 tenant data is never seeded by migrations; it is provisioned by services or
