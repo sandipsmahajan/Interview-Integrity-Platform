@@ -4,9 +4,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.stream.IntStream;
 
 /**
  * MFA recovery code generation and hashing.
@@ -24,13 +24,13 @@ public final class RecoveryCodes {
 
   /** Generates a fresh set of single-use recovery codes. */
   public static List<String> generate() {
-    List<String> codes = new ArrayList<>(CODE_COUNT);
-    for (int i = 0; i < CODE_COUNT; i++) {
-      byte[] bytes = new byte[CODE_BYTES];
-      RANDOM.nextBytes(bytes);
-      codes.add(toCode(bytes));
-    }
-    return codes;
+    return IntStream.range(0, CODE_COUNT).mapToObj(i -> toCode(randomBytes())).toList();
+  }
+
+  private static byte[] randomBytes() {
+    byte[] bytes = new byte[CODE_BYTES];
+    RANDOM.nextBytes(bytes);
+    return bytes;
   }
 
   /** Returns the SHA-256 hex digest of the given raw recovery code. */

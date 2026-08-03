@@ -66,12 +66,10 @@ public class DiscoveryService {
   /** Looks up the live instances of a service. */
   public Mono<List<ServiceInstance>> lookup(String serviceId) {
     evictExpired();
-    List<ServiceInstance> matches = new ArrayList<>();
-    for (ServiceInstance instance : instances.values()) {
-      if (instance.serviceId().equals(serviceId)) {
-        matches.add(instance);
-      }
-    }
+    List<ServiceInstance> matches =
+        instances.values().stream()
+            .filter(instance -> instance.serviceId().equals(serviceId))
+            .toList();
     return Mono.just(matches);
   }
 

@@ -2,9 +2,9 @@ package com.interviewintegrity.identity.service;
 
 import com.interviewintegrity.identity.repository.PermissionRepository;
 import com.interviewintegrity.identity.repository.UserRoleRepository;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 import reactor.core.publisher.Mono;
 
 /**
@@ -37,18 +37,10 @@ public final class AuthorityResolver {
               return Mono.zip(
                   roleAuthority,
                   permissionAuthorities,
-                  (roleAuth, permissionAuth) -> {
-                    List<String> combined = new ArrayList<>(roleAuth);
-                    combined.addAll(permissionAuth);
-                    return combined;
-                  });
+                  (roleAuth, permissionAuth) ->
+                      Stream.concat(roleAuth.stream(), permissionAuth.stream()).toList());
             })
-        .reduce(
-            new ArrayList<String>(),
-            (accumulator, authorities) -> {
-              accumulator.addAll(authorities);
-              return accumulator;
-            })
-        .map(authorities -> authorities.stream().distinct().sorted().toList());
+        .collectList()
+        .map(lists -> lists.stream().flatMap(List::stream).distinct().sorted().toList());
   }
 }

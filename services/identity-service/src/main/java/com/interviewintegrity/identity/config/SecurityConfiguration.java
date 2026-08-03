@@ -3,8 +3,8 @@ package com.interviewintegrity.identity.config;
 import com.interviewintegrity.security.JwtProperties;
 import com.interviewintegrity.security.PlatformCors;
 import com.interviewintegrity.security.PlatformJwtAuthenticationConverter;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -34,25 +34,27 @@ public class SecurityConfiguration {
       ServerHttpSecurity http,
       JwtProperties jwtProperties,
       PlatformJwtAuthenticationConverter authenticationConverter) {
-    List<String> permitAll = new ArrayList<>(jwtProperties.getPermitAll());
-    permitAll.addAll(
-        List.of(
-            "/api/v1/auth/register",
-            "/api/v1/auth/login",
-            "/api/v1/auth/refresh",
-            "/api/v1/auth/logout",
-            "/api/v1/auth/verify-email",
-            "/api/v1/auth/password/reset-request",
-            "/api/v1/auth/password/reset",
-            "/api/v1/auth/otp/send",
-            "/api/v1/auth/otp/verify",
-            "/api/v1/auth/mfa/verify",
-            "/api/v1/auth/mfa/email-otp",
-            "/v3/api-docs/**",
-            "/swagger-ui.html",
-            "/swagger-ui/**",
-            "/webjars/**",
-            "/favicon.ico"));
+    List<String> permitAll =
+        Stream.concat(
+                jwtProperties.getPermitAll().stream(),
+                Stream.of(
+                    "/api/v1/auth/register",
+                    "/api/v1/auth/login",
+                    "/api/v1/auth/refresh",
+                    "/api/v1/auth/logout",
+                    "/api/v1/auth/verify-email",
+                    "/api/v1/auth/password/reset-request",
+                    "/api/v1/auth/password/reset",
+                    "/api/v1/auth/otp/send",
+                    "/api/v1/auth/otp/verify",
+                    "/api/v1/auth/mfa/verify",
+                    "/api/v1/auth/mfa/email-otp",
+                    "/v3/api-docs/**",
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/webjars/**",
+                    "/favicon.ico"))
+            .toList();
     return http.csrf(ServerHttpSecurity.CsrfSpec::disable)
         .cors(spec -> spec.configurationSource(PlatformCors.from(jwtProperties)))
         .authorizeExchange(

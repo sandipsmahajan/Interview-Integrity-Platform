@@ -3,8 +3,8 @@ package com.interviewintegrity.desktopclient.config;
 import com.interviewintegrity.security.JwtProperties;
 import com.interviewintegrity.security.PlatformCors;
 import com.interviewintegrity.security.PlatformJwtAuthenticationConverter;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -25,15 +25,17 @@ public class SecurityConfiguration {
       ServerHttpSecurity http,
       JwtProperties jwtProperties,
       PlatformJwtAuthenticationConverter authenticationConverter) {
-    List<String> permitAll = new ArrayList<>(jwtProperties.getPermitAll());
-    permitAll.addAll(
-        List.of(
-            "/v3/api-docs/**",
-            "/swagger-ui.html",
-            "/swagger-ui/**",
-            "/webjars/**",
-            "/favicon.ico",
-            "/ws/**"));
+    List<String> permitAll =
+        Stream.concat(
+                jwtProperties.getPermitAll().stream(),
+                Stream.of(
+                    "/v3/api-docs/**",
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/webjars/**",
+                    "/favicon.ico",
+                    "/ws/**"))
+            .toList();
     return http.csrf(ServerHttpSecurity.CsrfSpec::disable)
         .cors(spec -> spec.configurationSource(PlatformCors.from(jwtProperties)))
         .authorizeExchange(
