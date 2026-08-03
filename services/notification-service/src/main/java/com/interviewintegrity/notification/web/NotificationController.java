@@ -67,6 +67,12 @@ public final class NotificationController {
       Authentication authentication,
       @RequestParam UUID userId,
       @RequestParam(required = false) String status) {
+    UUID callerId = SecurityPrincipals.userId(authentication);
+    if (callerId == null || !callerId.equals(userId)) {
+      return Flux.error(
+          new com.interviewintegrity.exception.ForbiddenException(
+              "Notifications can only be listed for the authenticated user"));
+    }
     return notificationService
         .listByUser(userId, SecurityPrincipals.organizationId(authentication))
         .filter(
@@ -81,7 +87,10 @@ public final class NotificationController {
   public Mono<NotificationResponse> get(
       Authentication authentication, @PathVariable UUID notificationId) {
     return notificationService
-        .getNotification(notificationId, SecurityPrincipals.organizationId(authentication))
+        .getOwnedNotification(
+            notificationId,
+            SecurityPrincipals.organizationId(authentication),
+            SecurityPrincipals.userId(authentication))
         .map(mapper::toResponse);
   }
 
@@ -139,7 +148,10 @@ public final class NotificationController {
   public Mono<NotificationResponse> markRead(
       Authentication authentication, @PathVariable UUID notificationId) {
     return notificationService
-        .markRead(notificationId, SecurityPrincipals.organizationId(authentication))
+        .markRead(
+            notificationId,
+            SecurityPrincipals.organizationId(authentication),
+            SecurityPrincipals.userId(authentication))
         .map(mapper::toResponse);
   }
 
@@ -149,7 +161,11 @@ public final class NotificationController {
   public Flux<NotificationDeliveryResponse> deliveries(
       Authentication authentication, @PathVariable UUID notificationId) {
     return notificationService
-        .listDeliveries(notificationId, SecurityPrincipals.organizationId(authentication))
+        .getOwnedNotification(
+            notificationId,
+            SecurityPrincipals.organizationId(authentication),
+            SecurityPrincipals.userId(authentication))
+        .flatMapMany(ignored -> notificationService.listDeliveries(notificationId))
         .map(mapper::toDeliveryResponse);
   }
 }

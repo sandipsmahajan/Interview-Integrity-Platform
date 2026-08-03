@@ -79,6 +79,41 @@ public class NotificationService {
     return notificationRepository.save(notification);
   }
 
+  /**
+   * Creates a pending email notification for a consumed event, skipping when the event was already
+   * processed so a Kafka redelivery never sends a duplicate email.
+   */
+  @Transactional
+  public Mono<Notification> createEmailNotificationFromEvent(
+      UUID organizationId,
+      UUID userId,
+      String recipient,
+      String notificationType,
+      String subject,
+      String body,
+      NotificationPriority priority,
+      UUID sourceEventId) {
+    return notificationRepository
+        .findBySourceEventId(sourceEventId)
+        .switchIfEmpty(
+            Mono.defer(
+                () ->
+                    createEmailNotification(
+                            organizationId,
+                            userId,
+                            recipient,
+                            notificationType,
+                            subject,
+                            body,
+                            priority,
+                            null)
+                        .flatMap(
+                            notification -> {
+                              notification.setSourceEventId(sourceEventId);
+                              return notificationRepository.save(notification);
+                            })));
+  }
+
   /** Returns the pending email notifications that are ready for dispatch. */
   @Transactional(readOnly = true)
   public Flux<Notification> listPendingEmailDue(Instant now, int limit) {
@@ -135,6 +170,20 @@ public class NotificationService {
   public Mono<Notification> getNotification(UUID notificationId, UUID organizationId) {
     return notificationRepository
         .findByIdAndOrganization(notificationId, organizationId)
+        .switchIfEmpty(Mono.error(new NotFoundException("Notification not found")));
+  }
+
+  /**
+   * Returns a single notification owned by a user within the organization.
+   *
+   * <p>Used by user-facing read and mark-read flows so callers can only access their own
+   * notifications, preventing cross-user notification access within a tenant.
+   */
+  @Transactional(readOnly = true)
+  public Mono<Notification> getOwnedNotification(
+      UUID notificationId, UUID organizationId, UUID userId) {
+    return notificationRepository
+        .findByIdAndOrganizationAndUser(notificationId, organizationId, userId)
         .switchIfEmpty(Mono.error(new NotFoundException("Notification not found")));
   }
 
@@ -211,8 +260,8 @@ public class NotificationService {
 
   /** Marks a notification as read by the recipient. */
   @Transactional
-  public Mono<Notification> markRead(UUID notificationId, UUID organizationId) {
-    return getNotification(notificationId, organizationId)
+  public Mono<Notification> markRead(UUID notificationId, UUID organizationId, UUID userId) {
+    return getOwnedNotification(notificationId, organizationId, userId)
         .map(
             notification -> {
               notification.markRead();
@@ -221,11 +270,15 @@ public class NotificationService {
         .flatMap(notificationRepository::save);
   }
 
-  /** Lists the delivery attempts of a notification. */
+  /**
+   * Lists the delivery attempts of a notification.
+   *
+   * <p>Callers must first resolve ownership via {@link #getOwnedNotification(UUID, UUID, UUID)} so
+   * a user cannot view the delivery history of another user's notification.
+   */
   @Transactional(readOnly = true)
-  public Flux<NotificationDelivery> listDeliveries(UUID notificationId, UUID organizationId) {
-    return getNotification(notificationId, organizationId)
-        .flatMapMany(notification -> deliveryRepository.listByNotification(notificationId));
+  public Flux<NotificationDelivery> listDeliveries(UUID notificationId) {
+    return deliveryRepository.listByNotification(notificationId);
   }
 
   private Mono<NotificationDelivery> recordDelivery(

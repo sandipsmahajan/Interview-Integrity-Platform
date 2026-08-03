@@ -17,6 +17,12 @@ public interface NotificationRepository extends ReactiveCrudRepository<Notificat
   @Query("SELECT * FROM notifications WHERE id = :id AND organization_id = :organizationId")
   Mono<Notification> findByIdAndOrganization(UUID id, UUID organizationId);
 
+  /** Finds a notification by id owned by a user within an organization. */
+  @Query(
+      "SELECT * FROM notifications WHERE id = :id AND organization_id = :organizationId "
+          + "AND user_id = :userId")
+  Mono<Notification> findByIdAndOrganizationAndUser(UUID id, UUID organizationId, UUID userId);
+
   /** Lists the notifications of a user within an organization, newest first. */
   @Query(
       "SELECT * FROM notifications WHERE user_id = :userId "
@@ -35,6 +41,10 @@ public interface NotificationRepository extends ReactiveCrudRepository<Notificat
           + "AND (scheduled_at IS NULL OR scheduled_at <= :now) "
           + "ORDER BY created_at LIMIT :limit")
   Flux<Notification> listPendingEmailDue(Instant now, int limit);
+
+  /** Finds the notification created from the given event, if any (consumer idempotency). */
+  @Query("SELECT * FROM notifications WHERE source_event_id = :sourceEventId")
+  Mono<Notification> findBySourceEventId(UUID sourceEventId);
 
   /**
    * Atomically claims a pending notification for dispatch, returning the number of rows affected.

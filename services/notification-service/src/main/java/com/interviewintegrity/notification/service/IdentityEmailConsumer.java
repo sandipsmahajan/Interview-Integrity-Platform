@@ -8,6 +8,7 @@ import com.interviewintegrity.notification.domain.NotificationPriority;
 import com.interviewintegrity.notification.repository.NotificationPreferenceRepository;
 import com.interviewintegrity.observability.MdcCorrelation;
 import java.util.Locale;
+import java.util.UUID;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,7 +101,9 @@ public final class IdentityEmailConsumer implements DisposableBean {
         return Mono.empty();
       }
       return MdcCorrelation.withCorrelationId(
-          isEnabled(event).filter(Boolean::booleanValue).flatMap(ignored -> process(event)),
+          isEnabled(event)
+              .filter(Boolean::booleanValue)
+              .flatMap(ignored -> process(event, envelope.eventId())),
           envelope.eventId().toString());
     } catch (Exception e) {
       if (log.isErrorEnabled()) {
@@ -123,7 +126,7 @@ public final class IdentityEmailConsumer implements DisposableBean {
         .defaultIfEmpty(true);
   }
 
-  private Mono<Void> process(IdentityEmailEvent event) {
+  private Mono<Void> process(IdentityEmailEvent event, UUID sourceEventId) {
     return templateEngine
         .render(
             event.organizationId(),
@@ -133,7 +136,7 @@ public final class IdentityEmailConsumer implements DisposableBean {
         .flatMap(
             rendered ->
                 notificationService
-                    .createEmailNotification(
+                    .createEmailNotificationFromEvent(
                         event.organizationId(),
                         event.userId(),
                         event.email(),
@@ -141,7 +144,7 @@ public final class IdentityEmailConsumer implements DisposableBean {
                         rendered.subject(),
                         rendered.htmlBody(),
                         NotificationPriority.MEDIUM,
-                        null)
+                        sourceEventId)
                     .flatMap(notification -> dispatchService.dispatch(notification)))
         .switchIfEmpty(
             Mono.fromRunnable(

@@ -48,6 +48,9 @@ public class Notification {
   @Column("created_by")
   private UUID createdBy;
 
+  @Column("source_event_id")
+  private UUID sourceEventId;
+
   @Column("created_at")
   private Instant createdAt;
 
@@ -184,6 +187,15 @@ public class Notification {
 
   public UUID getCreatedBy() {
     return createdBy;
+  }
+
+  public UUID getSourceEventId() {
+    return sourceEventId;
+  }
+
+  /** Records the event that produced this notification, for consumer idempotency. */
+  public void setSourceEventId(UUID sourceEventId) {
+    this.sourceEventId = sourceEventId;
   }
 
   public Instant getCreatedAt() {

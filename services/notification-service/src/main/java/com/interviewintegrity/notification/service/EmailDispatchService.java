@@ -56,6 +56,10 @@ public final class EmailDispatchService {
   /**
    * Claims the notification atomically, runs the given dispatch action only when the claim was won
    * and releases the claim afterwards so a crashed worker's lease does not block retries forever.
+   *
+   * <p>The claim is only released by the worker that won it; a worker that lost the race must not
+   * touch the lease, otherwise it would clear the winner's claim and let a third worker dispatch
+   * the same notification a second time.
    */
   private Mono<Void> claimThenRelease(
       Notification notification, java.util.function.Supplier<Mono<Void>> dispatchAction) {
@@ -63,8 +67,21 @@ public final class EmailDispatchService {
     Instant leaseExpiry = now.minus(mailProperties.getClaimLease());
     return notificationService
         .claimForDispatch(notification.getId(), now, leaseExpiry)
-        .flatMap(claimed -> claimed ? dispatchAction.get() : Mono.empty())
-        .doFinally(signal -> notificationService.releaseClaim(notification.getId()).subscribe())
+        .flatMap(
+            claimed -> {
+              if (!claimed) {
+                return Mono.empty();
+              }
+              return dispatchAction
+                  .get()
+                  .thenReturn(notification.getId())
+                  .onErrorResume(
+                      error ->
+                          notificationService
+                              .releaseClaim(notification.getId())
+                              .then(Mono.error(error)));
+            })
+        .flatMap(notificationId -> notificationService.releaseClaim(notificationId))
         .then();
   }
 
@@ -74,7 +91,7 @@ public final class EmailDispatchService {
         .flatMap(
             attempts -> {
               if (attempts == 0) {
-                return Mono.just(false);
+                return Mono.just(true);
               }
               if (attempts >= mailProperties.getMaxAttempts()) {
                 return notificationService

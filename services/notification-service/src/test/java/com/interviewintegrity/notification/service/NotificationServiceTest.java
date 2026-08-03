@@ -73,6 +73,59 @@ class NotificationServiceTest {
   }
 
   @Test
+  void createEmailNotificationFromEventSkipsDuplicateEvent() {
+    UUID organizationId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    UUID sourceEventId = UUID.randomUUID();
+    Notification existing = newNotification(organizationId);
+    when(notificationRepository.findBySourceEventId(sourceEventId)).thenReturn(Mono.just(existing));
+
+    StepVerifier.create(
+            notificationService.createEmailNotificationFromEvent(
+                organizationId,
+                userId,
+                "candidate@example.com",
+                "interview_reminder",
+                "Interview reminder",
+                "Your interview is tomorrow.",
+                NotificationPriority.HIGH,
+                sourceEventId))
+        .expectNext(existing)
+        .verifyComplete();
+
+    verify(notificationRepository, never()).save(any(Notification.class));
+  }
+
+  @Test
+  void createEmailNotificationFromEventStampsSourceEvent() {
+    UUID organizationId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    UUID sourceEventId = UUID.randomUUID();
+    when(notificationRepository.findBySourceEventId(sourceEventId)).thenReturn(Mono.empty());
+    when(notificationRepository.save(any(Notification.class)))
+        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+
+    StepVerifier.create(
+            notificationService.createEmailNotificationFromEvent(
+                organizationId,
+                userId,
+                "candidate@example.com",
+                "interview_reminder",
+                "Interview reminder",
+                "Your interview is tomorrow.",
+                NotificationPriority.HIGH,
+                sourceEventId))
+        .assertNext(
+            created -> {
+              org.assertj.core.api.Assertions.assertThat(created.getSourceEventId())
+                  .isEqualTo(sourceEventId);
+              org.assertj.core.api.Assertions.assertThat(created.getRecipient())
+                  .isEqualTo("candidate@example.com");
+            })
+        .verifyComplete();
+  }
+
+  @Test
   void markSentMarksNotificationAndRecordsDelivery() {
     UUID organizationId = UUID.randomUUID();
     Notification notification = newNotification(organizationId);
@@ -132,10 +185,12 @@ class NotificationServiceTest {
   void markReadFailsForUnknownNotification() {
     UUID notificationId = UUID.randomUUID();
     UUID organizationId = UUID.randomUUID();
-    when(notificationRepository.findByIdAndOrganization(notificationId, organizationId))
+    UUID userId = UUID.randomUUID();
+    when(notificationRepository.findByIdAndOrganizationAndUser(
+            notificationId, organizationId, userId))
         .thenReturn(Mono.empty());
 
-    StepVerifier.create(notificationService.markRead(notificationId, organizationId))
+    StepVerifier.create(notificationService.markRead(notificationId, organizationId, userId))
         .expectError(NotFoundException.class)
         .verify();
 

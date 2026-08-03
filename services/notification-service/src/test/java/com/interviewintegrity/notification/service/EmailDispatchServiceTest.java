@@ -49,6 +49,7 @@ class EmailDispatchServiceTest {
     StepVerifier.create(dispatchService.dispatch(notification)).verifyComplete();
 
     verify(emailDispatcher, never()).send(any(), any(), any(), any());
+    verify(notificationService, never()).releaseClaim(notification.getId());
   }
 
   @Test
