@@ -1,0 +1,112 @@
+name: terraform
+on:
+  pull_request:
+    branches: [master]
+    paths: ["terraform/**", ".github/workflows/terraform.yml"]
+  push:
+    branches: [master]
+    paths: ["terraform/**", ".github/workflows/terraform.yml"]
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        options: [dev, qa, uat, prod]
+        default: dev
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  # One in-flight plan/apply per branch; never cancel a running apply.
+  group: terraform-${{ github.ref_name }}-${{ github.event.inputs.environment || 'default' }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive terraform/
+      - name: Terraform validate (all roots)
+        run: |
+          for root in terraform terraform/bootstrap terraform/account \
+                       terraform/environments/local terraform/environments/dev \
+                       terraform/environments/qa terraform/environments/uat \
+                       terraform/environments/prod; do
+            echo "==> $root"
+            (cd "$root" && terraform init -backend=false -input=false && terraform validate)
+          done
+
+  plan:
+    if: github.event_name == 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [local, dev, qa, uat, prod]
+    environment: ${{ matrix.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/integrity-${{ matrix.environment }}-github-actions
+          role-session-name: terraform-plan
+      - name: Terraform init + plan
+        working-directory: terraform/environments/${{ matrix.environment }}
+        env:
+          TF_VAR_jwt_secret: ${{ secrets[format('JWT_SECRET_{0}', matrix.environment)] }}
+        run: |
+          terraform init -input=false
+          terraform plan -input=false -out=tfplan
+      - name: Upload plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ matrix.environment }}
+          path: terraform/environments/${{ matrix.environment }}/tfplan
+          retention-days: 7
+
+  apply:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.ref_name == 'master')
+    needs: validate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # push -> dev only; workflow_dispatch -> the chosen environment.
+        environment: ${{ (github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', github.event.inputs.environment))) || '["dev"]' }}
+    environment: ${{ matrix.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/integrity-${{ matrix.environment }}-github-actions
+          role-session-name: terraform-apply
+      - name: Terraform init + apply
+        working-directory: terraform/environments/${{ matrix.environment }}
+        env:
+          TF_VAR_jwt_secret: ${{ secrets[format('JWT_SECRET_{0}', matrix.environment)] }}
+        run: |
+          terraform init -input=false
+          terraform apply -input=false -auto-approve

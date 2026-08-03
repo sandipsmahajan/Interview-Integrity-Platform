@@ -1,0 +1,109 @@
+{{/*
+Deployment for every enabled service in the catalogue.
+*/}}
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "integrity.labels" (merge (deepCopy $svc) (dict "name" $name "Chart" $.Chart "Release" $.Release)) | nindent 4 }}
+spec:
+  replicas: {{ $svc.replicas | default 1 }}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      {{- include "integrity.selectorLabels" (dict "name" $name "Release" $.Release) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "integrity.selectorLabels" (dict "name" $name "Release" $.Release) | nindent 8 }}
+      annotations:
+        {{- include "integrity.monitoringAnnotations" (merge (deepCopy $svc) (dict "Values" $.Values)) | nindent 8 }}
+        checksum/config: {{ include "integrity.configMap" $ | sha256sum }}
+    spec:
+      {{- if $.Values.global.image.pullSecret }}
+      imagePullSecrets:
+        - name: {{ $.Values.global.image.pullSecret }}
+      {{- end }}
+      {{- if $svc.serviceAccount }}
+      serviceAccountName: {{ $svc.serviceAccount }}
+      {{- else }}
+      serviceAccountName: {{ $name }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 60
+      {{- if $svc.priorityClassName }}
+      priorityClassName: {{ $svc.priorityClassName }}
+      {{- end }}
+      containers:
+        - name: {{ $name }}
+          image: {{ include "integrity.image" (merge (deepCopy $svc) (dict "Values" $.Values)) }}
+          imagePullPolicy: {{ $.Values.global.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $svc.port }}
+              protocol: TCP
+          env:
+            {{- include "integrity.commonEnv" $ | nindent 12 }}
+            - name: DB_NAME
+              value: {{ $svc.dbName | default "" | quote }}
+            - name: SERVER_PORT
+              value: {{ $svc.port | quote }}
+            {{- range $key, $val := $svc.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+            {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ include "integrity.secrets" $ }}
+                optional: true
+          {{- if $svc.lifecycle }}
+          lifecycle:
+{{ toYaml $svc.lifecycle | nindent 12 }}
+          {{- end }}
+          startupProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+          {{- $res := $svc.resources | default $.Values.defaultResources }}
+          resources:
+{{ toYaml $res | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: {{ $.Values.global.config.mountPath }}
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "integrity.configMap" $ }}
+{{- end }}
+{{- end }}

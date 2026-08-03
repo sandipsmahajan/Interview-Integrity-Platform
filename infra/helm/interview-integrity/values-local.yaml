@@ -1,0 +1,36 @@
+# ---------------------------------------------------------------------------
+# Local / in-cluster development values.
+#
+# Uses the fully in-cluster data plane: PostgreSQL StatefulSet, Redis, MinIO,
+# Mailpit and Strimzi Kafka. Spring profile: kubernetes.
+# ---------------------------------------------------------------------------
+global:
+  environment: local
+  image:
+    registry: ghcr.io/sandipsmahajan
+    tag: 0.1.0
+    pullPolicy: IfNotPresent
+  spring:
+    profile: kubernetes
+  dataPlane:
+    db:
+      host: postgres.integrity.svc.cluster.local
+      port: "5432"
+      username: integrity
+    redis:
+      host: redis.integrity.svc.cluster.local
+      port: "6379"
+    kafka:
+      bootstrapServers: kafka-kafka-bootstrap.kafka.svc.cluster.local:9092
+      saslEnabled: "false"
+    mail:
+      host: mailpit.integrity.svc.cluster.local
+      port: "1025"
+    storage:
+      endpoint: http://minio.integrity.svc.cluster.local:9000
+    eureka:
+      url: http://discovery-service.integrity.svc.cluster.local:8761/eureka
+
+ingress:
+  apiHost: api.integrity.local
+  portalHost: portal.integrity.local

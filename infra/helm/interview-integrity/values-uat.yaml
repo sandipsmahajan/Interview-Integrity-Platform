@@ -1,0 +1,43 @@
+# ---------------------------------------------------------------------------
+# UAT values.
+#
+# Production-parity topology with smaller sizes: multi-AZ RDS, ElastiCache
+# with automatic failover, Amazon MSK (SASL/SCRAM), Amazon SES SMTP sandbox,
+# S3. Spring profile: uat. Endpoints injected by CI from the "uat" Terraform
+# root outputs.
+# ---------------------------------------------------------------------------
+global:
+  environment: uat
+  image:
+    registry: AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/integrity-uat
+    tag: latest
+    pullPolicy: IfNotPresent
+    pullSecret: ecr-registry-secret
+  spring:
+    profile: uat
+  dataPlane:
+    db:
+      host: CHANGE_ME_UAT_RDS_ENDPOINT
+      port: "5432"
+      username: integrity
+    redis:
+      host: CHANGE_ME_UAT_REDIS_ENDPOINT
+      port: "6379"
+    kafka:
+      bootstrapServers: CHANGE_ME_UAT_MSK_BOOTSTRAP
+      saslEnabled: "true"
+      saslUsername: integrity-msk
+    mail:
+      host: CHANGE_ME_SES_SMTP_ENDPOINT
+      port: "587"
+      from: no-reply@integritypro.app
+    storage:
+      endpoint: https://s3.us-east-1.amazonaws.com
+    eureka:
+      url: http://discovery-service.integrity.svc.cluster.local:8761/eureka
+
+ingress:
+  apiHost: api.uat.integritypro.example.com
+  portalHost: portal.uat.integritypro.example.com
+  apiTlsSecret: integrity-uat-api-tls
+  portalTlsSecret: integrity-uat-portal-tls

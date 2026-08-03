@@ -2,18 +2,66 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Release.Name }}-ingress
+  name: {{ .Release.Name }}-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/part-of: integrity-pro
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    {{- range $key, $value := .Values.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
 spec:
-  ingressClassName: nginx
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  {{- if .Values.ingress.apiTlsSecret }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.apiHost }}
+      secretName: {{ .Values.ingress.apiTlsSecret }}
+  {{- end }}
   rules:
-    - host: {{ .Values.ingress.host }}
+    - host: {{ .Values.ingress.apiHost }}
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: {{ .Release.Name }}-backend
+                name: api-gateway
                 port:
-                  number: 80
+                  name: http
+{{- if and .Values.ingress.portalHost .Values.ingress.portalBackend.service }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-portal
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/part-of: integrity-pro
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    {{- range $key, $value := .Values.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  {{- if .Values.ingress.portalTlsSecret }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.portalHost }}
+      secretName: {{ .Values.ingress.portalTlsSecret }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.portalHost }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.ingress.portalBackend.service }}
+                port:
+                  name: {{ .Values.ingress.portalBackend.port | default "http" }}
+{{- end }}
 {{- end }}

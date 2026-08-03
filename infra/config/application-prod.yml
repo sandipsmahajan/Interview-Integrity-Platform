@@ -1,0 +1,71 @@
+# ---------------------------------------------------------------------------
+# Integrity Pro - "prod" Spring profile
+#
+# Production environment on Amazon EKS. Fully managed, highly available data
+# plane: multi-AZ Amazon RDS PostgreSQL (TLS required), Amazon ElastiCache
+# Redis with automatic failover + transit encryption, Amazon MSK with SASL/SCRAM
+# authentication, Amazon SES SMTP. All endpoints are injected by the
+# deployment pipeline from Terraform outputs.
+# ---------------------------------------------------------------------------
+app:
+  timezone: ${APP_TIMEZONE:UTC}
+
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:CHANGE_ME_PROD_MSK_BOOTSTRAP}
+    producer:
+      acks: ${KAFKA_PRODUCER_ACKS:all}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:default}
+  data:
+    redis:
+      host: ${REDIS_HOST:CHANGE_ME_PROD_REDIS_ENDPOINT}
+      port: ${REDIS_PORT:6379}
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:CHANGE_ME_PROD_RDS_ENDPOINT}:${DB_PORT:5432}/${DB_NAME:integrity_db}?sslmode=verify-full&sslrootcert=/etc/ssl/certs/rds-ca-rsa2048-g1.pem
+    pool:
+      initial-size: ${DB_POOL_INITIAL_SIZE:8}
+      max-size: ${DB_POOL_MAX_SIZE:32}
+  flyway:
+    enabled: true
+    url: jdbc:postgresql://${DB_HOST:CHANGE_ME_PROD_RDS_ENDPOINT}:${DB_PORT:5432}/${DB_NAME:integrity_db}?sslmode=verify-full&sslrootcert=/etc/ssl/certs/rds-ca-rsa2048-g1.pem
+  mail:
+    host: ${MAIL_HOST:CHANGE_ME_SES_SMTP_ENDPOINT}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
+          connectiontimeout: ${MAIL_SMTP_CONNECTION_TIMEOUT:10000}
+          timeout: ${MAIL_SMTP_TIMEOUT:10000}
+          writetimeout: ${MAIL_SMTP_WRITE_TIMEOUT:10000}
+
+platform:
+  storage:
+    endpoint: ${PLATFORM_STORAGE_ENDPOINT:https://s3.${AWS_REGION:us-east-1}.amazonaws.com}
+    region: ${PLATFORM_STORAGE_REGION:${AWS_REGION:us-east-1}}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://discovery-service.integrity.svc.cluster.local:8761/eureka}
+    register-with-eureka: ${EUREKA_REGISTER_WITH_EUREKA:true}
+    fetch-registry: ${EUREKA_FETCH_REGISTRY:true}
+
+management:
+  endpoint:
+    health:
+      show-details: never
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+    com.interviewintegrity: ${LOG_LEVEL_APP:INFO}

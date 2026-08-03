@@ -32,3 +32,50 @@ jobs:
         working-directory: portals
       - run: npm run build
         working-directory: portals
+  infra-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive terraform/
+      - name: Terraform validate (all roots)
+        run: |
+          for root in terraform terraform/bootstrap terraform/account \
+                       terraform/environments/local terraform/environments/dev \
+                       terraform/environments/qa terraform/environments/uat \
+                       terraform/environments/prod; do
+            echo "==> $root"
+            (cd "$root" && terraform init -backend=false -input=false && terraform validate)
+          done
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.4
+      - name: Helm lint + template (all environments)
+        working-directory: infra/helm/interview-integrity
+        run: |
+          helm lint .
+          for env in local dev qa uat prod; do
+            helm template integrity . -f values-${env}.yaml > /tmp/helm-${env}.yaml
+            grep -q "kind: Deployment" /tmp/helm-${env}.yaml || { echo "no deployments in $env"; exit 1; }
+          done
+      - name: K8s + Compose YAML parse
+        run: |
+          python3 - <<'PY'
+          import glob, sys, yaml
+          files = glob.glob("infra/k8s/*.yaml") + ["infra/docker/docker-compose.yml"]
+          files += glob.glob("infra/config/*.yml") + ["infra/config/.env.example"]
+          for f in files:
+              if f.endswith(".env.example"):
+                  continue
+              with open(f) as fh:
+                  try:
+                      list(yaml.safe_load_all(fh))
+                  except Exception as e:
+                      print(f"ERR {f}: {e}")
+                      sys.exit(1)
+          print("YAML OK:", len(files), "files")
+          PY

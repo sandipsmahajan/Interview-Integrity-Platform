@@ -1,0 +1,65 @@
+# ---------------------------------------------------------------------------
+# Integrity Pro - "qa" Spring profile
+#
+# Quality-assurance environment on Amazon EKS. Managed RDS, ElastiCache and
+# Amazon MSK (smallest production-parity footprint) plus SES SMTP in sandbox
+# mode. All endpoints are injected by the deployment pipeline through the
+# environment variables below.
+# ---------------------------------------------------------------------------
+app:
+  timezone: ${APP_TIMEZONE:UTC}
+
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:CHANGE_ME_QA_MSK_BOOTSTRAP}
+    producer:
+      acks: ${KAFKA_PRODUCER_ACKS:all}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:default}
+  data:
+    redis:
+      host: ${REDIS_HOST:CHANGE_ME_QA_REDIS_ENDPOINT}
+      port: ${REDIS_PORT:6379}
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:CHANGE_ME_QA_RDS_ENDPOINT}:${DB_PORT:5432}/${DB_NAME:qa_db}?sslmode=require
+    pool:
+      initial-size: ${DB_POOL_INITIAL_SIZE:4}
+      max-size: ${DB_POOL_MAX_SIZE:16}
+  flyway:
+    enabled: true
+    url: jdbc:postgresql://${DB_HOST:CHANGE_ME_QA_RDS_ENDPOINT}:${DB_PORT:5432}/${DB_NAME:qa_db}?sslmode=require
+  mail:
+    host: ${MAIL_HOST:CHANGE_ME_SES_SMTP_ENDPOINT}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
+
+platform:
+  storage:
+    endpoint: ${PLATFORM_STORAGE_ENDPOINT:https://s3.${AWS_REGION:us-east-1}.amazonaws.com}
+    region: ${PLATFORM_STORAGE_REGION:${AWS_REGION:us-east-1}}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://discovery-service.integrity.svc.cluster.local:8761/eureka}
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,env
+
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+    com.interviewintegrity: ${LOG_LEVEL_APP:INFO}

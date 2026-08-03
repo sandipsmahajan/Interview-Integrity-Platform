@@ -1,0 +1,42 @@
+# ---------------------------------------------------------------------------
+# Dev values.
+#
+# Managed PostgreSQL (RDS) and ElastiCache Redis; in-cluster Strimzi Kafka
+# (cost optimisation) and Mailpit. Spring profile: dev.
+#
+# RDS/ElastiCache endpoints are injected by the deployment pipeline from the
+# "dev" Terraform root outputs; CHANGES below are placeholders.
+# ---------------------------------------------------------------------------
+global:
+  environment: dev
+  image:
+    registry: AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/integrity-dev
+    tag: latest
+    pullPolicy: IfNotPresent
+    pullSecret: ecr-registry-secret
+  spring:
+    profile: dev
+  dataPlane:
+    db:
+      host: CHANGE_ME_DEV_RDS_ENDPOINT
+      port: "5432"
+      username: integrity
+    redis:
+      host: CHANGE_ME_DEV_REDIS_ENDPOINT
+      port: "6379"
+    kafka:
+      bootstrapServers: kafka-kafka-bootstrap.kafka.svc.cluster.local:9092
+      saslEnabled: "false"
+    mail:
+      host: mailpit.integrity.svc.cluster.local
+      port: "1025"
+    storage:
+      endpoint: http://minio.integrity.svc.cluster.local:9000
+    eureka:
+      url: http://discovery-service.integrity.svc.cluster.local:8761/eureka
+
+ingress:
+  apiHost: api.dev.integritypro.example.com
+  portalHost: portal.dev.integritypro.example.com
+  apiTlsSecret: integrity-dev-api-tls
+  portalTlsSecret: integrity-dev-portal-tls

@@ -1,0 +1,74 @@
+# ---------------------------------------------------------------------------
+# Integrity Pro - "kubernetes" Spring profile
+#
+# Used when the platform runs on Kubernetes (kind / k3s / Amazon EKS) with the
+# in-cluster development data plane: PostgreSQL StatefulSet, Redis, MinIO,
+# Strimzi Kafka, Mailpit and the discovery-service headless Service.
+#
+# Activation:
+#   SPRING_PROFILES_ACTIVE=kubernetes
+#   SPRING_CONFIG_LOCATION=/etc/integrity/config/   (ConfigMap mounted volume)
+#
+# When the environment uses managed AWS services instead (RDS, ElastiCache,
+# MSK, SES), deploy with the "prod"/"dev"/"qa"/"uat" profile instead - the
+# platform injects the exact endpoints through environment variables below.
+# ---------------------------------------------------------------------------
+app:
+  timezone: ${APP_TIMEZONE:UTC}
+
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka-kafka-bootstrap.kafka.svc.cluster.local:9092}
+    producer:
+      acks: ${KAFKA_PRODUCER_ACKS:all}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:default}
+  data:
+    redis:
+      host: ${REDIS_HOST:redis.integrity.svc.cluster.local}
+      port: ${REDIS_PORT:6379}
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:postgres.integrity.svc.cluster.local}:${DB_PORT:5432}/${DB_NAME:k8s_db}
+    pool:
+      initial-size: ${DB_POOL_INITIAL_SIZE:4}
+      max-size: ${DB_POOL_MAX_SIZE:16}
+  flyway:
+    enabled: true
+    url: jdbc:postgresql://${DB_HOST:postgres.integrity.svc.cluster.local}:${DB_PORT:5432}/${DB_NAME:k8s_db}
+  mail:
+    host: ${MAIL_HOST:mailpit.integrity.svc.cluster.local}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:false}
+
+platform:
+  storage:
+    endpoint: ${PLATFORM_STORAGE_ENDPOINT:http://minio.integrity.svc.cluster.local:9000}
+    region: ${PLATFORM_STORAGE_REGION:us-east-1}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://discovery-service.integrity.svc.cluster.local:8761/eureka}
+    register-with-eureka: ${EUREKA_REGISTER_WITH_EUREKA:true}
+    fetch-registry: ${EUREKA_FETCH_REGISTRY:true}
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,env
+
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+    com.interviewintegrity: ${LOG_LEVEL_APP:INFO}

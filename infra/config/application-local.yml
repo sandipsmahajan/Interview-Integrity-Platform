@@ -1,0 +1,71 @@
+# ---------------------------------------------------------------------------
+# Integrity Pro - "local" Spring profile
+#
+# Used when running microservices from the IDE or a terminal on the developer
+# host while the platform infrastructure (PostgreSQL, Redis, Kafka, MinIO,
+# Mailpit) runs in Docker Compose.
+#
+# Activation:
+#   SPRING_PROFILES_ACTIVE=local
+#   SPRING_CONFIG_LOCATION=infra/config/     (relative to the repository root)
+#
+# Every value is still overridable through environment variables so the same
+# file is safe to commit and share.
+# ---------------------------------------------------------------------------
+app:
+  timezone: ${APP_TIMEZONE:UTC}
+
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: ${KAFKA_PRODUCER_ACKS:all}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:default}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:local_db}
+    pool:
+      initial-size: ${DB_POOL_INITIAL_SIZE:4}
+      max-size: ${DB_POOL_MAX_SIZE:16}
+  flyway:
+    enabled: true
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:local_db}
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:false}
+
+platform:
+  storage:
+    endpoint: ${PLATFORM_STORAGE_ENDPOINT:http://localhost:9000}
+    region: ${PLATFORM_STORAGE_REGION:us-east-1}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka}
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,env
+
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+    com.interviewintegrity: ${LOG_LEVEL_APP:DEBUG}

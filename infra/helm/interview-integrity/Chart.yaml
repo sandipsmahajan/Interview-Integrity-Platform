@@ -1,6 +1,23 @@
 apiVersion: v2
 name: interview-integrity
-description: Interview Integrity Platform backend and portal chart
+description: >-
+  Umbrella chart for the Integrity Pro platform - all 19 microservices,
+  shared configuration and the nginx ingress front door. The managed data
+  plane (RDS, ElastiCache, MSK, S3, SES) is provisioned by Terraform and its
+  endpoints are injected through per-environment values files.
 type: application
-version: 0.1.0
+version: 1.0.0
 appVersion: "0.1.0"
+kubeVersion: ">=1.29.0-0"
+home: https://github.com/sandipsmahajan/Interview-Integrity-Platform
+sources:
+  - https://github.com/sandipsmahajan/Interview-Integrity-Platform
+keywords:
+  - integrity-pro
+  - microservices
+  - spring-boot
+  - eureka
+  - kafka
+maintainers:
+  - name: Integrity Platform Team
+    email: ops@integritypro.example.com

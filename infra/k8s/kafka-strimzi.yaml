@@ -1,0 +1,247 @@
+# ---------------------------------------------------------------------------
+# In-cluster Kafka via the Strimzi operator (dev/local data plane only).
+#
+# Requires the Strimzi operator (strimzi-cluster-operator) to be installed in
+# the `kafka` namespace:
+#
+#   helm repo add strimzi https://strimzi.io/charts/
+#   helm install strimzi-operator strimzi/strimzi-kafka-operator -n kafka \
+#     --set watchAnyNamespace=false --set watchNamespaces={kafka}
+#
+# The cluster is named `kafka`, so the bootstrap service resolves to
+# kafka-kafka-bootstrap.kafka.svc.cluster.local:9092, matching the default in
+# infra/config/application-kubernetes.yml.
+#
+# Production, QA and UAT use Amazon MSK with SASL/SCRAM instead - no topic
+# declaration is needed there (MSK auto-creates topics).
+# ---------------------------------------------------------------------------
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: kafka
+  namespace: kafka
+  labels:
+    app.kubernetes.io/part-of: integrity-pro
+    strimzi.io/kind: Kafka
+spec:
+  kafka:
+    replicas: 1
+    version: 3.9.1
+    image: quay.io/strimzi/kafka:0.44.0-kafka-3.9.1
+    listeners:
+      - name: plaintext
+        port: 9092
+        type: internal
+        tls: false
+    config:
+      offsets.topic.replication.factor: 1
+      transaction.state.log.replication.factor: 1
+      transaction.state.log.min.isr: 1
+      default.replication.factor: 1
+      min.insync.replicas: 1
+      auto.create.topics.enable: false
+      log.retention.hours: 168
+      log.retention.bytes: 1073741824
+      log.segment.bytes: 536870912
+    storage:
+      type: ephemeral
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+    livenessProbe:
+      initialDelaySeconds: 30
+      timeoutSeconds: 5
+    readinessProbe:
+      initialDelaySeconds: 30
+      timeoutSeconds: 5
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+---
+# Platform topics. Partitions/retention are conservative for the single-node
+# dev cluster; the same topic names are auto-created on MSK in qa/uat/prod.
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: identity-user-registered
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  topicName: identity.user-registered.v1
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: identity-user-updated
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  topicName: identity.user-updated.v1
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: organization-registered
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  topicName: organization.registered.v1
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: interview-created
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  topicName: interview.created.v1
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: interview-scheduled
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  topicName: interview.scheduled.v1
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: interview-started
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  topicName: interview.started.v1
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: interview-completed
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  topicName: interview.completed.v1
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: telemetry-received
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  topicName: telemetry.received.v1
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: telemetry-received-dlq
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  topicName: telemetry.received.dlq.v1
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: policy-violation
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  topicName: policy.violation.v1
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: report-generated
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  topicName: report.generated.v1
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: identity-email
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  topicName: identity.email.v1
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: candidate-registered
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  topicName: candidate.registered.v1
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000

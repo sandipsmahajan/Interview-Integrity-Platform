@@ -1,0 +1,151 @@
+# ---------------------------------------------------------------------------
+# In-cluster PostgreSQL (dev/local data plane only).
+#
+# Production, QA and UAT use Amazon RDS PostgreSQL provisioned by Terraform
+# (terraform/modules/rds). This StatefulSet exists so the same image can run
+# against a fully in-cluster stack when the `kubernetes` Spring profile is
+# active (SPRING_PROFILES_ACTIVE=kubernetes).
+#
+# One database per microservice is created on first boot by the init script in
+# the postgres-init ConfigMap, mirroring infra/docker/init-databases.sh.
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: integrity
+  labels:
+    app.kubernetes.io/part-of: integrity-pro
+    app.kubernetes.io/component: postgres
+data:
+  init-databases.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+    DATABASES=(
+      identity_db organization_db recruiter_db candidate_db interview_db
+      telemetry_db policy_db report_db notification_db analytics_db audit_db
+      storage_db feature_flag_db scheduler_db integration_db configuration_db
+    )
+    for DB in "${DATABASES[@]}"; do
+      if ! psql -v ON_ERROR_STOP=1 -d postgres -U "$POSTGRES_USER" -tAc \
+          "SELECT 1 FROM pg_database WHERE datname='${DB}'" | grep -q 1; then
+        psql -v ON_ERROR_STOP=1 -d postgres -U "$POSTGRES_USER" \
+          -c "CREATE DATABASE ${DB};"
+      fi
+    done
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-credentials
+  namespace: integrity
+  labels:
+    app.kubernetes.io/part-of: integrity-pro
+    app.kubernetes.io/component: postgres
+type: Opaque
+stringData:
+  POSTGRES_USER: integrity
+  POSTGRES_PASSWORD: integrity
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: integrity
+  labels:
+    app.kubernetes.io/part-of: integrity-pro
+    app.kubernetes.io/component: postgres
+spec:
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: postgresql
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: integrity
+  labels:
+    app.kubernetes.io/part-of: integrity-pro
+    app.kubernetes.io/component: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      securityContext:
+        fsGroup: 999
+        runAsUser: 999
+        runAsNonRoot: true
+      containers:
+        - name: postgres
+          image: postgres:16
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgresql
+              containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: postgres-credentials
+          env:
+            - name: POSTGRES_DB
+              value: interview_integrity
+            - name: POSTGRES_INITDB_ARGS
+              value: "--data-checksums"
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)"]
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)"]
+            periodSeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)"]
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: init
+          configMap:
+            name: postgres-init
+            defaultMode: 0555
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: gp3-encrypted
+        resources:
+          requests:
+            storage: 20Gi

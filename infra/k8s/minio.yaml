@@ -1,0 +1,147 @@
+# ---------------------------------------------------------------------------
+# In-cluster MinIO (dev/local data plane only).
+#
+# S3-compatible object storage behind the `platform.storage.endpoint` property.
+# Production, QA and UAT use Amazon S3 buckets provisioned by Terraform
+# (documents, reports, uploads). This Deployment keeps object-storage access
+# identical across runtimes so no application code changes are required.
+# ---------------------------------------------------------------------------
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-credentials
+  namespace: integrity
+  labels:
+    app.kubernetes.io/part-of: integrity-pro
+    app.kubernetes.io/component: minio
+type: Opaque
+stringData:
+  MINIO_ROOT_USER: integrity
+  MINIO_ROOT_PASSWORD: integrity-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: integrity
+  labels:
+    app.kubernetes.io/part-of: integrity-pro
+    app.kubernetes.io/component: minio
+spec:
+  selector:
+    app: minio
+  ports:
+    - name: api
+      port: 9000
+      targetPort: api
+    - name: console
+      port: 9001
+      targetPort: console
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: integrity
+  labels:
+    app.kubernetes.io/part-of: integrity-pro
+    app.kubernetes.io/component: minio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+      containers:
+        - name: minio
+          image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+          imagePullPolicy: IfNotPresent
+          args: ["server", "/data", "--console-address", ":9001"]
+          envFrom:
+            - secretRef:
+                name: minio-credentials
+          ports:
+            - name: api
+              containerPort: 9000
+            - name: console
+              containerPort: 9001
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: api
+            periodSeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: api
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: minio-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-data
+  namespace: integrity
+  labels:
+    app.kubernetes.io/part-of: integrity-pro
+    app.kubernetes.io/component: minio
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: gp3-encrypted
+  resources:
+    requests:
+      storage: 20Gi
+---
+# One-shot job that creates the buckets the platform expects. Idempotent; safe
+# to re-run after a clean namespace.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-seed-buckets
+  namespace: integrity
+  labels:
+    app.kubernetes.io/part-of: integrity-pro
+    app.kubernetes.io/component: minio
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mc
+          image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -euo pipefail
+              mc alias set local http://minio.integrity.svc.cluster.local:9000 \
+                "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
+              for BUCKET in documents reports uploads; do
+                mc mb --ignore-existing "local/$BUCKET"
+              done
+          envFrom:
+            - secretRef:
+                name: minio-credentials

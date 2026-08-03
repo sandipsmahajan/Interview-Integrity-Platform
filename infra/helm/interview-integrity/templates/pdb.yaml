@@ -1,0 +1,20 @@
+{{/*
+PodDisruptionBudget for services with pdb.enabled=true.
+*/}}
+{{- range $name, $svc := .Values.services }}
+{{- if and $svc.enabled $svc.pdb.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "integrity.labels" (merge (deepCopy $svc) (dict "name" $name "Chart" $.Chart "Release" $.Release)) | nindent 4 }}
+spec:
+  minAvailable: {{ $svc.pdb.minAvailable | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "integrity.selectorLabels" (dict "name" $name "Release" $.Release) | nindent 6 }}
+{{- end }}
+{{- end }}

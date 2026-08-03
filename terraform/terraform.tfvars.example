@@ -1,0 +1,62 @@
+# -----------------------------------------------------------------------------
+# Integrity Pro - example Terraform variables
+#
+#   cp terraform.tfvars.example terraform.tfvars
+#   terraform init && terraform plan
+#
+# Secrets are never stored in tfvars - they are provided by the CI/CD
+# pipeline as environment variables (TF_VAR_jwt_secret) or by the Secrets
+# Manager / Parameter Store modules.
+# -----------------------------------------------------------------------------
+
+project     = "integrity"
+environment = "dev"
+aws_region  = "us-east-1"
+
+# --- Networking --------------------------------------------------------------
+# vpc_cidr            = "10.100.0.0/16"
+# public_subnets      = ["10.100.1.0/24", "10.100.2.0/24", "10.100.3.0/24"]
+# private_subnets     = ["10.100.11.0/24", "10.100.12.0/24", "10.100.13.0/24"]
+# enable_flow_logs    = true
+
+# --- DNS / TLS ---------------------------------------------------------------
+# dns_domain        = "integritypro.example.com"
+# create_hosted_zone = false   # true only the first time the zone is created
+# tls_domain        = "integritypro.example.com"
+
+# --- EKS ---------------------------------------------------------------------
+eks_cluster_version     = "1.31"
+eks_node_instance_types = ["m6i.large"]
+eks_node_desired_size   = 3
+eks_node_min_size       = 3
+eks_node_max_size       = 9
+
+# --- RDS ---------------------------------------------------------------------
+db_instance_class        = "db.t4g.medium"
+db_multi_az              = false        # true for uat/prod
+db_allocated_storage_gb  = 100
+db_backup_retention_days = 14
+db_deletion_protection   = true
+db_enable_rotation       = false        # true for prod
+
+# --- ElastiCache --------------------------------------------------------------
+redis_node_type          = "cache.t4g.micro"
+redis_num_cache_clusters = 1            # 2+ for uat/prod (automatic failover)
+
+# --- MSK ---------------------------------------------------------------------
+kafka_enabled                = false     # dev runs Strimzi in-cluster; qa/uat/prod -> true
+kafka_broker_instance_type   = "kafka.t3.small"
+kafka_broker_volume_gb       = 100
+kafka_number_of_broker_nodes = 3
+
+# --- Load balancer / ingress --------------------------------------------------
+alb_ingress_node_port = 30080
+enable_waf            = false
+
+# --- Observability -------------------------------------------------------------
+log_retention_days = 30
+alarm_email        = "ops@integritypro.example.com"
+
+# --- CI/CD ---------------------------------------------------------------------
+github_organisation = "sandipsmahajan"
+github_repository   = "Interview-Integrity-Platform"

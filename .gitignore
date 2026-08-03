@@ -10,3 +10,11 @@
 /libs/build
 /services/*/build
 /services/build
+
+# Terraform
+/terraform/.terraform
+/terraform/**/.terraform
+/terraform/**/*.tfstate*
+/terraform/**/*.tfvars
+!/terraform/**/terraform.tfvars.example
+/terraform/*.tfplan

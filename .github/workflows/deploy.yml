@@ -1,0 +1,173 @@
+name: deploy
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        options: [dev, qa, uat, prod]
+        default: dev
+      version:
+        type: string
+        default: ""
+        description: "Image tag to deploy (default: the git SHA being built)"
+  push:
+    branches: [master]
+    paths:
+      - "services/**"
+      - "libs/**"
+      - "infra/helm/**"
+      - "infra/config/**"
+      - ".github/workflows/deploy.yml"
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+  ENVIRONMENT: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.environment) || 'dev' }}
+  IMAGE_TAG: ${{ (github.event.inputs.version != '' && github.event.inputs.version) || github.sha }}
+
+concurrency:
+  group: deploy-${{ env.ENVIRONMENT }}
+  cancel-in-progress: false
+
+jobs:
+  build-images:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - discovery-service
+          - api-gateway
+          - identity-service
+          - organization-service
+          - recruiter-service
+          - candidate-service
+          - interview-service
+          - desktop-client-service
+          - telemetry-service
+          - policy-engine-service
+          - report-service
+          - notification-service
+          - analytics-service
+          - audit-service
+          - storage-service
+          - feature-flag-service
+          - scheduler-service
+          - integration-service
+          - configuration-service
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/integrity-${{ env.ENVIRONMENT }}-github-actions
+          role-session-name: image-build
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build and push image
+        env:
+          REGISTRY: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+          REPO: integrity-${{ env.ENVIRONMENT }}/${{ matrix.service }}
+        run: |
+          docker build \
+            -f services/${{ matrix.service }}/Dockerfile \
+            -t $REGISTRY/$REPO:${{ env.IMAGE_TAG }} \
+            -t $REGISTRY/$REPO:latest \
+            .
+          docker push $REGISTRY/$REPO:${{ env.IMAGE_TAG }}
+          docker push $REGISTRY/$REPO:latest
+
+  deploy:
+    needs: build-images
+    runs-on: ubuntu-latest
+    environment: ${{ env.ENVIRONMENT }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/integrity-${{ env.ENVIRONMENT }}-github-actions
+          role-session-name: helm-deploy
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.4
+      - name: Configure kubectl
+        run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name integrity-${{ env.ENVIRONMENT }}
+      - name: Create namespace
+        run: kubectl create namespace integrity --dry-run=client -o yaml | kubectl apply -f -
+
+      # Externalised Spring configuration - single source of truth is
+      # infra/config/. Mounted into every pod by the Helm chart.
+      - name: Apply ConfigMap from infra/config
+        run: |
+          kubectl create configmap integrity-config \
+            --from-file=infra/config/ \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # Platform credentials. Values are sourced from GitHub environment
+      # secrets (never committed) and mirrored to AWS Secrets Manager by
+      # Terraform. Chart pods reference this Secret via envFrom.
+      - name: Apply integrity-secrets Secret
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets[format('JWT_SECRET_{0}', env.ENVIRONMENT)] }}
+          REDIS_AUTH: ${{ secrets.REDIS_AUTH }}
+          MSK_USERNAME: ${{ secrets.MSK_USERNAME }}
+          MSK_PASSWORD: ${{ secrets.MSK_PASSWORD }}
+          SES_USERNAME: ${{ secrets.SES_USERNAME }}
+          SES_PASSWORD: ${{ secrets.SES_PASSWORD }}
+          MINIO_ROOT_USER: ${{ secrets.MINIO_ROOT_USER }}
+          MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
+        run: |
+          kubectl create secret generic integrity-secrets \
+            --from-literal=DB_PASSWORD="$DB_PASSWORD" \
+            --from-literal=JWT_SECRET="$JWT_SECRET" \
+            --from-literal=REDIS_AUTH="$REDIS_AUTH" \
+            --from-literal=MSK_USERNAME="$MSK_USERNAME" \
+            --from-literal=MSK_PASSWORD="$MSK_PASSWORD" \
+            --from-literal=SES_USERNAME="$SES_USERNAME" \
+            --from-literal=SES_PASSWORD="$SES_PASSWORD" \
+            --from-literal=MINIO_ROOT_USER="$MINIO_ROOT_USER" \
+            --from-literal=MINIO_ROOT_PASSWORD="$MINIO_ROOT_PASSWORD" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Helm upgrade
+        working-directory: infra/helm/interview-integrity
+        env:
+          REGISTRY: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/integrity-${{ env.ENVIRONMENT }}
+        run: |
+          helm upgrade --install integrity . \
+            --namespace integrity \
+            --values values-${{ env.ENVIRONMENT }}.yaml \
+            --set global.image.registry=$REGISTRY \
+            --set global.image.tag=${{ env.IMAGE_TAG }} \
+            --wait --timeout 10m
+
+      - name: Verify rollout
+        run: |
+          kubectl rollout status deployment -n integrity --timeout=5m
+          kubectl get pods -n integrity -o wide
+
+      - name: Smoke test (API gateway health)
+        run: |
+          for i in $(seq 1 30); do
+            STATUS=$(kubectl exec -n integrity deploy/api-gateway -- \
+              wget -q -O- http://localhost:8080/actuator/health/readiness 2>/dev/null || echo DOWN)
+            echo "$STATUS" | grep -q '"UP"' && { echo "api-gateway READY"; exit 0; }
+            sleep 10
+          done
+          echo "api-gateway never became ready"
+          exit 1
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          helm rollback integrity 1 --namespace integrity --timeout 5m || true

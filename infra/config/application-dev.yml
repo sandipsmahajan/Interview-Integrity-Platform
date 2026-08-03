@@ -1,0 +1,69 @@
+# ---------------------------------------------------------------------------
+# Integrity Pro - "dev" Spring profile
+#
+# Development environment on Amazon EKS. Uses managed PostgreSQL (RDS) and
+# ElastiCache Redis. Kafka runs in-cluster with the Strimzi operator by
+# default (cost optimisation); flip `kafkaEnabled` to true in the "dev"
+# Terraform root to provision Amazon MSK and inject its bootstrap brokers.
+#
+# The deployment pipeline injects the exact RDS/ElastiCache endpoints created
+# by Terraform through the environment variables; the defaults below are safe
+# placeholders so the file remains commit-safe.
+# ---------------------------------------------------------------------------
+app:
+  timezone: ${APP_TIMEZONE:UTC}
+
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka-kafka-bootstrap.kafka.svc.cluster.local:9092}
+    producer:
+      acks: ${KAFKA_PRODUCER_ACKS:all}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:default}
+  data:
+    redis:
+      host: ${REDIS_HOST:CHANGE_ME_DEV_REDIS_ENDPOINT}
+      port: ${REDIS_PORT:6379}
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:CHANGE_ME_DEV_RDS_ENDPOINT}:${DB_PORT:5432}/${DB_NAME:dev_db}
+    pool:
+      initial-size: ${DB_POOL_INITIAL_SIZE:4}
+      max-size: ${DB_POOL_MAX_SIZE:16}
+  flyway:
+    enabled: true
+    url: jdbc:postgresql://${DB_HOST:CHANGE_ME_DEV_RDS_ENDPOINT}:${DB_PORT:5432}/${DB_NAME:dev_db}
+  mail:
+    host: ${MAIL_HOST:mailpit.integrity.svc.cluster.local}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:false}
+
+platform:
+  storage:
+    endpoint: ${PLATFORM_STORAGE_ENDPOINT:http://minio.integrity.svc.cluster.local:9000}
+    region: ${PLATFORM_STORAGE_REGION:us-east-1}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://discovery-service.integrity.svc.cluster.local:8761/eureka}
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,env
+
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+    com.interviewintegrity: ${LOG_LEVEL_APP:DEBUG}

@@ -1,0 +1,129 @@
+# ---------------------------------------------------------------------------
+# Network policies for the `integrity` namespace (dev/local data plane).
+#
+# Default-deny both directions, then selectively allow:
+#   - ingress from the nginx ingress controller (ingress-nginx namespace)
+#   - egress to platform pods inside the namespace (discovery, postgres,
+#     redis, minio, mailpit, and every peer service on the mesh)
+#   - egress to the Strimzi Kafka cluster (kafka namespace, port 9092)
+#   - egress to cluster DNS
+#   - egress to the internet on 443/80 (actuator, cloud SDKs, OTLP export)
+#
+# Production/QA/UAT workloads additionally require egress to the managed data
+# plane (RDS 5432, ElastiCache 6379, MSK 9096/9098, S3 443, SES 587). Those
+# policies are rendered per-environment by the Helm chart (values-<env>.yaml).
+# ---------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: integrity
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-ingress-controller
+  namespace: integrity
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - port: 8080
+        - port: 8081
+        - port: 8082
+        - port: 8083
+        - port: 8084
+        - port: 8085
+        - port: 8086
+        - port: 8087
+        - port: 8088
+        - port: 8089
+        - port: 8090
+        - port: 8091
+        - port: 8092
+        - port: 8093
+        - port: 8094
+        - port: 8095
+        - port: 8096
+        - port: 8097
+        - port: 8761
+---
+# Intra-namespace: discovery clients talk to eureka (8761), services call
+# redis (6379), minio (9000), mailpit (1025) and each other.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-integrity
+  namespace: integrity
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: integrity
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-kafka
+  namespace: integrity
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kafka
+      ports:
+        - port: 9092
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-dns
+  namespace: integrity
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-internet
+  namespace: integrity
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - port: 443
+          protocol: TCP
+        - port: 80
+          protocol: TCP

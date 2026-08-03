@@ -1,12 +1,304 @@
-backend:
-  image: interview-integrity/api-gateway:0.1.0
-  replicas: 3
-  port: 8080
+# ---------------------------------------------------------------------------
+# Integrity Pro - base Helm values.
+#
+# Everything is overridable per environment through values-local.yaml,
+# values-dev.yaml, values-qa.yaml, values-uat.yaml and values-prod.yaml.
+# The managed data plane (RDS / ElastiCache / MSK / S3 / SES) endpoints are
+# injected into the env-specific files from Terraform outputs at deploy time.
+# ---------------------------------------------------------------------------
+
+global:
+  # Deployment environment label (local | dev | qa | uat | prod)
+  environment: local
+
+  image:
+    registry: ghcr.io/sandipsmahajan
+    tag: 0.1.0
+    pullPolicy: IfNotPresent
+    pullSecret: ""
+
+  # Spring profile activated by every service (see infra/config/).
+  spring:
+    profile: kubernetes
+    configLocation: /etc/integrity/config/
+
+  # External ConfigMap (created by CI from infra/config/) and Secret
+  # (created by CI from AWS Secrets Manager). The chart references these
+  # rather than owning them so infra/config stays the single source of truth.
+  config:
+    configMapName: integrity-config
+    mountPath: /etc/integrity/config
+
+  secrets:
+    name: integrity-secrets
+
+  # Data plane endpoints (defaults target the in-cluster dev stack).
+  dataPlane:
+    db:
+      host: postgres.integrity.svc.cluster.local
+      port: "5432"
+      username: integrity
+      # password lives in the integrity-secrets Secret (DB_PASSWORD)
+    redis:
+      host: redis.integrity.svc.cluster.local
+      port: "6379"
+    kafka:
+      bootstrapServers: kafka-kafka-bootstrap.kafka.svc.cluster.local:9092
+      saslEnabled: "false"
+      saslUsername: ""
+    mail:
+      host: mailpit.integrity.svc.cluster.local
+      port: "1025"
+      from: no-reply@integritypro.app
+    storage:
+      endpoint: http://minio.integrity.svc.cluster.local:9000
+      region: us-east-1
+    eureka:
+      url: http://discovery-service.integrity.svc.cluster.local:8761/eureka
+
+  platform:
+    timezone: UTC
+    frontendBaseUrl: http://localhost:5173
+
+  app:
+    name: Integrity Pro
+
+  # Prometheus annotations on every pod when true.
+  monitoring:
+    enabled: true
+
+  jvm:
+    # Applied to every service unless overridden per service.
+    heapInitial: -Xms256m
+    heapMax: -Xmx512m
+
 ingress:
   enabled: true
-  host: api.interview-integrity.local
-postgres:
-  databaseUrlSecretName: integrity-secrets
-  databaseUrlSecretKey: database-url
-kafka:
-  bootstrapServers: kafka:9092
+  ingressClassName: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 20m
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "10"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+  apiHost: api.integrity.local
+  portalHost: portal.integrity.local
+  apiTlsSecret: ""
+  portalTlsSecret: ""
+  # Optional portal frontend backend (React/Vite build served as static files).
+  portalBackend:
+    service: ""
+    port: http
+
+# Namespace-level default-deny network policy with selective egress.
+networkPolicy:
+  enabled: true
+
+# ---------------------------------------------------------------------------
+# Service catalogue. `image` is the ECR/ghcr image name; `port` is the service
+# port (SERVER_PORT); `dbName` sets DB_NAME (empty = no database).
+# ---------------------------------------------------------------------------
+services:
+  discovery:
+    enabled: true
+    image: discovery-service
+    port: 8761
+    replicas: 1
+    dbName: ""
+    needsRedis: false
+    needsKafka: false
+    hpa: { enabled: false }
+    pdb: { enabled: true, minAvailable: 1 }
+  api-gateway:
+    enabled: true
+    image: api-gateway
+    port: 8080
+    replicas: 2
+    dbName: ""
+    needsRedis: true
+    needsKafka: false
+    extraEnv:
+      GATEWAY_DISCOVERY_LOCATOR_ENABLED: "false"
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 8, cpuTarget: 70 }
+    pdb: { enabled: true, minAvailable: 1 }
+  identity:
+    enabled: true
+    image: identity-service
+    port: 8081
+    replicas: 2
+    dbName: identity_db
+    needsRedis: false
+    needsKafka: true
+    extraEnv:
+      MFA_EMAIL_PURPOSE: mfa-login
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 8, cpuTarget: 70 }
+    pdb: { enabled: true, minAvailable: 1 }
+  organization:
+    enabled: true
+    image: organization-service
+    port: 8082
+    replicas: 2
+    dbName: organization_db
+    needsRedis: false
+    needsKafka: true
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 6, cpuTarget: 70 }
+    pdb: { enabled: true, minAvailable: 1 }
+  recruiter:
+    enabled: true
+    image: recruiter-service
+    port: 8083
+    replicas: 2
+    dbName: recruiter_db
+    needsRedis: false
+    needsKafka: false
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 6, cpuTarget: 70 }
+    pdb: { enabled: true, minAvailable: 1 }
+  candidate:
+    enabled: true
+    image: candidate-service
+    port: 8084
+    replicas: 2
+    dbName: candidate_db
+    needsRedis: false
+    needsKafka: true
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 6, cpuTarget: 70 }
+    pdb: { enabled: true, minAvailable: 1 }
+  interview:
+    enabled: true
+    image: interview-service
+    port: 8085
+    replicas: 2
+    dbName: interview_db
+    needsRedis: false
+    needsKafka: true
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 6, cpuTarget: 70 }
+    pdb: { enabled: true, minAvailable: 1 }
+  desktop-client:
+    enabled: true
+    image: desktop-client-service
+    port: 8086
+    replicas: 1
+    dbName: ""
+    needsRedis: false
+    needsKafka: true
+    extraEnv:
+      DESKTOP_RELAY_TOPICS: desktop-client-events.v1
+    hpa: { enabled: false }
+    pdb: { enabled: true, minAvailable: 1 }
+  telemetry:
+    enabled: true
+    image: telemetry-service
+    port: 8087
+    replicas: 2
+    dbName: telemetry_db
+    needsRedis: false
+    needsKafka: true
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 8, cpuTarget: 70 }
+    pdb: { enabled: true, minAvailable: 1 }
+  policy-engine:
+    enabled: true
+    image: policy-engine-service
+    port: 8088
+    replicas: 2
+    dbName: policy_db
+    needsRedis: false
+    needsKafka: true
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 6, cpuTarget: 70 }
+    pdb: { enabled: true, minAvailable: 1 }
+  report:
+    enabled: true
+    image: report-service
+    port: 8089
+    replicas: 2
+    dbName: report_db
+    needsRedis: false
+    needsKafka: true
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 6, cpuTarget: 70 }
+    pdb: { enabled: true, minAvailable: 1 }
+  notification:
+    enabled: true
+    image: notification-service
+    port: 8090
+    replicas: 2
+    dbName: notification_db
+    needsRedis: false
+    needsKafka: true
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 6, cpuTarget: 70 }
+    pdb: { enabled: true, minAvailable: 1 }
+  analytics:
+    enabled: true
+    image: analytics-service
+    port: 8091
+    replicas: 2
+    dbName: analytics_db
+    needsRedis: false
+    needsKafka: true
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 6, cpuTarget: 70 }
+    pdb: { enabled: true, minAvailable: 1 }
+  audit:
+    enabled: true
+    image: audit-service
+    port: 8092
+    replicas: 2
+    dbName: audit_db
+    needsRedis: false
+    needsKafka: true
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 6, cpuTarget: 70 }
+    pdb: { enabled: true, minAvailable: 1 }
+  storage:
+    enabled: true
+    image: storage-service
+    port: 8093
+    replicas: 2
+    dbName: storage_db
+    needsRedis: false
+    needsKafka: true
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 6, cpuTarget: 70 }
+    pdb: { enabled: true, minAvailable: 1 }
+  feature-flag:
+    enabled: true
+    image: feature-flag-service
+    port: 8094
+    replicas: 2
+    dbName: feature_flag_db
+    needsRedis: false
+    needsKafka: true
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 6, cpuTarget: 70 }
+    pdb: { enabled: true, minAvailable: 1 }
+  scheduler:
+    enabled: true
+    image: scheduler-service
+    port: 8095
+    replicas: 1
+    dbName: scheduler_db
+    needsRedis: false
+    needsKafka: true
+    hpa: { enabled: false }
+    pdb: { enabled: true, minAvailable: 1 }
+  integration:
+    enabled: true
+    image: integration-service
+    port: 8096
+    replicas: 2
+    dbName: integration_db
+    needsRedis: false
+    needsKafka: true
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 6, cpuTarget: 70 }
+    pdb: { enabled: true, minAvailable: 1 }
+  configuration:
+    enabled: true
+    image: configuration-service
+    port: 8097
+    replicas: 2
+    dbName: configuration_db
+    needsRedis: false
+    needsKafka: true
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 6, cpuTarget: 70 }
+    pdb: { enabled: true, minAvailable: 1 }
+
+# Default resource profile applied to services that do not override it.
+defaultResources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

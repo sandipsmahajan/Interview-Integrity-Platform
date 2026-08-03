@@ -1,0 +1,19 @@
+# Namespaces for the Integrity Pro platform.
+#
+#   integrity   - all 19 microservices, PostgreSQL, Redis, MinIO, Mailpit
+#   kafka       - Strimzi operator + Kafka cluster (dev/local data plane only)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: integrity
+  labels:
+    app.kubernetes.io/part-of: integrity-pro
+    name: integrity
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kafka
+  labels:
+    app.kubernetes.io/part-of: integrity-pro
+    name: kafka

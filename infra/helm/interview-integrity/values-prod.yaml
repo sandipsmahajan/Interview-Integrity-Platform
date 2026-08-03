@@ -1,0 +1,53 @@
+# ---------------------------------------------------------------------------
+# Production values.
+#
+# Full production topology: multi-AZ RDS, ElastiCache with auto-failover,
+# Amazon MSK (SASL/SCRAM), Amazon SES SMTP, S3, WAF-protected ALB in front of
+# nginx ingress. Spring profile: prod. Endpoints injected by CI from the
+# "prod" Terraform root outputs.
+#
+# The integrity-secrets Secret is created by the deployment pipeline from AWS
+# Secrets Manager (never from values), so no credentials appear in this file.
+# ---------------------------------------------------------------------------
+global:
+  environment: prod
+  image:
+    registry: AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/integrity-prod
+    tag: 0.1.0
+    pullPolicy: IfNotPresent
+    pullSecret: ecr-registry-secret
+  spring:
+    profile: prod
+  dataPlane:
+    db:
+      host: CHANGE_ME_PROD_RDS_ENDPOINT
+      port: "5432"
+      username: integrity
+    redis:
+      host: CHANGE_ME_PROD_REDIS_ENDPOINT
+      port: "6379"
+    kafka:
+      bootstrapServers: CHANGE_ME_PROD_MSK_BOOTSTRAP
+      saslEnabled: "true"
+      saslUsername: integrity-msk
+    mail:
+      host: CHANGE_ME_SES_SMTP_ENDPOINT
+      port: "587"
+      from: no-reply@integritypro.app
+    storage:
+      endpoint: https://s3.us-east-1.amazonaws.com
+    eureka:
+      url: http://discovery-service.integrity.svc.cluster.local:8761/eureka
+
+  jvm:
+    heapInitial: -Xms512m
+    heapMax: -Xmx1g
+
+ingress:
+  apiHost: api.integritypro.example.com
+  portalHost: portal.integritypro.example.com
+  apiTlsSecret: integrity-prod-api-tls
+  portalTlsSecret: integrity-prod-portal-tls
+
+networkPolicy:
+  enabled: true
