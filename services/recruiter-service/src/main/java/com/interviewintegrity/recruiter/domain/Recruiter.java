@@ -60,6 +60,7 @@ public class Recruiter implements Persistable<UUID> {
       UUID createdBy) {
     Assert.notBlank(fullName, "fullName");
     Assert.notBlank(email, "email");
+    Assert.notNull(userId, "userId");
     this.organizationId = organizationId;
     this.userId = userId;
     this.fullName = fullName;
