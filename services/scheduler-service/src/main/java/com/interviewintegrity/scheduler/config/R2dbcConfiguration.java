@@ -2,6 +2,7 @@ package com.interviewintegrity.scheduler.config;
 
 import com.interviewintegrity.scheduler.domain.JobStatus;
 import com.interviewintegrity.scheduler.domain.ExecutionStatus;
+import com.interviewintegrity.common.JsonbConverters;
 import io.r2dbc.postgresql.PostgresqlConnectionFactoryProvider;
 import io.r2dbc.postgresql.codec.EnumCodec;
 import java.util.ArrayList;
@@ -43,6 +44,7 @@ public class R2dbcConfiguration {
     List<Object> converters = new ArrayList<>(R2dbcCustomConversions.STORE_CONVERTERS);
     converters.add(new JobStatusWriteConverter());
     converters.add(new ExecutionStatusWriteConverter());
+    converters.addAll(JsonbConverters.toList());
     return new R2dbcCustomConversions(
         StoreConversions.of(simpleTypes, R2dbcCustomConversions.STORE_CONVERTERS), converters);
   }

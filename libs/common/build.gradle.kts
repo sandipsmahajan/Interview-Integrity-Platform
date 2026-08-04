@@ -8,5 +8,7 @@ dependencies {
     implementation(platform("org.springframework.boot:spring-boot-dependencies:${libs.versions.spring.boot.get()}"))
     implementation("org.springframework.boot:spring-boot-autoconfigure")
     implementation("org.springframework:spring-r2dbc")
+    implementation(libs.spring.boot.starter.data.r2dbc)
+    implementation(libs.r2dbc.postgresql)
     errorprone(libs.errorprone.core)
 }

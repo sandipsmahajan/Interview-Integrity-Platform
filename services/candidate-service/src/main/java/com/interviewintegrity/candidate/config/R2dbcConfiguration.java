@@ -3,6 +3,7 @@ package com.interviewintegrity.candidate.config;
 import com.interviewintegrity.candidate.domain.AssessmentStatus;
 import com.interviewintegrity.candidate.domain.CandidateStatus;
 import com.interviewintegrity.candidate.domain.ConsentStatus;
+import com.interviewintegrity.common.JsonbConverters;
 import io.r2dbc.postgresql.PostgresqlConnectionFactoryProvider;
 import io.r2dbc.postgresql.codec.EnumCodec;
 import java.util.ArrayList;
@@ -57,6 +58,7 @@ public class R2dbcConfiguration {
     converters.add(new CandidateStatusWriteConverter());
     converters.add(new AssessmentStatusWriteConverter());
     converters.add(new ConsentStatusWriteConverter());
+    converters.addAll(JsonbConverters.toList());
     return new R2dbcCustomConversions(
         StoreConversions.of(simpleTypes, R2dbcCustomConversions.STORE_CONVERTERS), converters);
   }

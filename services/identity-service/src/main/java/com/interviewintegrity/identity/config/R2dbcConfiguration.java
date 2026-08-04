@@ -2,6 +2,7 @@ package com.interviewintegrity.identity.config;
 
 import com.interviewintegrity.identity.domain.SessionStatus;
 import com.interviewintegrity.identity.domain.UserStatus;
+import com.interviewintegrity.common.JsonbConverters;
 import io.r2dbc.postgresql.PostgresqlConnectionFactoryProvider;
 import io.r2dbc.postgresql.codec.EnumCodec;
 import java.net.InetAddress;
@@ -65,6 +66,7 @@ public class R2dbcConfiguration {
     List<Object> converters = new ArrayList<>(R2dbcCustomConversions.STORE_CONVERTERS);
     converters.add(new UserStatusWriteConverter());
     converters.add(new SessionStatusWriteConverter());
+    converters.addAll(JsonbConverters.toList());
     return new R2dbcCustomConversions(
         StoreConversions.of(simpleTypes, R2dbcCustomConversions.STORE_CONVERTERS), converters);
   }

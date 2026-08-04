@@ -3,6 +3,7 @@ package com.interviewintegrity.notification.config;
 import com.interviewintegrity.notification.domain.NotificationChannel;
 import com.interviewintegrity.notification.domain.NotificationPriority;
 import com.interviewintegrity.notification.domain.NotificationStatus;
+import com.interviewintegrity.common.JsonbConverters;
 import io.r2dbc.postgresql.PostgresqlConnectionFactoryProvider;
 import io.r2dbc.postgresql.codec.EnumCodec;
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ public class R2dbcConfiguration {
     converters.add(new NotificationChannelWriteConverter());
     converters.add(new NotificationPriorityWriteConverter());
     converters.add(new NotificationStatusWriteConverter());
+    converters.addAll(JsonbConverters.toList());
     return new R2dbcCustomConversions(
         StoreConversions.of(simpleTypes, R2dbcCustomConversions.STORE_CONVERTERS), converters);
   }
