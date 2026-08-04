@@ -24,7 +24,7 @@ interface FeatureSlideProps {
  */
 export function FeatureSlide({ slide }: FeatureSlideProps) {
   return (
-    <Box sx={{ maxWidth: 600 }}>
+    <Box sx={{ maxWidth: { md: 560, lg: 720 } }}>
       <Box
         sx={{
           display: 'inline-flex',

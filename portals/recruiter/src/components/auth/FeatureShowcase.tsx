@@ -41,7 +41,8 @@ export function FeatureShowcase() {
           display: 'flex',
           flexDirection: 'column',
           px: { md: 4, lg: 7 },
-          py: { md: 5, lg: 6 },
+          pt: 0,
+          pb: { md: 5, lg: 6 },
           overflow: 'hidden'
         }}
       >
