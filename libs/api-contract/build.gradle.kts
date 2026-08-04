@@ -13,4 +13,5 @@ dependencies {
     errorprone(libs.errorprone.core)
 
     testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.spring.boot.starter.webflux)
 }

@@ -7,6 +7,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.webflux.error.ErrorWebExceptionHandler;
+import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,8 +18,13 @@ import tools.jackson.databind.ObjectMapper;
 /**
  * Reactive error handler that renders every failure as a {@link ErrorResponse} with the platform's
  * stable error contract.
+ *
+ * <p>Runs at {@link Ordered#HIGHEST_PRECEDENCE} so it always handles the exception before Spring
+ * Boot's default {@code ErrorWebExceptionHandler} (which is ordered at {@code -1}); this is what
+ * turns platform domain exceptions (e.g. {@code AuthenticationFailedException}) into their contract
+ * status codes (e.g. 401) instead of a generic 500.
  */
-public final class PlatformErrorWebExceptionHandler implements ErrorWebExceptionHandler {
+public final class PlatformErrorWebExceptionHandler implements ErrorWebExceptionHandler, Ordered {
 
   private static final Logger log = LoggerFactory.getLogger(PlatformErrorWebExceptionHandler.class);
 
@@ -29,6 +35,11 @@ public final class PlatformErrorWebExceptionHandler implements ErrorWebException
 
   public PlatformErrorWebExceptionHandler(ObjectMapper objectMapper) {
     this.objectMapper = objectMapper;
+  }
+
+  @Override
+  public int getOrder() {
+    return Ordered.HIGHEST_PRECEDENCE;
   }
 
   @Override
