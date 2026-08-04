@@ -5,6 +5,7 @@ import com.interviewintegrity.identity.domain.UserStatus;
 import com.interviewintegrity.common.JsonbConverters;
 import io.r2dbc.postgresql.PostgresqlConnectionFactoryProvider;
 import io.r2dbc.postgresql.codec.EnumCodec;
+import io.r2dbc.postgresql.codec.Json;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +63,7 @@ public class R2dbcConfiguration {
   @Bean
   R2dbcCustomConversions r2dbcCustomConversions() {
     SimpleTypeHolder simpleTypes =
-        new SimpleTypeHolder(Set.of(InetAddress.class), R2dbcSimpleTypeHolder.HOLDER);
+        new SimpleTypeHolder(Set.of(InetAddress.class, Json.class), R2dbcSimpleTypeHolder.HOLDER);
     List<Object> converters = new ArrayList<>(R2dbcCustomConversions.STORE_CONVERTERS);
     converters.add(new UserStatusWriteConverter());
     converters.add(new SessionStatusWriteConverter());
