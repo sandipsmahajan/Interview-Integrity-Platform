@@ -49,7 +49,13 @@ describe('LoginPage', () => {
     renderLogin();
     expect(screen.getByLabelText(/work email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument();
+    expect(screen.getByText('Welcome back')).toBeInTheDocument();
+  });
+
+  it('does not expose the organization id field on the login form', () => {
+    renderLogin();
+    expect(screen.queryByLabelText(/organization id/i)).not.toBeInTheDocument();
   });
 
   it('shows validation errors for empty required fields', async () => {

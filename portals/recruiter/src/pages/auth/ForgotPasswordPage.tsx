@@ -9,7 +9,7 @@ import Box from '@mui/material/Box';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { api } from '../../lib/api';
-import { AuthLayout } from '../../components/AuthLayout';
+import { AuthenticationLayout, AuthHeading } from '../../components/auth/AuthenticationLayout';
 
 const schema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email address')
@@ -36,7 +36,8 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <AuthLayout title="Reset your password" subtitle="We will email you a link to create a new password.">
+    <AuthenticationLayout>
+      <AuthHeading title="Reset your password" subtitle="We will email you a link to create a new password." />
       {sent ? (
         <Box sx={{ textAlign: 'center', py: 2 }}>
           <Typography variant="body1" sx={{ mb: 2 }}>
@@ -66,6 +67,6 @@ export function ForgotPasswordPage() {
           </Button>
         </form>
       )}
-    </AuthLayout>
+    </AuthenticationLayout>
   );
 }

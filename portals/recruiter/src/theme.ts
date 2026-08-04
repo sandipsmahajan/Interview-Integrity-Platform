@@ -59,4 +59,56 @@ const darkTheme = createTheme({
   }
 });
 
-export { lightTheme, darkTheme };
+/**
+ * Always-dark theme used by the public authentication screens. The auth
+ * experience is intentionally dark regardless of the app's light/dark toggle.
+ */
+const authTheme = createTheme({
+  ...baseOptions,
+  palette: {
+    mode: 'dark',
+    primary: { main: '#3b82f6' },
+    secondary: { main: '#22d3ee' },
+    success: { main: '#22c55e' },
+    warning: { main: '#f59e0b' },
+    error: { main: '#ef4444' },
+    info: { main: '#22d3ee' },
+    background: { default: '#0b1220', paper: '#0f172a' },
+    text: { primary: '#f1f5f9', secondary: '#94a3b8' },
+    divider: 'rgba(148, 163, 184, 0.14)'
+  },
+  shape: { borderRadius: 12 },
+  components: {
+    ...baseOptions.components,
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          backgroundColor: 'rgba(255, 255, 255, 0.04)',
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'rgba(148, 163, 184, 0.22)'
+          },
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'rgba(148, 163, 184, 0.4)'
+          },
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: '#3b82f6',
+            borderWidth: 1
+          }
+        }
+      }
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: { textTransform: 'none', fontWeight: 600, borderRadius: 12 }
+      }
+    },
+    MuiCheckbox: {
+      styleOverrides: {
+        root: { color: 'rgba(148, 163, 184, 0.6)', '&.Mui-checked': { color: '#3b82f6' } }
+      }
+    }
+  }
+});
+
+export { lightTheme, darkTheme, authTheme };

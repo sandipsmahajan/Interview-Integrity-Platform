@@ -9,7 +9,7 @@ import Box from '@mui/material/Box';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { api } from '../../lib/api';
-import { AuthLayout } from '../../components/AuthLayout';
+import { AuthenticationLayout, AuthHeading } from '../../components/auth/AuthenticationLayout';
 
 const schema = z.object({
   token: z.string().min(1, 'Verification code is required')
@@ -37,7 +37,8 @@ export function VerifyEmailPage() {
   }
 
   return (
-    <AuthLayout title="Verify your email" subtitle="Enter the one-time verification token from your email.">
+    <AuthenticationLayout>
+      <AuthHeading title="Verify your email" subtitle="Enter the one-time verification token from your email." />
       {done ? (
         <Box sx={{ textAlign: 'center', py: 2 }}>
           <Typography variant="body1" sx={{ mb: 2 }}>
@@ -70,6 +71,6 @@ export function VerifyEmailPage() {
           </Typography>
         </Link>
       </Box>
-    </AuthLayout>
+    </AuthenticationLayout>
   );
 }

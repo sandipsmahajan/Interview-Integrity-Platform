@@ -7,7 +7,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import toast from 'react-hot-toast';
-import { AuthLayout } from '../../components/AuthLayout';
+import { AuthenticationLayout, AuthHeading } from '../../components/auth/AuthenticationLayout';
 import { useAuth } from '../../hooks/useAuth';
 
 const schema = z
@@ -59,7 +59,8 @@ export function RegisterPage() {
   }
 
   return (
-    <AuthLayout title="Create your workspace" subtitle="Register your organization and first administrator.">
+    <AuthenticationLayout>
+      <AuthHeading title="Create your workspace" subtitle="Register your organization and first administrator." />
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <TextField
           label="Company name"
@@ -120,6 +121,6 @@ export function RegisterPage() {
           </Link>
         </Typography>
       </Box>
-    </AuthLayout>
+    </AuthenticationLayout>
   );
 }

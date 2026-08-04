@@ -9,7 +9,7 @@ import Box from '@mui/material/Box';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { api } from '../../lib/api';
-import { AuthLayout } from '../../components/AuthLayout';
+import { AuthenticationLayout, AuthHeading } from '../../components/auth/AuthenticationLayout';
 
 const schema = z
   .object({
@@ -48,7 +48,8 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <AuthLayout title="Choose a new password" subtitle="Enter the reset token from your email.">
+    <AuthenticationLayout>
+      <AuthHeading title="Choose a new password" subtitle="Enter the reset token from your email." />
       {done ? (
         <Box sx={{ textAlign: 'center', py: 2 }}>
           <Typography variant="body1" sx={{ mb: 2 }}>
@@ -100,6 +101,6 @@ export function ResetPasswordPage() {
           </Typography>
         </Link>
       </Box>
-    </AuthLayout>
+    </AuthenticationLayout>
   );
 }
