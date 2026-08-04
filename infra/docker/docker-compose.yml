@@ -83,7 +83,7 @@ services:
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
       KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
@@ -134,7 +134,7 @@ services:
       dockerfile: services/discovery-service/Dockerfile
     image: interview-integrity/discovery-service:0.1.0
     ports: [ "8761:8761" ]
-    depends_on: []
+    depends_on: [ ]
 
   # Single entry point for all HTTP traffic; routes /api paths to services.
   api-gateway:
