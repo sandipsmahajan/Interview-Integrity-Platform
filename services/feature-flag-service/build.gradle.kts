@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":libs:common"))
     implementation(project(":libs:config"))
     implementation(project(":libs:exception"))
+    runtimeOnly(libs.caffeine)
     implementation(project(":libs:logging"))
     implementation(project(":libs:observability"))
     implementation(project(":libs:security"))
