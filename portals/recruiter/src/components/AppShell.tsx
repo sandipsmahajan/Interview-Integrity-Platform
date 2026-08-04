@@ -32,6 +32,7 @@ import { initials, formatRelative } from '../lib/format';
 import { NAV_GROUPS, NAV_ITEMS, navItemForPath } from '../lib/nav';
 import { useAuth, useCurrentUserId } from '../hooks/useAuth';
 import { CommandPalette } from './CommandPalette';
+import { BrandMark } from './BrandLogo';
 
 const DRAWER_WIDTH = 260;
 
@@ -68,21 +69,7 @@ export function AppShell({ mode, onToggleMode, children }: AppShellProps) {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Toolbar>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box
-            sx={{
-              width: 34,
-              height: 34,
-              borderRadius: 2,
-              display: 'grid',
-              placeItems: 'center',
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
-              fontWeight: 800,
-              fontSize: 18
-            }}
-          >
-            IP
-          </Box>
+          <BrandMark size={34} />
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.1 }}>
               Integrity Pro

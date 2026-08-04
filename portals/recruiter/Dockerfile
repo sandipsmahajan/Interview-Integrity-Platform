@@ -1,6 +1,7 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY portals/package.json ./package.json
+COPY portals/images ./images
 COPY portals/recruiter ./recruiter
 RUN npm install --workspace @interview-integrity/recruiter
 RUN npm run build --workspace @interview-integrity/recruiter
