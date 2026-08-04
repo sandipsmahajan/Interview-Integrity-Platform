@@ -1,6 +1,7 @@
 package com.interviewintegrity.audit.domain;
 
 import com.interviewintegrity.validation.Assert;
+import io.r2dbc.postgresql.codec.Json;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -46,7 +47,7 @@ public class AuditEvent implements Persistable<UUID> {
   @Column("user_agent")
   private String userAgent;
 
-  private String metadata;
+  private Json metadata;
 
   /** Records a new compliance audit event. */
   public AuditEvent(
@@ -77,7 +78,7 @@ public class AuditEvent implements Persistable<UUID> {
     this.requestId = requestId;
     this.ipAddress = ipAddress;
     this.userAgent = userAgent;
-    this.metadata = metadata == null ? "{}" : metadata;
+    this.metadata = Json.of(metadata == null ? "{}" : metadata);
   }
 
   protected AuditEvent() {}
@@ -132,7 +133,7 @@ public class AuditEvent implements Persistable<UUID> {
   }
 
   public String getMetadata() {
-    return metadata;
+    return metadata == null ? "{}" : metadata.asString();
   }
 
   public void setId(UUID id) {

@@ -1,6 +1,7 @@
 package com.interviewintegrity.storage.domain;
 
 import com.interviewintegrity.validation.Assert;
+import io.r2dbc.postgresql.codec.Json;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -23,7 +24,7 @@ public class StorageBucket implements Persistable<UUID> {
   @Column("versioning_enabled")
   private boolean versioningEnabled;
 
-  private String policy;
+  private Json policy;
 
   @Column("created_by")
   private UUID createdBy;
@@ -53,7 +54,7 @@ public class StorageBucket implements Persistable<UUID> {
     this.organizationId = organizationId;
     this.name = name;
     this.versioningEnabled = versioningEnabled;
-    this.policy = policy == null ? "{}" : policy;
+    this.policy = Json.of(policy == null ? "{}" : policy);
     this.createdBy = createdBy;
     Instant now = Instant.now();
     this.createdAt = now;
@@ -67,7 +68,7 @@ public class StorageBucket implements Persistable<UUID> {
     Assert.notBlank(name, "name");
     this.name = name;
     this.versioningEnabled = versioningEnabled;
-    this.policy = policy == null ? "{}" : policy;
+    this.policy = Json.of(policy == null ? "{}" : policy);
     this.updatedBy = byUser;
     this.updatedAt = Instant.now();
   }
@@ -97,7 +98,7 @@ public class StorageBucket implements Persistable<UUID> {
   }
 
   public String getPolicy() {
-    return policy;
+    return policy == null ? "{}" : policy.asString();
   }
 
   public UUID getCreatedBy() {

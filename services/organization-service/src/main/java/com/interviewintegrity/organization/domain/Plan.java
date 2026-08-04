@@ -1,5 +1,6 @@
 package com.interviewintegrity.organization.domain;
 
+import io.r2dbc.postgresql.codec.Json;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -23,7 +24,7 @@ public class Plan implements Persistable<UUID> {
   @Column("max_seats")
   private Integer maxSeats;
 
-  private String features;
+  private Json features;
 
   @Column("created_at")
   private Instant createdAt;
@@ -55,7 +56,7 @@ public class Plan implements Persistable<UUID> {
   }
 
   public String getFeatures() {
-    return features;
+    return features == null ? "{}" : features.asString();
   }
 
   public Instant getCreatedAt() {

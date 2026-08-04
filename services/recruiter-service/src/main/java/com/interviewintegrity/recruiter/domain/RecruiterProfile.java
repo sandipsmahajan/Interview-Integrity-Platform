@@ -1,6 +1,7 @@
 package com.interviewintegrity.recruiter.domain;
 
 import com.interviewintegrity.validation.Assert;
+import io.r2dbc.postgresql.codec.Json;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -28,7 +29,7 @@ public class RecruiterProfile implements Persistable<UUID> {
   @Column("linkedin_url")
   private String linkedinUrl;
 
-  private String availability;
+  private Json availability;
 
   @Column("created_at")
   private Instant createdAt;
@@ -43,7 +44,7 @@ public class RecruiterProfile implements Persistable<UUID> {
     this.recruiterId = recruiterId;
     this.organizationId = organizationId;
     this.specialties = new String[0];
-    this.availability = "{}";
+    this.availability = Json.of("{}");
     Instant now = Instant.now();
     this.createdAt = now;
     this.updatedAt = now;
@@ -59,7 +60,7 @@ public class RecruiterProfile implements Persistable<UUID> {
     this.bio = bio;
     this.specialties = specialties == null ? new String[0] : specialties.clone();
     this.linkedinUrl = linkedinUrl;
-    this.availability = availability == null ? "{}" : availability;
+    this.availability = Json.of(availability == null ? "{}" : availability);
     this.updatedAt = Instant.now();
   }
 
@@ -89,7 +90,7 @@ public class RecruiterProfile implements Persistable<UUID> {
   }
 
   public String getAvailability() {
-    return availability;
+    return availability == null ? "{}" : availability.asString();
   }
 
   public Instant getCreatedAt() {

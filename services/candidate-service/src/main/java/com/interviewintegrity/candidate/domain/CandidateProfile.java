@@ -1,6 +1,7 @@
 package com.interviewintegrity.candidate.domain;
 
 import com.interviewintegrity.validation.Assert;
+import io.r2dbc.postgresql.codec.Json;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -45,7 +46,7 @@ public class CandidateProfile implements Persistable<UUID> {
   @Column("experience_years")
   private BigDecimal experienceYears;
 
-  private String attributes;
+  private Json attributes;
 
   @Column("created_at")
   private Instant createdAt;
@@ -65,7 +66,7 @@ public class CandidateProfile implements Persistable<UUID> {
     this.candidateId = candidateId;
     this.organizationId = organizationId;
     this.skills = new String[0];
-    this.attributes = "{}";
+    this.attributes = Json.of("{}");
     Instant now = Instant.now();
     this.createdAt = now;
     this.updatedAt = now;
@@ -104,7 +105,7 @@ public class CandidateProfile implements Persistable<UUID> {
     this.githubUrl = githubUrl;
     this.skills = skills == null ? new String[0] : skills.toArray(new String[0]);
     this.experienceYears = experienceYears;
-    this.attributes = attributes == null ? "{}" : attributes;
+    this.attributes = Json.of(attributes == null ? "{}" : attributes);
     this.updatedAt = Instant.now();
   }
 
@@ -157,7 +158,7 @@ public class CandidateProfile implements Persistable<UUID> {
   }
 
   public String getAttributes() {
-    return attributes;
+    return attributes == null ? "{}" : attributes.asString();
   }
 
   public Instant getCreatedAt() {

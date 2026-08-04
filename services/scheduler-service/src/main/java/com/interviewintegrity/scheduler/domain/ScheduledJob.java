@@ -1,6 +1,7 @@
 package com.interviewintegrity.scheduler.domain;
 
 import com.interviewintegrity.validation.Assert;
+import io.r2dbc.postgresql.codec.Json;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -28,7 +29,7 @@ public class ScheduledJob implements Persistable<UUID> {
 
   private String handler;
 
-  private String payload;
+  private Json payload;
 
   private JobStatus status;
 
@@ -92,7 +93,7 @@ public class ScheduledJob implements Persistable<UUID> {
     this.jobType = jobType;
     this.cronExpression = cronExpression;
     this.handler = handler;
-    this.payload = payload;
+    this.payload = Json.of(payload);
     this.maxRetries = maxRetries;
     this.timeoutSeconds = timeoutSeconds;
     this.retryCount = 0;
@@ -118,7 +119,7 @@ public class ScheduledJob implements Persistable<UUID> {
     Assert.isTrue(timeoutSeconds > 0, "timeoutSeconds must be positive");
     this.name = name;
     this.cronExpression = cronExpression;
-    this.payload = payload;
+    this.payload = Json.of(payload);
     this.maxRetries = maxRetries;
     this.timeoutSeconds = timeoutSeconds;
     this.updatedBy = updatedBy;
@@ -203,7 +204,7 @@ public class ScheduledJob implements Persistable<UUID> {
   }
 
   public String getPayload() {
-    return payload;
+    return payload == null ? "{}" : payload.asString();
   }
 
   public JobStatus getStatus() {

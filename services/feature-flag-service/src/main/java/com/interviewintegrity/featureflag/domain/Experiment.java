@@ -1,6 +1,7 @@
 package com.interviewintegrity.featureflag.domain;
 
 import com.interviewintegrity.validation.Assert;
+import io.r2dbc.postgresql.codec.Json;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -37,7 +38,7 @@ public class Experiment implements Persistable<UUID> {
   @Column("ended_at")
   private Instant endedAt;
 
-  private String metrics;
+  private Json metrics;
 
   @Column("created_by")
   private UUID createdBy;
@@ -70,7 +71,7 @@ public class Experiment implements Persistable<UUID> {
     this.controlVariant = controlVariant;
     this.treatmentVariant = treatmentVariant;
     this.status = ExperimentStatus.DRAFT;
-    this.metrics = metrics == null ? "{}" : metrics;
+    this.metrics = Json.of(metrics == null ? "{}" : metrics);
     this.createdBy = createdBy;
     Instant now = Instant.now();
     this.createdAt = now;
@@ -163,7 +164,7 @@ public class Experiment implements Persistable<UUID> {
   }
 
   public String getMetrics() {
-    return metrics;
+    return metrics == null ? "{}" : metrics.asString();
   }
 
   public UUID getCreatedBy() {

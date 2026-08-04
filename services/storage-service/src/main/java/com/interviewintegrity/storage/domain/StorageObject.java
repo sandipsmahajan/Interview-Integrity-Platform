@@ -1,6 +1,7 @@
 package com.interviewintegrity.storage.domain;
 
 import com.interviewintegrity.validation.Assert;
+import io.r2dbc.postgresql.codec.Json;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -38,7 +39,7 @@ public class StorageObject implements Persistable<UUID> {
   @Column("storage_ref")
   private String storageRef;
 
-  private String metadata;
+  private Json metadata;
 
   @Column("uploaded_by")
   private UUID uploadedBy;
@@ -82,7 +83,7 @@ public class StorageObject implements Persistable<UUID> {
     this.checksumSha256 = checksumSha256;
     this.storageClass = storageClass == null ? StorageClass.STANDARD : storageClass;
     this.storageRef = storageRef;
-    this.metadata = metadata == null ? "{}" : metadata;
+    this.metadata = Json.of(metadata == null ? "{}" : metadata);
     this.uploadedBy = uploadedBy;
     this.uploadedAt = Instant.now();
   }
@@ -93,7 +94,7 @@ public class StorageObject implements Persistable<UUID> {
   public void update(String contentType, StorageClass storageClass, String metadata, UUID byUser) {
     this.contentType = contentType;
     this.storageClass = storageClass == null ? StorageClass.STANDARD : storageClass;
-    this.metadata = metadata == null ? "{}" : metadata;
+    this.metadata = Json.of(metadata == null ? "{}" : metadata);
     this.updatedBy = byUser;
     this.uploadedAt = Instant.now();
   }
@@ -142,7 +143,7 @@ public class StorageObject implements Persistable<UUID> {
   }
 
   public String getMetadata() {
-    return metadata;
+    return metadata == null ? "{}" : metadata.asString();
   }
 
   public UUID getUploadedBy() {

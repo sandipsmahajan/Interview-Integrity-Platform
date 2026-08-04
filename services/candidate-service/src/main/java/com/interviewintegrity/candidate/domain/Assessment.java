@@ -1,6 +1,7 @@
 package com.interviewintegrity.candidate.domain;
 
 import com.interviewintegrity.validation.Assert;
+import io.r2dbc.postgresql.codec.Json;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -29,7 +30,7 @@ public class Assessment implements Persistable<UUID> {
 
   private BigDecimal score;
 
-  private String metadata;
+  private Json metadata;
 
   @Column("assigned_by")
   private UUID assignedBy;
@@ -73,7 +74,7 @@ public class Assessment implements Persistable<UUID> {
     this.assignedBy = assignedBy;
     this.expiresAt = expiresAt;
     this.status = AssessmentStatus.ASSIGNED;
-    this.metadata = "{}";
+    this.metadata = Json.of("{}");
     Instant now = Instant.now();
     this.assignedAt = now;
     this.createdAt = now;
@@ -133,7 +134,7 @@ public class Assessment implements Persistable<UUID> {
   }
 
   public String getMetadata() {
-    return metadata;
+    return metadata == null ? "{}" : metadata.asString();
   }
 
   public UUID getAssignedBy() {

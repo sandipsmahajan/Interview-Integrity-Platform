@@ -1,6 +1,7 @@
 package com.interviewintegrity.organization.domain;
 
 import com.interviewintegrity.validation.Assert;
+import io.r2dbc.postgresql.codec.Json;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -24,7 +25,7 @@ public class Organization implements Persistable<UUID> {
 
   private OrganizationStatus status;
 
-  private String settings;
+  private Json settings;
 
   @Column("created_by")
   private UUID createdBy;
@@ -53,7 +54,7 @@ public class Organization implements Persistable<UUID> {
     this.name = name;
     this.slug = slug;
     this.legalName = legalName;
-    this.settings = settings == null ? "{}" : settings;
+    this.settings = Json.of(settings == null ? "{}" : settings);
     this.createdBy = createdBy;
     this.status = OrganizationStatus.TRIAL;
     Instant now = Instant.now();
@@ -95,7 +96,7 @@ public class Organization implements Persistable<UUID> {
 
   /** Replaces the JSON settings blob. */
   public void updateSettings(String settings, UUID byUser) {
-    this.settings = settings == null ? "{}" : settings;
+    this.settings = Json.of(settings == null ? "{}" : settings);
     this.updatedBy = byUser;
     this.updatedAt = Instant.now();
   }
@@ -129,7 +130,7 @@ public class Organization implements Persistable<UUID> {
   }
 
   public String getSettings() {
-    return settings;
+    return settings == null ? "{}" : settings.asString();
   }
 
   public UUID getCreatedBy() {

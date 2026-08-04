@@ -1,6 +1,7 @@
 package com.interviewintegrity.integration.domain;
 
 import com.interviewintegrity.validation.Assert;
+import io.r2dbc.postgresql.codec.Json;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -27,7 +28,7 @@ public class Integration implements Persistable<UUID> {
   @Column("credentials_ref")
   private String credentialsRef;
 
-  private String config;
+  private Json config;
 
   @Column("created_by")
   private UUID createdBy;
@@ -65,7 +66,7 @@ public class Integration implements Persistable<UUID> {
     this.provider = provider;
     this.name = name;
     this.credentialsRef = credentialsRef;
-    this.config = config;
+    this.config = Json.of(config);
     this.createdBy = createdBy;
     this.status = IntegrationStatus.DISCONNECTED;
     Instant now = Instant.now();
@@ -79,7 +80,7 @@ public class Integration implements Persistable<UUID> {
   public void update(String name, String config, UUID updatedBy) {
     Assert.notBlank(name, "name");
     this.name = name;
-    this.config = config;
+    this.config = Json.of(config);
     this.updatedBy = updatedBy;
     this.updatedAt = Instant.now();
   }
@@ -139,7 +140,7 @@ public class Integration implements Persistable<UUID> {
   }
 
   public String getConfig() {
-    return config;
+    return config == null ? "{}" : config.asString();
   }
 
   public UUID getCreatedBy() {

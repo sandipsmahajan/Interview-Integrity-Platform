@@ -1,6 +1,7 @@
 package com.interviewintegrity.featureflag.domain;
 
 import com.interviewintegrity.validation.Assert;
+import io.r2dbc.postgresql.codec.Json;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -31,8 +32,8 @@ public class FeatureFlag implements Persistable<UUID> {
   @Column("default_variant")
   private String defaultVariant;
 
-  private String variants;
-  private String rules;
+  private Json variants;
+  private Json rules;
 
   @Column("created_by")
   private UUID createdBy;
@@ -70,8 +71,8 @@ public class FeatureFlag implements Persistable<UUID> {
     this.enabled = enabled;
     this.rolloutPercent = rolloutPercent;
     this.defaultVariant = defaultVariant;
-    this.variants = variants == null ? "{}" : variants;
-    this.rules = rules == null ? "{}" : rules;
+    this.variants = Json.of(variants == null ? "{}" : variants);
+    this.rules = Json.of(rules == null ? "{}" : rules);
     this.createdBy = createdBy;
     Instant now = Instant.now();
     this.createdAt = now;
@@ -93,8 +94,8 @@ public class FeatureFlag implements Persistable<UUID> {
     this.enabled = enabled;
     this.rolloutPercent = rolloutPercent;
     this.defaultVariant = defaultVariant;
-    this.variants = variants == null ? "{}" : variants;
-    this.rules = rules == null ? "{}" : rules;
+    this.variants = Json.of(variants == null ? "{}" : variants);
+    this.rules = Json.of(rules == null ? "{}" : rules);
     this.updatedBy = byUser;
     this.updatedAt = Instant.now();
   }
@@ -129,11 +130,11 @@ public class FeatureFlag implements Persistable<UUID> {
   }
 
   public String getVariants() {
-    return variants;
+    return variants == null ? "{}" : variants.asString();
   }
 
   public String getRules() {
-    return rules;
+    return rules == null ? "{}" : rules.asString();
   }
 
   public UUID getCreatedBy() {

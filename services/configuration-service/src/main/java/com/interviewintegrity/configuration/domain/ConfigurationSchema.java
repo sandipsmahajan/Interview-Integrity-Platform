@@ -1,6 +1,7 @@
 package com.interviewintegrity.configuration.domain;
 
 import com.interviewintegrity.validation.Assert;
+import io.r2dbc.postgresql.codec.Json;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -23,7 +24,7 @@ public class ConfigurationSchema implements Persistable<UUID> {
   @Column("default_value")
   private String defaultValue;
 
-  private String constraints;
+  private Json constraints;
 
   private String description;
 
@@ -47,7 +48,7 @@ public class ConfigurationSchema implements Persistable<UUID> {
     this.key = key;
     this.valueType = valueType;
     this.defaultValue = defaultValue == null ? "{}" : defaultValue;
-    this.constraints = constraints == null ? "{}" : constraints;
+    this.constraints = Json.of(constraints == null ? "{}" : constraints);
     this.description = description;
     Instant now = Instant.now();
     this.createdAt = now;
@@ -62,7 +63,7 @@ public class ConfigurationSchema implements Persistable<UUID> {
     Assert.notNull(valueType, "valueType");
     this.valueType = valueType;
     this.defaultValue = defaultValue == null ? "{}" : defaultValue;
-    this.constraints = constraints == null ? "{}" : constraints;
+    this.constraints = Json.of(constraints == null ? "{}" : constraints);
     this.description = description;
     this.updatedAt = Instant.now();
   }
@@ -85,7 +86,7 @@ public class ConfigurationSchema implements Persistable<UUID> {
   }
 
   public String getConstraints() {
-    return constraints;
+    return constraints == null ? "{}" : constraints.asString();
   }
 
   public String getDescription() {
