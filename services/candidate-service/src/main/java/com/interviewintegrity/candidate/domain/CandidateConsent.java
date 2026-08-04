@@ -5,12 +5,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** Data-protection consent granted by a candidate. */
 @Table("candidate_consents")
-public class CandidateConsent {
+public class CandidateConsent implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -46,7 +47,12 @@ public class CandidateConsent {
   @Column("updated_at")
   private Instant updatedAt;
 
-  @Version private long version = 0;
+  @Version private long version = 1;
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
+  }
 
   /** Grants a consent to a candidate. */
   public CandidateConsent(

@@ -5,12 +5,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** Tenant scoped tag that can be applied to candidates. */
 @Table("tags")
-public class Tag {
+public class Tag implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -24,7 +25,12 @@ public class Tag {
   @Column("created_at")
   private Instant createdAt;
 
-  @Version private long version = 0;
+  @Version private long version = 1;
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
+  }
 
   /** Creates a tag within the given tenant. */
   public Tag(UUID organizationId, String code, String name) {

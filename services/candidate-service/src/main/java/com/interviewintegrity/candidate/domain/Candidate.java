@@ -1,6 +1,7 @@
 package com.interviewintegrity.candidate.domain;
 
 import com.interviewintegrity.validation.Assert;
+import org.springframework.data.domain.Persistable;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -10,7 +11,7 @@ import org.springframework.data.relational.core.mapping.Table;
 
 /** Candidate master record; the root of the candidate service aggregate. */
 @Table("candidates")
-public class Candidate {
+public class Candidate implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -49,7 +50,12 @@ public class Candidate {
   @Column("deleted_at")
   private Instant deletedAt;
 
-  @Version private long version = 0;
+  @Version private long version = 1;
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
+  }
 
   /** Creates a new candidate in the NEW state. */
   public Candidate(

@@ -5,12 +5,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** Attachment uploaded for a candidate. */
 @Table("candidate_documents")
-public class CandidateDocument {
+public class CandidateDocument implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -43,7 +44,12 @@ public class CandidateDocument {
   @Column("deleted_at")
   private Instant deletedAt;
 
-  @Version private long version = 0;
+  @Version private long version = 1;
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
+  }
 
   /** Creates a document reference for an uploaded object. */
   public CandidateDocument(

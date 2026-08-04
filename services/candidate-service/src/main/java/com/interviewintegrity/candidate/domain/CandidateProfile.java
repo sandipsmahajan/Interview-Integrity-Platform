@@ -7,12 +7,13 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** One-to-one extended profile of a candidate. */
 @Table("candidate_profiles")
-public class CandidateProfile {
+public class CandidateProfile implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -53,6 +54,11 @@ public class CandidateProfile {
   private Instant updatedAt;
 
   @Version private long version = 1;
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
+  }
 
   /** Creates an empty extended profile for a candidate. */
   public CandidateProfile(UUID candidateId, UUID organizationId) {

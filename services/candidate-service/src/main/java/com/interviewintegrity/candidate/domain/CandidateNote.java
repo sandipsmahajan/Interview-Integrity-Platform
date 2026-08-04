@@ -5,12 +5,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** Collaboration note attached to a candidate. */
 @Table("candidate_notes")
-public class CandidateNote {
+public class CandidateNote implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -45,7 +46,12 @@ public class CandidateNote {
   @Column("deleted_at")
   private Instant deletedAt;
 
-  @Version private long version = 0;
+  @Version private long version = 1;
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
+  }
 
   /** Creates a note for a candidate. */
   public CandidateNote(
