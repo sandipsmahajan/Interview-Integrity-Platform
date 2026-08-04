@@ -18,6 +18,7 @@ dependencies {
     implementation(platform("org.springframework.cloud:spring-cloud-dependencies:${libs.versions.spring.cloud.get()}"))
     implementation(libs.spring.cloud.starter.netflix.eureka.server)
     implementation("org.springframework.boot:spring-boot-starter-web")
+    runtimeOnly(libs.spring.boot.starter.validation)
 
     errorprone(libs.errorprone.core)
 
