@@ -1,6 +1,7 @@
 package com.interviewintegrity.interview.domain;
 
 import com.interviewintegrity.validation.Assert;
+import io.r2dbc.postgresql.codec.Json;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -44,7 +45,7 @@ public class Interview implements Persistable<UUID> {
 
   private String timezone;
 
-  private String metadata;
+  private Json metadata;
 
   @Column("created_by")
   private UUID createdBy;
@@ -98,7 +99,7 @@ public class Interview implements Persistable<UUID> {
     this.startsAt = startsAt;
     this.endsAt = endsAt;
     this.timezone = timezone == null ? "UTC" : timezone;
-    this.metadata = metadata == null ? "{}" : metadata;
+    this.metadata = Json.of(metadata == null ? "{}" : metadata);
     this.createdBy = createdBy;
     this.status = InterviewStatus.SCHEDULED;
     Instant now = Instant.now();
@@ -167,7 +168,7 @@ public class Interview implements Persistable<UUID> {
     Assert.notBlank(title, "title");
     this.title = title;
     this.meetingUrl = meetingUrl;
-    this.metadata = metadata == null ? "{}" : metadata;
+    this.metadata = Json.of(metadata == null ? "{}" : metadata);
     this.updatedBy = byUser;
     this.updatedAt = Instant.now();
   }
@@ -229,7 +230,7 @@ public class Interview implements Persistable<UUID> {
   }
 
   public String getMetadata() {
-    return metadata;
+    return metadata == null ? "{}" : metadata.asString();
   }
 
   public UUID getCreatedBy() {
