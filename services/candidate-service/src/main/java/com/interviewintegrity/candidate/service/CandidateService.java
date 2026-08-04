@@ -7,16 +7,12 @@ import com.interviewintegrity.exception.ConflictException;
 import com.interviewintegrity.exception.NotFoundException;
 import java.util.Locale;
 import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /** Manages the candidate master records of an organization. */
 public class CandidateService {
-
-  private static final Logger log = LoggerFactory.getLogger(CandidateService.class);
 
   private final CandidateRepository candidateRepository;
   private final CandidateEventPublisher eventPublisher;
@@ -59,12 +55,7 @@ public class CandidateService {
             })
         .flatMap(
             candidate ->
-                eventPublisher
-                    .publishCandidateRegistered(candidate)
-                    .doOnError(
-                        err -> log.warn("Failed to publish candidate.registered event", err))
-                    .onErrorResume(err -> Mono.empty())
-                    .thenReturn(candidate));
+                eventPublisher.publishCandidateRegistered(candidate).thenReturn(candidate));
   }
 
   /** Returns a single live candidate scoped to the tenant. */
