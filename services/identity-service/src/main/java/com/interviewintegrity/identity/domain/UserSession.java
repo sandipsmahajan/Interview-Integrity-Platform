@@ -1,5 +1,6 @@
 package com.interviewintegrity.identity.domain;
 
+import java.net.InetAddress;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -26,7 +27,7 @@ public class UserSession {
   private String deviceId;
 
   @Column("ip_address")
-  private String ipAddress;
+  private InetAddress ipAddress;
 
   @Column("user_agent")
   private String userAgent;
@@ -54,7 +55,7 @@ public class UserSession {
   @Column("updated_at")
   private Instant updatedAt;
 
-  @Version private long version = 1;
+  @Version private long version = 0;
 
   /** Creates a new active session. */
   public UserSession(
@@ -62,7 +63,7 @@ public class UserSession {
       UUID organizationId,
       String refreshTokenHash,
       String deviceId,
-      String ipAddress,
+      InetAddress ipAddress,
       String userAgent,
       Instant expiresAt) {
     this.userId = userId;
@@ -132,7 +133,7 @@ public class UserSession {
     return deviceId;
   }
 
-  public String getIpAddress() {
+  public InetAddress getIpAddress() {
     return ipAddress;
   }
 

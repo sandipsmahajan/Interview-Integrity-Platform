@@ -326,7 +326,9 @@ public final class AuthService {
                                   tokenIssuer.issue(
                                       user,
                                       session.getDeviceId(),
-                                      session.getIpAddress(),
+                                      session.getIpAddress() == null
+                                          ? null
+                                          : session.getIpAddress().getHostAddress(),
                                       session.getUserAgent())));
             });
   }

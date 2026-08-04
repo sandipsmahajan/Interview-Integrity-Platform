@@ -8,6 +8,7 @@ import com.interviewintegrity.identity.web.dto.MfaDeviceResponse;
 import com.interviewintegrity.identity.web.dto.PermissionResponse;
 import com.interviewintegrity.identity.web.dto.SessionResponse;
 import com.interviewintegrity.identity.web.dto.TrustedDeviceResponse;
+import java.net.InetAddress;
 import org.mapstruct.Mapper;
 
 /**
@@ -30,4 +31,9 @@ public interface IdentityMapper {
 
   /** Maps a trusted device into its public response. */
   TrustedDeviceResponse toResponse(TrustedDevice device);
+
+  /** Maps a stored {@code inet} address into its textual form for the session response. */
+  default String toIpAddress(InetAddress address) {
+    return address == null ? null : address.getHostAddress();
+  }
 }

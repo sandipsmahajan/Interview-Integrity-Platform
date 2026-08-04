@@ -41,15 +41,15 @@ public class Role {
   @Column("deleted_at")
   private Instant deletedAt;
 
-  @Version private long version = 1;
+  @Version private long version = 0;
 
   /** Creates a new role for the given organization. */
-  public Role(UUID organizationId, String code, String name, String description, boolean system) {
+  public Role(UUID organizationId, String code, String name, String description, boolean isSystem) {
     this.organizationId = organizationId;
     this.code = code;
     this.name = name;
     this.description = description;
-    this.system = system;
+    this.system = isSystem;
     Instant now = Instant.now();
     this.createdAt = now;
     this.updatedAt = now;

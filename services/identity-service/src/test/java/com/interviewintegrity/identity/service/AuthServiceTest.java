@@ -36,6 +36,7 @@ import com.interviewintegrity.identity.web.dto.TokenResponse;
 import com.interviewintegrity.identity.web.dto.UserResponse;
 import com.interviewintegrity.security.JwtTokenService;
 import com.interviewintegrity.security.RefreshTokens;
+import java.net.InetAddress;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -345,7 +346,7 @@ class AuthServiceTest {
             organizationId,
             RefreshTokens.hash(rawToken),
             "dev",
-            "127.0.0.1",
+            InetAddress.getLoopbackAddress(),
             "agent",
             Instant.now().plus(30, ChronoUnit.DAYS));
 
@@ -381,7 +382,7 @@ class AuthServiceTest {
             UUID.randomUUID(),
             "revoked-hash",
             "dev",
-            "127.0.0.1",
+            InetAddress.getLoopbackAddress(),
             "agent",
             Instant.now().plus(30, ChronoUnit.DAYS));
     revoked.revoke(null);

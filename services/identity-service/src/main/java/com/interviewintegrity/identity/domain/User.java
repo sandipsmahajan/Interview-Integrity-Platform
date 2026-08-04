@@ -60,7 +60,7 @@ public class User {
   @Column("password_reset_requested_at")
   private Instant passwordResetRequestedAt;
 
-  @Version private long version = 1;
+  @Version private long version = 0;
 
   /** Creates a new pending user with the given profile. */
   public User(UUID organizationId, String email, String passwordHash, String displayName) {

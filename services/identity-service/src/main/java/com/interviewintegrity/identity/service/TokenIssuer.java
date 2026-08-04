@@ -9,6 +9,8 @@ import com.interviewintegrity.security.JwtProperties;
 import com.interviewintegrity.security.JwtTokenService;
 import com.interviewintegrity.security.PlatformPrincipal;
 import com.interviewintegrity.security.RefreshTokens;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -61,7 +63,7 @@ public final class TokenIssuer {
                       user.getOrganizationId(),
                       RefreshTokens.hash(refreshToken),
                       deviceId,
-                      ipAddress,
+                      parseIp(ipAddress),
                       userAgent,
                       Instant.now().plus(REFRESH_TOKEN_TTL));
               return sessionRepository
@@ -82,6 +84,20 @@ public final class TokenIssuer {
         .filter(authority -> authority.startsWith("ROLE_"))
         .map(authority -> authority.substring("ROLE_".length()))
         .toList();
+  }
+
+  /**
+   * Parses a client IP string for storage in the {@code inet} column; null when absent or invalid.
+   */
+  private static InetAddress parseIp(String ipAddress) {
+    if (ipAddress == null || ipAddress.isBlank()) {
+      return null;
+    }
+    try {
+      return InetAddress.getByName(ipAddress.trim());
+    } catch (UnknownHostException e) {
+      return null;
+    }
   }
 
   private UserResponse toUserResponse(User user, List<String> roleCodes) {

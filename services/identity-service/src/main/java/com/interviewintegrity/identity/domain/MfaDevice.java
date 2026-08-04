@@ -48,7 +48,7 @@ public class MfaDevice {
   @Column("deleted_at")
   private Instant deletedAt;
 
-  @Version private long version = 1;
+  @Version private long version = 0;
 
   /** Creates a new unverified MFA device. */
   public MfaDevice(UUID userId, UUID organizationId, String kind, String secretCiphertext) {
