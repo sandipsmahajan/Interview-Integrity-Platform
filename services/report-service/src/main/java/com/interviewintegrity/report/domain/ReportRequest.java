@@ -1,6 +1,7 @@
 package com.interviewintegrity.report.domain;
 
 import com.interviewintegrity.validation.Assert;
+import io.r2dbc.postgresql.codec.Json;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -25,9 +26,9 @@ public class ReportRequest implements Persistable<UUID> {
   private String aggregationLevel;
 
   @Column("time_range")
-  private String timeRange;
+  private Json timeRange;
 
-  private String parameters;
+  private Json parameters;
 
   @Column("requested_by")
   private UUID requestedBy;
@@ -57,8 +58,8 @@ public class ReportRequest implements Persistable<UUID> {
     this.organizationId = organizationId;
     this.reportId = reportId;
     this.aggregationLevel = aggregationLevel;
-    this.timeRange = timeRange == null ? "{}" : timeRange;
-    this.parameters = parameters == null ? "{}" : parameters;
+    this.timeRange = Json.of(timeRange == null ? "{}" : timeRange);
+    this.parameters = Json.of(parameters == null ? "{}" : parameters);
     this.requestedBy = requestedBy;
     this.requestedAt = Instant.now();
   }
@@ -96,11 +97,11 @@ public class ReportRequest implements Persistable<UUID> {
   }
 
   public String getTimeRange() {
-    return timeRange;
+    return timeRange == null ? "{}" : timeRange.asString();
   }
 
   public String getParameters() {
-    return parameters;
+    return parameters == null ? "{}" : parameters.asString();
   }
 
   public UUID getRequestedBy() {

@@ -1,6 +1,7 @@
 package com.interviewintegrity.report.domain;
 
 import com.interviewintegrity.validation.Assert;
+import io.r2dbc.postgresql.codec.Json;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -32,7 +33,7 @@ public class Report implements Persistable<UUID> {
 
   private BigDecimal score;
 
-  private String filters;
+  private Json filters;
 
   @Column("requested_by")
   private UUID requestedBy;
@@ -76,7 +77,7 @@ public class Report implements Persistable<UUID> {
     this.type = type;
     this.title = title;
     this.format = format;
-    this.filters = filters == null ? "{}" : filters;
+    this.filters = Json.of(filters == null ? "{}" : filters);
     this.requestedBy = requestedBy;
     this.status = ReportStatus.REQUESTED;
     Instant now = Instant.now();
@@ -155,7 +156,7 @@ public class Report implements Persistable<UUID> {
   }
 
   public String getFilters() {
-    return filters;
+    return filters == null ? "{}" : filters.asString();
   }
 
   public UUID getRequestedBy() {

@@ -1,6 +1,7 @@
 package com.interviewintegrity.report.domain;
 
 import com.interviewintegrity.validation.Assert;
+import io.r2dbc.postgresql.codec.Json;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
@@ -25,9 +26,9 @@ public class ReportSchedule implements Persistable<UUID> {
 
   private ReportFormat format;
 
-  private String recipients;
+  private Json recipients;
 
-  private String parameters;
+  private Json parameters;
 
   private boolean enabled;
 
@@ -75,8 +76,8 @@ public class ReportSchedule implements Persistable<UUID> {
     this.type = type;
     this.cronExpression = cronExpression;
     this.format = format;
-    this.recipients = recipients == null ? "[]" : recipients;
-    this.parameters = parameters == null ? "{}" : parameters;
+    this.recipients = Json.of(recipients == null ? "[]" : recipients);
+    this.parameters = Json.of(parameters == null ? "{}" : parameters);
     this.nextRunAt = nextRunAt;
     this.createdBy = createdBy;
     this.enabled = true;
@@ -99,8 +100,8 @@ public class ReportSchedule implements Persistable<UUID> {
     Assert.notNull(format, "format");
     this.cronExpression = cronExpression;
     this.format = format;
-    this.recipients = recipients == null ? "[]" : recipients;
-    this.parameters = parameters == null ? "{}" : parameters;
+    this.recipients = Json.of(recipients == null ? "[]" : recipients);
+    this.parameters = Json.of(parameters == null ? "{}" : parameters);
     this.nextRunAt = nextRunAt;
     this.updatedBy = byUser;
     this.updatedAt = Instant.now();
@@ -151,11 +152,11 @@ public class ReportSchedule implements Persistable<UUID> {
   }
 
   public String getRecipients() {
-    return recipients;
+    return recipients == null ? "[]" : recipients.asString();
   }
 
   public String getParameters() {
-    return parameters;
+    return parameters == null ? "{}" : parameters.asString();
   }
 
   public boolean isEnabled() {
