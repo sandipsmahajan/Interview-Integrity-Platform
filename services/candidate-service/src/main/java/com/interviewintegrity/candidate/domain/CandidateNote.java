@@ -45,7 +45,7 @@ public class CandidateNote {
   @Column("deleted_at")
   private Instant deletedAt;
 
-  @Version private long version = 1;
+  @Version private long version = 0;
 
   /** Creates a note for a candidate. */
   public CandidateNote(

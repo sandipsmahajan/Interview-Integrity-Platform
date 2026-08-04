@@ -49,7 +49,7 @@ public class Candidate {
   @Column("deleted_at")
   private Instant deletedAt;
 
-  @Version private long version = 1;
+  @Version private long version = 0;
 
   /** Creates a new candidate in the NEW state. */
   public Candidate(

@@ -24,7 +24,7 @@ public class Tag {
   @Column("created_at")
   private Instant createdAt;
 
-  @Version private long version = 1;
+  @Version private long version = 0;
 
   /** Creates a tag within the given tenant. */
   public Tag(UUID organizationId, String code, String name) {

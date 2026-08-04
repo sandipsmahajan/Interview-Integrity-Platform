@@ -46,7 +46,7 @@ public class CandidateConsent {
   @Column("updated_at")
   private Instant updatedAt;
 
-  @Version private long version = 1;
+  @Version private long version = 0;
 
   /** Grants a consent to a candidate. */
   public CandidateConsent(
