@@ -32,7 +32,7 @@ import { initials, formatRelative } from '../lib/format';
 import { NAV_GROUPS, NAV_ITEMS, navItemForPath } from '../lib/nav';
 import { useAuth, useCurrentUserId } from '../hooks/useAuth';
 import { CommandPalette } from './CommandPalette';
-import { BrandMark } from './BrandLogo';
+import { BrandBanner } from './BrandLogo';
 
 const DRAWER_WIDTH = 260;
 
@@ -68,17 +68,7 @@ export function AppShell({ mode, onToggleMode, children }: AppShellProps) {
   const drawer = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Toolbar>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <BrandMark size={34} />
-          <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.1 }}>
-              Integrity Pro
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Recruiter Portal
-            </Typography>
-          </Box>
-        </Box>
+        <BrandBanner maxWidth={170} />
       </Toolbar>
       <Box sx={{ px: 2, pb: 1 }}>
         <Tooltip title="Search pages (Ctrl+K)">

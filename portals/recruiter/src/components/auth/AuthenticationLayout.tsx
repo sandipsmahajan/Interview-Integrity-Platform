@@ -4,8 +4,8 @@ import Card from '@mui/material/Card';
 import { ThemeProvider } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import { authTheme } from '../../theme';
-import { AnimatedBackground } from './AnimatedBackground';
-import { BrandHeader } from './BrandHeader';
+import { BrandBanner } from '../BrandLogo';
+import { BackgroundAnimation } from './BackgroundAnimation';
 import { FeatureShowcase } from './FeatureShowcase';
 
 interface AuthenticationLayoutProps {
@@ -14,7 +14,9 @@ interface AuthenticationLayoutProps {
 
 /**
  * Full-screen enterprise auth shell: an animated 60/40 split with a product
- * showcase on the left and a fixed glass login panel on the right. Always dark.
+ * showcase on the left and a fixed glass form panel on the right. Always dark.
+ * Branding appears only in the showcase header (horizontal logo) — never inside
+ * the form card — and as a compact horizontal logo above the form on mobile.
  */
 export function AuthenticationLayout({ children }: AuthenticationLayoutProps) {
   return (
@@ -29,7 +31,7 @@ export function AuthenticationLayout({ children }: AuthenticationLayoutProps) {
           overflow: 'hidden'
         }}
       >
-        <AnimatedBackground />
+        <BackgroundAnimation />
         <Box
           component="aside"
           sx={{
@@ -46,12 +48,16 @@ export function AuthenticationLayout({ children }: AuthenticationLayoutProps) {
             position: 'relative',
             zIndex: 1,
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             minHeight: '100dvh',
             p: { xs: 2, md: 4 }
           }}
         >
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, justifyContent: 'center', mb: 3 }}>
+            <BrandBanner maxWidth={170} />
+          </Box>
           <Card
             sx={{
               width: '100%',
@@ -64,12 +70,7 @@ export function AuthenticationLayout({ children }: AuthenticationLayoutProps) {
               boxShadow: '0 32px 80px -20px rgba(0, 0, 0, 0.65)'
             }}
           >
-            <Box sx={{ p: { xs: 3, sm: 4 } }}>
-              <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
-                <BrandHeader />
-              </Box>
-              {children}
-            </Box>
+            <Box sx={{ p: { xs: 3, sm: 4 } }}>{children}</Box>
           </Card>
         </Box>
       </Box>

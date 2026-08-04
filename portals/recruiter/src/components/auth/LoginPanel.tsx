@@ -7,7 +7,6 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import CircularProgress from '@mui/material/CircularProgress';
-import Divider from '@mui/material/Divider';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -35,43 +34,10 @@ type ChallengeValues = z.infer<typeof challengeSchema>;
 
 const DEVICE_ID = 'web-portal';
 
-function GoogleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden focusable="false">
-      <path
-        fill="#4285F4"
-        d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09A11.99 11.99 0 0 0 12 24z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M5.27 14.29A7.19 7.19 0 0 1 4.89 12c0-.8.14-1.57.38-2.29V6.62H1.29a11.99 11.99 0 0 0 0 10.76l3.98-3.09z"
-      />
-      <path
-        fill="#EA4335"
-        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0A11.99 11.99 0 0 0 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75z"
-      />
-    </svg>
-  );
-}
-
-function MicrosoftIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden focusable="false">
-      <path fill="#F25022" d="M1 1h10v10H1z" />
-      <path fill="#7FBA00" d="M13 1h10v10H13z" />
-      <path fill="#00A4EF" d="M1 13h10v10H1z" />
-      <path fill="#FFB900" d="M13 13h10v10H13z" />
-    </svg>
-  );
-}
-
 /**
  * Right-hand authentication panel for the login screen. Owns the credentials
  * and MFA challenge forms while keeping the exact backend auth workflow.
+ * Enterprise email authentication only — no social login options.
  */
 export function LoginPanel() {
   const { login, mfaVerify, mfaEmailOtp } = useAuth();
@@ -139,10 +105,6 @@ export function LoginPanel() {
     } finally {
       setSendingCode(false);
     }
-  }
-
-  function handleSso(provider: 'Google' | 'Microsoft') {
-    toast(`${provider} sign-in is not configured yet. Use your email and password to sign in.`);
   }
 
   if (challenge) {
@@ -286,35 +248,6 @@ export function LoginPanel() {
           {credentialsForm.formState.isSubmitting ? 'Signing in...' : 'Sign in'}
         </Button>
       </form>
-
-      <Divider sx={{ my: 2.5 }}>
-        <Typography variant="caption" sx={{ color: 'text.secondary', px: 1 }}>
-          or continue with
-        </Typography>
-      </Divider>
-
-      <Stack direction="row" spacing={1.5}>
-        <Button
-          fullWidth
-          variant="outlined"
-          startIcon={<GoogleIcon />}
-          aria-label="Continue with Google"
-          onClick={() => handleSso('Google')}
-          sx={{ py: 1.1, color: 'text.primary', borderColor: 'rgba(148, 163, 184, 0.28)' }}
-        >
-          Google
-        </Button>
-        <Button
-          fullWidth
-          variant="outlined"
-          startIcon={<MicrosoftIcon />}
-          aria-label="Continue with Microsoft"
-          onClick={() => handleSso('Microsoft')}
-          sx={{ py: 1.1, color: 'text.primary', borderColor: 'rgba(148, 163, 184, 0.28)' }}
-        >
-          Microsoft
-        </Button>
-      </Stack>
 
       <Box sx={{ mt: 3, textAlign: 'center' }}>
         <Typography variant="body2" color="text.secondary">

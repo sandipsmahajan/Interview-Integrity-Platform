@@ -58,6 +58,18 @@ describe('LoginPage', () => {
     expect(screen.queryByLabelText(/organization id/i)).not.toBeInTheDocument();
   });
 
+  it('does not render social login options', () => {
+    renderLogin();
+    expect(screen.queryByRole('button', { name: /continue with google/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /continue with microsoft/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/or continue with/i)).not.toBeInTheDocument();
+  });
+
+  it('leads with the invisible AI copilot detection capability', async () => {
+    renderLogin();
+    expect(await screen.findByText(/Detect Invisible AI Interview Copilots/i)).toBeInTheDocument();
+  });
+
   it('shows validation errors for empty required fields', async () => {
     renderLogin();
     await userEvent.click(screen.getByRole('button', { name: /sign in/i }));

@@ -1,29 +1,25 @@
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import { BrandMark } from '../BrandLogo';
+import { BrandBanner } from '../BrandLogo';
 
 interface BrandHeaderProps {
   align?: 'left' | 'center';
-  size?: number;
+  maxWidth?: number | string;
 }
 
-export function BrandHeader({ align = 'center', size = 40 }: BrandHeaderProps) {
+/**
+ * Header branding for the auth screens: the official horizontal Integrity Pro
+ * logo. No duplicate logo, product name, or subtitle appears inside the form.
+ */
+export function BrandHeader({ align = 'left', maxWidth = 190 }: BrandHeaderProps) {
   return (
     <Box
       sx={{
         display: 'flex',
         alignItems: 'center',
-        justifyContent: align === 'center' ? 'center' : 'flex-start',
-        gap: 1.5
+        justifyContent: align === 'center' ? 'center' : 'flex-start'
       }}
     >
-      <BrandMark size={size} />
-      <Box>
-        <Typography sx={{ fontWeight: 800, lineHeight: 1.15, fontSize: 20 }}>Integrity Pro</Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-          Recruiter Portal
-        </Typography>
-      </Box>
+      <BrandBanner maxWidth={maxWidth} />
     </Box>
   );
 }
