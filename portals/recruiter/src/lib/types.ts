@@ -98,7 +98,7 @@ export interface RecruiterResponse {
 }
 
 export interface CreateRecruiterRequest {
-  userId: string | null;
+  userId: string;
   fullName: string;
   email: string;
   title: string;

@@ -24,7 +24,7 @@ const schema = z.object({
   fullName: z.string().min(1, 'Full name is required').max(150),
   email: z.string().min(1, 'Email is required').email('Enter a valid email'),
   title: z.string().max(120).optional().or(z.literal('')),
-  userId: z.string().optional().or(z.literal(''))
+  userId: z.string().min(1, 'Linked user is required')
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -171,7 +171,7 @@ function CreateRecruiterDialog({ open, onClose, loading, users, onSubmit }: Crea
       <DialogTitle>Invite recruiter</DialogTitle>
       <form
         onSubmit={handleSubmit((values) =>
-          onSubmit({ fullName: values.fullName, email: values.email, title: values.title || '', userId: values.userId || null })
+          onSubmit({ fullName: values.fullName, email: values.email, title: values.title || '', userId: values.userId })
         )}
         onReset={() => {
           reset();
@@ -205,12 +205,12 @@ function CreateRecruiterDialog({ open, onClose, loading, users, onSubmit }: Crea
           />
           <TextField
             select
-            label="Linked platform user (optional)"
+            label="Linked platform user"
             fullWidth
             {...register('userId')}
-            helperText="Link to an existing user account created in Settings > Users."
+            error={Boolean(errors.userId)}
+            helperText={errors.userId?.message || 'Link to an existing user account created in Settings > Users.'}
           >
-            <MenuItem value="">No linked user</MenuItem>
             {users.map((user) => (
               <MenuItem key={user.id} value={user.id}>
                 {user.displayName} ({user.email})

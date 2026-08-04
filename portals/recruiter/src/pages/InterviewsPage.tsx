@@ -37,7 +37,7 @@ const schema = z.object({
 type FormValues = z.input<typeof schema>;
 type FormOutput = z.output<typeof schema>;
 
-const INTERVIEW_MODES = ['IN_PERSON', 'VIDEO', 'PHONE', 'ASYNC'];
+const INTERVIEW_MODES = ['ONLINE', 'ONSITE', 'HYBRID'];
 
 export function InterviewsPage() {
   const [open, setOpen] = useState(false);
@@ -149,7 +149,7 @@ function CreateInterviewDialog({ open, onClose, candidates, recruiters, loading,
     reset
   } = useForm<FormValues, unknown, FormOutput>({
     resolver: zodResolver(schema),
-    defaultValues: { title: '', candidateId: '', recruiterId: '', roundNumber: 1, mode: 'VIDEO', startsAt: '', endsAt: '', meetingUrl: '' }
+    defaultValues: { title: '', candidateId: '', recruiterId: '', roundNumber: 1, mode: 'ONLINE', startsAt: '', endsAt: '', meetingUrl: '' }
   });
 
   function submit(values: FormOutput) {
@@ -164,7 +164,7 @@ function CreateInterviewDialog({ open, onClose, candidates, recruiters, loading,
       startsAt,
       endsAt,
       meetingUrl: values.meetingUrl || null,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone === 'Asia/Calcutta' ? 'Asia/Kolkata' : Intl.DateTimeFormat().resolvedOptions().timeZone
     });
   }
 
