@@ -92,7 +92,7 @@ public class CandidateNote implements Persistable<UUID> {
     this.updatedAt = Instant.now();
   }
 
-  public UUID getId() {
+  @Override public UUID getId() {
     return id;
   }
 

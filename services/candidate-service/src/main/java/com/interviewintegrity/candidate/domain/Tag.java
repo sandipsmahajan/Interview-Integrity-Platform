@@ -44,7 +44,7 @@ public class Tag implements Persistable<UUID> {
 
   protected Tag() {}
 
-  public UUID getId() {
+  @Override public UUID getId() {
     return id;
   }
 
