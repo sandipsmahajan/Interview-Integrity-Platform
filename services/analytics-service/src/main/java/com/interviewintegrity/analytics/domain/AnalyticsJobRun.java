@@ -3,12 +3,14 @@ package com.interviewintegrity.analytics.domain;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** Observability log of an analytics aggregation run. */
 @Table("analytics_job_runs")
-public class AnalyticsJobRun {
+public class AnalyticsJobRun implements Persistable<Long> {
 
   @Id private Long id;
 
@@ -60,6 +62,7 @@ public class AnalyticsJobRun {
     this.durationMs = Math.max(0, ChronoUnit.MILLIS.between(startedAt, finishedAt));
   }
 
+  @Override
   public Long getId() {
     return id;
   }
@@ -95,4 +98,17 @@ public class AnalyticsJobRun {
   public void setId(Long id) {
     this.id = id;
   }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
+  }
+
+  @Version
+  private long version = 1;
+
+  public long getVersion() {
+    return version;
+  }
+
 }

@@ -4,12 +4,14 @@ import com.interviewintegrity.validation.Assert;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.domain.Persistable;
 
 /** Pre-signed URL grant; only the token hash is persisted. */
 @Table("signed_urls")
-public class SignedUrl {
+public class SignedUrl implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -76,6 +78,7 @@ public class SignedUrl {
     this.createdBy = byUser;
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -122,5 +125,16 @@ public class SignedUrl {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  private long version = 1;
+
+  public long getVersion() {
+    return version;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

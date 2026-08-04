@@ -4,12 +4,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** A tenant scoped RBAC role. */
 @Table("roles")
-public class Role {
+public class Role implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -41,7 +42,7 @@ public class Role {
   @Column("deleted_at")
   private Instant deletedAt;
 
-  @Version private long version = 0;
+  @Version private long version = 1;
 
   /** Creates a new role for the given organization. */
   public Role(UUID organizationId, String code, String name, String description, boolean isSystem) {
@@ -72,6 +73,7 @@ public class Role {
     this.updatedAt = Instant.now();
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -130,5 +132,10 @@ public class Role {
 
   public void setCreatedBy(UUID createdBy) {
     this.createdBy = createdBy;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

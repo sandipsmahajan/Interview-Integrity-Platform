@@ -3,12 +3,14 @@ package com.interviewintegrity.identity.domain;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.domain.Persistable;
 
 /** Historical password hash enabling password reuse prevention. */
 @Table("password_history")
-public class PasswordHistory {
+public class PasswordHistory implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -34,6 +36,7 @@ public class PasswordHistory {
 
   protected PasswordHistory() {}
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -56,5 +59,17 @@ public class PasswordHistory {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Version
+  private long version = 1;
+
+  public long getVersion() {
+    return version;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

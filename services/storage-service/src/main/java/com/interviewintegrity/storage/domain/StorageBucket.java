@@ -5,12 +5,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** Logical bucket owned by a tenant. */
 @Table("storage_buckets")
-public class StorageBucket {
+public class StorageBucket implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -78,6 +79,7 @@ public class StorageBucket {
     this.updatedAt = Instant.now();
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -128,5 +130,10 @@ public class StorageBucket {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

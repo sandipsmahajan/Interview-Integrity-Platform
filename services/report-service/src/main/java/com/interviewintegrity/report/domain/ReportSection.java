@@ -5,12 +5,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** An ordered section within a generated report. */
 @Table("report_sections")
-public class ReportSection {
+public class ReportSection implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -68,6 +69,7 @@ public class ReportSection {
     this.orderIndex = orderIndex;
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -106,5 +108,10 @@ public class ReportSection {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

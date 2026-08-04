@@ -5,12 +5,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** One monitoring session per interview run. */
 @Table("interview_sessions")
-public class InterviewSession {
+public class InterviewSession implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -118,6 +119,7 @@ public class InterviewSession {
     this.updatedAt = Instant.now();
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -172,5 +174,10 @@ public class InterviewSession {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

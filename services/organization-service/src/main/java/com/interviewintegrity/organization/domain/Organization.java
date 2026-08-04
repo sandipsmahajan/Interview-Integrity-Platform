@@ -5,12 +5,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** The tenant root: every tenant-scoped row in the platform references this organization id. */
 @Table("organizations")
-public class Organization {
+public class Organization implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -106,6 +107,7 @@ public class Organization {
     this.updatedAt = Instant.now();
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -160,5 +162,10 @@ public class Organization {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

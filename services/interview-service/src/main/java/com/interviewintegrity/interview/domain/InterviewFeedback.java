@@ -5,12 +5,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** Structured feedback collected after an interview. */
 @Table("interview_feedback")
-public class InterviewFeedback {
+public class InterviewFeedback implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -102,6 +103,7 @@ public class InterviewFeedback {
     this.updatedAt = Instant.now();
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -172,5 +174,10 @@ public class InterviewFeedback {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

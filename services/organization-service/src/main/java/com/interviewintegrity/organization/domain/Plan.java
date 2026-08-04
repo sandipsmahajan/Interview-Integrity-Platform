@@ -4,12 +4,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** Subscription plan offered by the platform (global catalog, read only). */
 @Table("plans")
-public class Plan {
+public class Plan implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -32,6 +33,7 @@ public class Plan {
 
   @Version private long version = 1;
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -70,5 +72,10 @@ public class Plan {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

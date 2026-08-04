@@ -5,12 +5,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** Flag configuration for a feature within an environment. */
 @Table("feature_flags")
-public class FeatureFlag {
+public class FeatureFlag implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -98,6 +99,7 @@ public class FeatureFlag {
     this.updatedAt = Instant.now();
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -156,5 +158,10 @@ public class FeatureFlag {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

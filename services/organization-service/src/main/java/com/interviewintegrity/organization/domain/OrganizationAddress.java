@@ -5,12 +5,13 @@ import java.util.Locale;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** One-to-one registered billing address of an organization. */
 @Table("organization_addresses")
-public class OrganizationAddress {
+public class OrganizationAddress implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -67,6 +68,7 @@ public class OrganizationAddress {
     this.updatedAt = Instant.now();
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -113,5 +115,10 @@ public class OrganizationAddress {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

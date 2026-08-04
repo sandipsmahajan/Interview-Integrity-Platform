@@ -3,12 +3,14 @@ package com.interviewintegrity.identity.domain;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.domain.Persistable;
 
 /** A single-use MFA recovery code, stored as a SHA-256 hash. */
 @Table("recovery_codes")
-public class RecoveryCode {
+public class RecoveryCode implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -47,6 +49,7 @@ public class RecoveryCode {
     return consumedAt == null;
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -73,5 +76,17 @@ public class RecoveryCode {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Version
+  private long version = 1;
+
+  public long getVersion() {
+    return version;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

@@ -4,12 +4,14 @@ import com.interviewintegrity.validation.Assert;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.domain.Persistable;
 
 /** Immutable version record of a configuration change, populated by a database trigger. */
 @Table("configuration_history")
-public class ConfigurationHistory {
+public class ConfigurationHistory implements Persistable<Long> {
 
   @Id private Long id;
 
@@ -59,6 +61,7 @@ public class ConfigurationHistory {
 
   protected ConfigurationHistory() {}
 
+  @Override
   public Long getId() {
     return id;
   }
@@ -97,5 +100,10 @@ public class ConfigurationHistory {
 
   public void setId(Long id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

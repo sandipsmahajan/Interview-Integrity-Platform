@@ -4,12 +4,14 @@ import com.interviewintegrity.validation.Assert;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.domain.Persistable;
 
 /** HTTP access log entry produced by the API gateway. */
 @Table("api_audit_log")
-public class ApiAuditLog {
+public class ApiAuditLog implements Persistable<Long> {
 
   @Id private Long id;
 
@@ -63,6 +65,7 @@ public class ApiAuditLog {
 
   protected ApiAuditLog() {}
 
+  @Override
   public Long getId() {
     return id;
   }
@@ -105,5 +108,16 @@ public class ApiAuditLog {
 
   public void setId(Long id) {
     this.id = id;
+  }
+
+  private long version = 1;
+
+  public long getVersion() {
+    return version;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

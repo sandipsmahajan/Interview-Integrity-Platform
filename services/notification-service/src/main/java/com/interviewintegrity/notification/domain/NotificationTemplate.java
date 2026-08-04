@@ -5,12 +5,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** A message template. A null organization id provides a platform default. */
 @Table("notification_templates")
-public class NotificationTemplate {
+public class NotificationTemplate implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -89,6 +90,7 @@ public class NotificationTemplate {
     this.updatedAt = Instant.now();
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -139,5 +141,10 @@ public class NotificationTemplate {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

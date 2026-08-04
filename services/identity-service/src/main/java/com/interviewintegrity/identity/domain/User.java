@@ -5,12 +5,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** A platform user account, scoped to an organization. */
 @Table("users")
-public class User {
+public class User implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -60,7 +61,7 @@ public class User {
   @Column("password_reset_requested_at")
   private Instant passwordResetRequestedAt;
 
-  @Version private long version = 0;
+  @Version private long version = 1;
 
   /** Creates a new pending user with the given profile. */
   public User(UUID organizationId, String email, String passwordHash, String displayName) {
@@ -164,6 +165,7 @@ public class User {
         && passwordResetRequestedAt.isAfter(Instant.now().minus(interval));
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -238,5 +240,10 @@ public class User {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

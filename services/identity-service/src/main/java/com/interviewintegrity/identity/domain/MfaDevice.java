@@ -4,12 +4,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** A multi-factor authentication device registered to a user. */
 @Table("mfa_devices")
-public class MfaDevice {
+public class MfaDevice implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -48,7 +49,7 @@ public class MfaDevice {
   @Column("deleted_at")
   private Instant deletedAt;
 
-  @Version private long version = 0;
+  @Version private long version = 1;
 
   /** Creates a new unverified MFA device. */
   public MfaDevice(UUID userId, UUID organizationId, String kind, String secretCiphertext) {
@@ -82,6 +83,7 @@ public class MfaDevice {
     this.updatedAt = Instant.now();
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -140,5 +142,10 @@ public class MfaDevice {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

@@ -7,12 +7,13 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** A live connection to an external account under an integration. */
 @Table("integration_connections")
-public class IntegrationConnection {
+public class IntegrationConnection implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -88,6 +89,7 @@ public class IntegrationConnection {
     this.updatedAt = Instant.now();
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -134,5 +136,10 @@ public class IntegrationConnection {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

@@ -7,12 +7,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** A report artifact owned by an organization. */
 @Table("reports")
-public class Report {
+public class Report implements Persistable<UUID> {
 
   private static final int DEFAULT_RETENTION_DAYS = 30;
 
@@ -124,6 +125,7 @@ public class Report {
     this.updatedAt = Instant.now();
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -194,5 +196,10 @@ public class Report {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

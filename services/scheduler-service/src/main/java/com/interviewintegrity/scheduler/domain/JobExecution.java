@@ -5,12 +5,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.domain.Persistable;
 
 /** Execution history of a job (1 job : N executions). */
 @Table("job_executions")
-public class JobExecution {
+public class JobExecution implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -95,6 +97,7 @@ public class JobExecution {
     return Duration.between(startedAt, finishedAt).toMillis();
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -141,5 +144,16 @@ public class JobExecution {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  private long version = 1;
+
+  public long getVersion() {
+    return version;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

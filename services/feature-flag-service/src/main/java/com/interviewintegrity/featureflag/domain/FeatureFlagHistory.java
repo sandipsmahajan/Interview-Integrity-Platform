@@ -4,12 +4,14 @@ import com.interviewintegrity.validation.Assert;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.domain.Persistable;
 
 /** Snapshot of a feature flag configuration, populated by a database trigger. */
 @Table("feature_flags_history")
-public class FeatureFlagHistory {
+public class FeatureFlagHistory implements Persistable<Long> {
 
   @Id private Long historyId;
 
@@ -41,6 +43,7 @@ public class FeatureFlagHistory {
 
   private String variants;
   private String rules;
+  @Version
   private long version;
 
   /** Creates a feature flag history snapshot. */
@@ -80,6 +83,16 @@ public class FeatureFlagHistory {
     return historyId;
   }
 
+  /** Returns the flag UUID stored in this history snapshot. */
+  public UUID getFlagId() {
+    return id;
+  }
+
+  @Override
+  public Long getId() {
+    return historyId;
+  }
+
   public String getHistoryAction() {
     return historyAction;
   }
@@ -90,10 +103,6 @@ public class FeatureFlagHistory {
 
   public Instant getChangedAt() {
     return changedAt;
-  }
-
-  public UUID getId() {
-    return id;
   }
 
   public UUID getOrganizationId() {
@@ -134,5 +143,10 @@ public class FeatureFlagHistory {
 
   public void setHistoryId(Long historyId) {
     this.historyId = historyId;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.historyId == null;
   }
 }

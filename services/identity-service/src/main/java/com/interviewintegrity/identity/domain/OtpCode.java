@@ -3,12 +3,14 @@ package com.interviewintegrity.identity.domain;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.domain.Persistable;
 
 /** A short-lived one-time passcode delivered by email for a specific purpose. */
 @Table("otp_codes")
-public class OtpCode {
+public class OtpCode implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -77,6 +79,7 @@ public class OtpCode {
     return consumedAt == null && attempts < maxAttempts && !expiresAt.isBefore(Instant.now());
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -123,5 +126,17 @@ public class OtpCode {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Version
+  private long version = 1;
+
+  public long getVersion() {
+    return version;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

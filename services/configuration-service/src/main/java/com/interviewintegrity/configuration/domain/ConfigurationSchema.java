@@ -5,12 +5,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** Global catalog entry declaring a configuration key, its type and constraints. */
 @Table("configuration_schema")
-public class ConfigurationSchema {
+public class ConfigurationSchema implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -66,6 +67,7 @@ public class ConfigurationSchema {
     this.updatedAt = Instant.now();
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -104,5 +106,10 @@ public class ConfigurationSchema {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

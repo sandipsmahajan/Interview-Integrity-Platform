@@ -4,12 +4,14 @@ import com.interviewintegrity.validation.Assert;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.domain.Persistable;
 
 /** Immutable version history entry of a storage object. */
 @Table("object_versions")
-public class ObjectVersion {
+public class ObjectVersion implements Persistable<Long> {
 
   @Id private Long id;
 
@@ -65,6 +67,7 @@ public class ObjectVersion {
 
   protected ObjectVersion() {}
 
+  @Override
   public Long getId() {
     return id;
   }
@@ -107,5 +110,10 @@ public class ObjectVersion {
 
   public void setId(Long id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

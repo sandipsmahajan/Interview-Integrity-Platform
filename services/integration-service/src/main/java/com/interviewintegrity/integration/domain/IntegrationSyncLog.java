@@ -5,12 +5,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.domain.Persistable;
 
 /** Sync run history of a connection. */
 @Table("integration_sync_logs")
-public class IntegrationSyncLog {
+public class IntegrationSyncLog implements Persistable<Long> {
 
   @Id private Long id;
 
@@ -69,6 +71,7 @@ public class IntegrationSyncLog {
     this.durationMs = Duration.between(startedAt, finishedAt).toMillis();
   }
 
+  @Override
   public Long getId() {
     return id;
   }
@@ -111,5 +114,16 @@ public class IntegrationSyncLog {
 
   public void setId(Long id) {
     this.id = id;
+  }
+
+  private long version = 1;
+
+  public long getVersion() {
+    return version;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

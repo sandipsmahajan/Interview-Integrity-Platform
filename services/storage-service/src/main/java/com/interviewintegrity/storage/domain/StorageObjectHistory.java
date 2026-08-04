@@ -4,12 +4,14 @@ import com.interviewintegrity.validation.Assert;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.domain.Persistable;
 
 /** Snapshot of a storage object, populated by a database trigger. */
 @Table("storage_objects_history")
-public class StorageObjectHistory {
+public class StorageObjectHistory implements Persistable<UUID> {
 
   @Id
   @Column("history_id")
@@ -90,6 +92,7 @@ public class StorageObjectHistory {
     return changedAt;
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -124,5 +127,10 @@ public class StorageObjectHistory {
 
   public void setHistoryId(Long historyId) {
     this.historyId = historyId;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

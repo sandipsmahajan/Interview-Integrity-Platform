@@ -5,12 +5,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** One-to-one extended profile of a recruiter. */
 @Table("recruiter_profiles")
-public class RecruiterProfile {
+public class RecruiterProfile implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -62,6 +63,7 @@ public class RecruiterProfile {
     this.updatedAt = Instant.now();
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -104,5 +106,10 @@ public class RecruiterProfile {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

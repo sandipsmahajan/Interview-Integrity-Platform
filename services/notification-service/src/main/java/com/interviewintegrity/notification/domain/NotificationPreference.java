@@ -4,12 +4,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** Per-user opt-in/opt-out for a notification channel and type. */
 @Table("notification_preferences")
-public class NotificationPreference {
+public class NotificationPreference implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -55,6 +56,7 @@ public class NotificationPreference {
     this.updatedAt = Instant.now();
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -93,5 +95,10 @@ public class NotificationPreference {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

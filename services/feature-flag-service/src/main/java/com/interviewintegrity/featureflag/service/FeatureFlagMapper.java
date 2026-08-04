@@ -10,6 +10,7 @@ import com.interviewintegrity.featureflag.web.dto.FeatureFlagHistoryResponse;
 import com.interviewintegrity.featureflag.web.dto.FeatureFlagResponse;
 import com.interviewintegrity.featureflag.web.dto.FeatureResponse;
 import com.interviewintegrity.featureflag.web.dto.FlagTargetResponse;
+import java.util.UUID;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -33,8 +34,14 @@ public interface FeatureFlagMapper {
   FlagTargetResponse toTargetResponse(FlagTarget target);
 
   /** Maps a flag history entry into its public response. */
-  @Mapping(target = "featureFlagId", source = "id")
+  @Mapping(target = "featureFlagId", source = "history", qualifiedByName = "mapFlagId")
   FeatureFlagHistoryResponse toHistoryResponse(FeatureFlagHistory history);
+
+  /** Extracts the stored flag UUID from a history entry. */
+  @org.mapstruct.Named("mapFlagId")
+  default UUID mapFlagId(FeatureFlagHistory history) {
+    return history.getFlagId();
+  }
 
   /** Maps an experiment into its public response. */
   ExperimentResponse toResponse(Experiment experiment);

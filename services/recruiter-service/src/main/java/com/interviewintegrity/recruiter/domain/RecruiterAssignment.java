@@ -4,12 +4,13 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 /** Explicit assignment of a candidate to a recruiter with a role. */
 @Table("recruiter_assignments")
-public class RecruiterAssignment {
+public class RecruiterAssignment implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -69,6 +70,7 @@ public class RecruiterAssignment {
     this.updatedAt = Instant.now();
   }
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -115,5 +117,10 @@ public class RecruiterAssignment {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

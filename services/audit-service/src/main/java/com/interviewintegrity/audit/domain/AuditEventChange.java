@@ -4,12 +4,14 @@ import com.interviewintegrity.validation.Assert;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.domain.Persistable;
 
 /** Field-level change detail recorded alongside an audit event. */
 @Table("audit_event_changes")
-public class AuditEventChange {
+public class AuditEventChange implements Persistable<Long> {
 
   @Id private Long id;
 
@@ -41,6 +43,7 @@ public class AuditEventChange {
 
   protected AuditEventChange() {}
 
+  @Override
   public Long getId() {
     return id;
   }
@@ -67,5 +70,16 @@ public class AuditEventChange {
 
   public void setId(Long id) {
     this.id = id;
+  }
+
+  private long version = 1;
+
+  public long getVersion() {
+    return version;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }

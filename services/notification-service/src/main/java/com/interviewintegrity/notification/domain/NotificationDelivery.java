@@ -4,12 +4,14 @@ import com.interviewintegrity.validation.Assert;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.domain.Persistable;
 
 /** Delivery attempt history of a notification (1 notification : N deliveries). */
 @Table("notification_deliveries")
-public class NotificationDelivery {
+public class NotificationDelivery implements Persistable<Long> {
 
   @Id private Long id;
 
@@ -71,6 +73,7 @@ public class NotificationDelivery {
     }
   }
 
+  @Override
   public Long getId() {
     return id;
   }
@@ -113,5 +116,16 @@ public class NotificationDelivery {
 
   public void setId(Long id) {
     this.id = id;
+  }
+
+  private long version = 1;
+
+  public long getVersion() {
+    return version;
+  }
+
+  @Override
+  public boolean isNew() {
+    return this.id == null;
   }
 }
