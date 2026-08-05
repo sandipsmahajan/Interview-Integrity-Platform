@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.integrity.exception.AuthenticationFailedException;
 import com.integrity.exception.ValidationFailedException;
 import com.integrity.exception.Violation;
+import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,7 +66,11 @@ class PlatformErrorWebExceptionHandlerIntegrationTest {
 
   @BeforeEach
   void setUp() {
-    webTestClient = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+    webTestClient =
+        WebTestClient.bindToServer()
+            .responseTimeout(Duration.ofSeconds(15))
+            .baseUrl("http://localhost:" + port)
+            .build();
   }
 
   @Test
