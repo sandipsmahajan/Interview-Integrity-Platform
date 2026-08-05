@@ -1,5 +1,6 @@
 app:
   timezone: ${APP_TIMEZONE:UTC}
+  download-url: ${APP_DOWNLOAD_URL:https://integritypro.com/download}
 spring:
   application:
     name: interview-service

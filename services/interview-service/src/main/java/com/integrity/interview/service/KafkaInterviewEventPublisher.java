@@ -1,6 +1,7 @@
 package com.integrity.interview.service;
 
 import com.integrity.event.EventEnvelope;
+import com.integrity.event.IdentityEmailEvent;
 import com.integrity.event.InterviewCompletedEvent;
 import com.integrity.event.InterviewCreatedEvent;
 import com.integrity.event.InterviewScheduledEvent;
@@ -8,8 +9,14 @@ import com.integrity.event.InterviewStartedEvent;
 import com.integrity.event.KafkaTopics;
 import com.integrity.interview.domain.Interview;
 import com.integrity.interview.domain.InterviewSession;
+import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,6 +91,77 @@ public final class KafkaInterviewEventPublisher implements InterviewEventPublish
         new InterviewCompletedEvent(session.getInterviewId(), session.getId(), occurredAt);
     return publish(
         KafkaTopics.INTERVIEW_COMPLETED, payload, session.getOrganizationId(), occurredAt);
+  }
+
+  @Override
+  public Mono<Void> publishCandidateInvitation(Interview interview, String downloadUrl) {
+    Instant occurredAt = Instant.now();
+    String tempPassword = generateTempPassword();
+    String candidateName =
+        interview.getCandidateName() != null ? interview.getCandidateName() : "Candidate";
+
+    DateTimeFormatter dateFmt =
+        DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a")
+            .withZone(ZoneId.of(interview.getTimezone()));
+
+    IdentityEmailEvent payload =
+        new IdentityEmailEvent(
+            interview.getCandidateId(),
+            interview.getOrganizationId(),
+            interview.getCandidateEmail(),
+            candidateName,
+            "en",
+            "interview-invitation",
+            Map.of(
+                "candidateName",
+                candidateName,
+                "interviewTitle",
+                interview.getTitle(),
+                "interviewDate",
+                dateFmt.format(interview.getStartsAt()),
+                "interviewMode",
+                interview.getMode().name(),
+                "meetingUrl",
+                interview.getMeetingUrl() != null ? interview.getMeetingUrl() : "",
+                "tempPassword",
+                tempPassword,
+                "downloadUrl",
+                downloadUrl,
+                "appName",
+                "Integrity Pro"),
+            occurredAt);
+
+    return publishEmail(payload, interview.getOrganizationId(), occurredAt);
+  }
+
+  private Mono<Void> publishEmail(
+      IdentityEmailEvent event, UUID organizationId, Instant occurredAt) {
+    EventEnvelope envelope =
+        new EventEnvelope(
+            UUID.randomUUID(), KafkaTopics.IDENTITY_EMAIL, serviceName, occurredAt, toJson(event));
+    String key = organizationId.toString();
+    ProducerRecord<String, String> record =
+        new ProducerRecord<>(KafkaTopics.IDENTITY_EMAIL, key, toJson(envelope));
+    SenderRecord<String, String, String> senderRecord = SenderRecord.create(record, key);
+    return sender
+        .send(Mono.just(senderRecord))
+        .doOnNext(
+            result ->
+                log.info(
+                    "Published candidate invitation for {} to topic {}",
+                    event.email(),
+                    KafkaTopics.IDENTITY_EMAIL))
+        .then();
+  }
+
+  private static String generateTempPassword() {
+    String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    SecureRandom random = new SecureRandom();
+    return IntStream.range(0, 12)
+        .map(i -> random.nextInt(chars.length()))
+        .mapToObj(chars::charAt)
+        .map(Object::toString)
+        .collect(Collectors.joining());
   }
 
   private Mono<Void> publish(

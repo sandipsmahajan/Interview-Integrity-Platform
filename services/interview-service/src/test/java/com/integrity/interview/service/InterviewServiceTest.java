@@ -2,6 +2,7 @@ package com.integrity.interview.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,11 +28,12 @@ class InterviewServiceTest {
   @Mock private InterviewRepository interviewRepository;
   @Mock private InterviewEventPublisher eventPublisher;
 
+  private static final String DOWNLOAD_URL = "https://integritypro.com/download";
   private InterviewService interviewService;
 
   @BeforeEach
   void setUp() {
-    interviewService = new InterviewService(interviewRepository, eventPublisher);
+    interviewService = new InterviewService(interviewRepository, eventPublisher, DOWNLOAD_URL);
   }
 
   @Test
@@ -51,11 +53,15 @@ class InterviewServiceTest {
               return Mono.just(interview);
             });
     when(eventPublisher.publishCreated(any(Interview.class))).thenReturn(Mono.empty());
+    when(eventPublisher.publishCandidateInvitation(any(Interview.class), eq(DOWNLOAD_URL)))
+        .thenReturn(Mono.empty());
 
     StepVerifier.create(
             interviewService.create(
                 organizationId,
                 candidateId,
+                "candidate@example.com",
+                "John Doe",
                 recruiterId,
                 1,
                 "Phone screen",
@@ -69,6 +75,8 @@ class InterviewServiceTest {
         .assertNext(
             interview -> {
               assertThat(interview.getOrganizationId()).isEqualTo(organizationId);
+              assertThat(interview.getCandidateEmail()).isEqualTo("candidate@example.com");
+              assertThat(interview.getCandidateName()).isEqualTo("John Doe");
               assertThat(interview.getStatus()).isEqualTo(InterviewStatus.SCHEDULED);
               assertThat(interview.getMode()).isEqualTo(InterviewMode.ONLINE);
               assertThat(interview.getMetadata()).isEqualTo("{}");
@@ -77,6 +85,7 @@ class InterviewServiceTest {
         .verifyComplete();
 
     verify(eventPublisher).publishCreated(any(Interview.class));
+    verify(eventPublisher).publishCandidateInvitation(any(Interview.class), eq(DOWNLOAD_URL));
   }
 
   @Test
@@ -172,6 +181,8 @@ class InterviewServiceTest {
         new Interview(
             organizationId,
             candidateId,
+            "candidate@example.com",
+            "Test Candidate",
             recruiterId,
             1,
             "Phone screen",

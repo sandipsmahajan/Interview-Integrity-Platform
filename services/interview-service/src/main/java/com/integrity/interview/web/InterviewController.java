@@ -52,6 +52,8 @@ public final class InterviewController {
         .create(
             SecurityPrincipals.organizationId(authentication),
             request.candidateId(),
+            request.candidateEmail().trim(),
+            request.candidateName(),
             request.recruiterId(),
             request.roundNumber(),
             request.title().trim(),

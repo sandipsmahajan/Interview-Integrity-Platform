@@ -13,6 +13,8 @@ import java.util.UUID;
  * Request to create an interview.
  *
  * @param candidateId candidate identifier
+ * @param candidateEmail candidate email address (for notification delivery)
+ * @param candidateName candidate display name
  * @param recruiterId owning recruiter identifier
  * @param roundNumber interview round within the process
  * @param title interview title
@@ -25,6 +27,8 @@ import java.util.UUID;
  */
 public record CreateInterviewRequest(
     @NotNull UUID candidateId,
+    @NotBlank @Size(max = 320) String candidateEmail,
+    @Size(max = 200) String candidateName,
     @NotNull UUID recruiterId,
     @Min(1) @Max(100) int roundNumber,
     @NotBlank @Size(max = 250) String title,

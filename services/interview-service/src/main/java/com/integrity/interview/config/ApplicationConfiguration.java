@@ -15,6 +15,7 @@ import com.integrity.interview.service.InterviewService;
 import com.integrity.interview.service.InterviewSessionService;
 import com.integrity.interview.service.InterviewerService;
 import com.integrity.interview.service.KafkaInterviewEventPublisher;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -29,6 +30,9 @@ import reactor.kafka.sender.KafkaSender;
  */
 @Configuration
 public class ApplicationConfiguration {
+
+  @Value("${app.download-url:https://integritypro.com/download}")
+  private String downloadUrl;
 
   /** Provides the database client backed panel bridge repository. */
   @Bean
@@ -48,7 +52,7 @@ public class ApplicationConfiguration {
   @Bean
   public InterviewService interviewService(
       InterviewRepository interviewRepository, InterviewEventPublisher eventPublisher) {
-    return new InterviewService(interviewRepository, eventPublisher);
+    return new InterviewService(interviewRepository, eventPublisher, downloadUrl);
   }
 
   /** Provides the interview session service. */

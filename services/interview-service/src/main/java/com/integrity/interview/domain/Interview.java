@@ -22,6 +22,12 @@ public class Interview implements Persistable<UUID> {
   @Column("candidate_id")
   private UUID candidateId;
 
+  @Column("candidate_email")
+  private String candidateEmail;
+
+  @Column("candidate_name")
+  private String candidateName;
+
   @Column("recruiter_id")
   private UUID recruiterId;
 
@@ -71,6 +77,8 @@ public class Interview implements Persistable<UUID> {
   public Interview(
       UUID organizationId,
       UUID candidateId,
+      String candidateEmail,
+      String candidateName,
       UUID recruiterId,
       int roundNumber,
       String title,
@@ -83,6 +91,7 @@ public class Interview implements Persistable<UUID> {
       UUID createdBy) {
     Assert.notNull(organizationId, "organizationId");
     Assert.notNull(candidateId, "candidateId");
+    Assert.notBlank(candidateEmail, "candidateEmail");
     Assert.notNull(recruiterId, "recruiterId");
     Assert.notBlank(title, "title");
     Assert.isTrue(roundNumber > 0, "roundNumber must be positive");
@@ -91,6 +100,8 @@ public class Interview implements Persistable<UUID> {
     Assert.isTrue(endsAt.isAfter(startsAt), "endsAt must be after startsAt");
     this.organizationId = organizationId;
     this.candidateId = candidateId;
+    this.candidateEmail = candidateEmail;
+    this.candidateName = candidateName;
     this.recruiterId = recruiterId;
     this.roundNumber = roundNumber;
     this.title = title;
@@ -191,6 +202,14 @@ public class Interview implements Persistable<UUID> {
 
   public UUID getCandidateId() {
     return candidateId;
+  }
+
+  public String getCandidateEmail() {
+    return candidateEmail;
+  }
+
+  public String getCandidateName() {
+    return candidateName;
   }
 
   public UUID getRecruiterId() {

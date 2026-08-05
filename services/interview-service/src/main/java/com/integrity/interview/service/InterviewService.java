@@ -16,19 +16,25 @@ public class InterviewService {
 
   private final InterviewRepository interviewRepository;
   private final InterviewEventPublisher eventPublisher;
+  private final String downloadUrl;
 
   /** Wires the service with its repository and event publisher. */
   public InterviewService(
-      InterviewRepository interviewRepository, InterviewEventPublisher eventPublisher) {
+      InterviewRepository interviewRepository,
+      InterviewEventPublisher eventPublisher,
+      String downloadUrl) {
     this.interviewRepository = interviewRepository;
     this.eventPublisher = eventPublisher;
+    this.downloadUrl = downloadUrl;
   }
 
-  /** Creates an interview and publishes the creation event. */
+  /** Creates an interview, publishes the creation event, and sends a candidate invitation email. */
   @Transactional
   public Mono<Interview> create(
       UUID organizationId,
       UUID candidateId,
+      String candidateEmail,
+      String candidateName,
       UUID recruiterId,
       int roundNumber,
       String title,
@@ -44,6 +50,8 @@ public class InterviewService {
             new Interview(
                 organizationId,
                 candidateId,
+                candidateEmail,
+                candidateName,
                 recruiterId,
                 roundNumber,
                 title,
@@ -54,7 +62,12 @@ public class InterviewService {
                 timezone,
                 metadata,
                 createdBy))
-        .flatMap(interview -> eventPublisher.publishCreated(interview).thenReturn(interview));
+        .flatMap(
+            interview ->
+                eventPublisher
+                    .publishCreated(interview)
+                    .then(eventPublisher.publishCandidateInvitation(interview, downloadUrl))
+                    .thenReturn(interview));
   }
 
   /** Returns a single interview of the organization. */

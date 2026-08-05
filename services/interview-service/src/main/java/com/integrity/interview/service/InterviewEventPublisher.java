@@ -38,4 +38,13 @@ public interface InterviewEventPublisher {
    * @return completion signal of the publish attempt
    */
   Mono<Void> publishCompleted(InterviewSession session);
+
+  /**
+   * Publishes a candidate invitation email event for the interview.
+   *
+   * @param interview the created interview
+   * @param downloadUrl the URL where candidates can download the desktop client
+   * @return completion signal of the publish attempt
+   */
+  Mono<Void> publishCandidateInvitation(Interview interview, String downloadUrl);
 }
