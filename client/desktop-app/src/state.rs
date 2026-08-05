@@ -6,7 +6,7 @@ use config::{ClientSettings, CollectorConfig, FeatureFlags, RemoteConfig};
 use network::{
     parse_interview_link, ApiClient, AuthRequest, AuthResponse, InterviewContext, SessionStartRequest,
 };
-use policy::{PolicyEngine, PolicyRule, PolicySet, Severity};
+use policy::{PolicyEngine, default_policy_set};
 use security::{generate_device_id, AuthSession, ConsentRecord};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -36,6 +36,7 @@ struct StateInner {
     browser: BrowserController,
     monitoring_handle: Option<tauri::async_runtime::JoinHandle<()>>,
     panel_tx: Option<mpsc::UnboundedSender<TelemetryPanelEvent>>,
+    shutdown_tx: Option<mpsc::UnboundedSender<()>>,
     settings: ClientSettings,
     client_version: String,
 }
@@ -90,6 +91,7 @@ impl AppState {
                 browser: BrowserController::new(BrowserPolicy::enterprise_default()),
                 monitoring_handle: None,
                 panel_tx: Some(panel_tx),
+                shutdown_tx: None,
                 settings,
                 client_version: env!("CARGO_PKG_VERSION").into(),
             })),
@@ -285,23 +287,13 @@ impl AppState {
 
             let collector_config = CollectorConfig::new(state.remote_config.feature_flags.clone());
             let collectors = build_collector_registry(&collector_config);
-            let policy = PolicyEngine::new(PolicySet {
-                rules: vec![
-                    PolicyRule {
-                        code: "BROWSER_FOCUS_LOST".into(),
-                        enabled: true,
-                        severity: Severity::Medium,
-                    },
-                    PolicyRule {
-                        code: "VM_DETECTED".into(),
-                        enabled: true,
-                        severity: Severity::Critical,
-                    },
-                ],
-            });
+            let policy = PolicyEngine::new(default_policy_set());
 
             let streaming_enabled = state.remote_config.feature_flags.enable_telemetry_streaming;
-            let agent = MonitoringAgent::new(
+            let (shutdown_tx, shutdown_rx) = mpsc::unbounded_channel();
+            state.shutdown_tx = Some(shutdown_tx);
+
+            let mut agent = MonitoringAgent::new(
                 session.id,
                 token,
                 collectors,
@@ -310,6 +302,7 @@ impl AppState {
                 store,
                 collector_config,
                 panel_tx,
+                shutdown_rx,
                 streaming_enabled,
             );
 
@@ -335,8 +328,8 @@ impl AppState {
                 .or_else(|| state.link_token.clone())
                 .unwrap_or_default();
             let api = state.api.clone();
-            if let Some(handle) = state.monitoring_handle.take() {
-                handle.abort();
+            if let Some(tx) = state.shutdown_tx.take() {
+                let _ = tx.send(());
             }
             Ok((session_id, token, api))
         })?;

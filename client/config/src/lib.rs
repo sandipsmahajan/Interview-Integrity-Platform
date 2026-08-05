@@ -17,6 +17,7 @@ pub struct FeatureFlags {
     pub enable_video_collector: bool,
     pub enable_window_focus_collector: bool,
     pub enable_system_health_collector: bool,
+    pub enable_process_collector: bool,
 }
 
 impl Default for FeatureFlags {
@@ -35,6 +36,7 @@ impl Default for FeatureFlags {
             enable_video_collector: true,
             enable_window_focus_collector: true,
             enable_system_health_collector: true,
+            enable_process_collector: true,
         }
     }
 }
@@ -60,6 +62,7 @@ impl CollectorConfig {
                 self.flags.enable_video_collector || self.flags.enable_audio_collector
             }
             "window_focus" => self.flags.enable_window_focus_collector,
+            "process_collector" => self.flags.enable_process_collector,
             _ => self.flags.enable_diagnostics,
         }
     }
