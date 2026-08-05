@@ -1,0 +1,105 @@
+package com.integrity.candidate.config;
+
+import com.integrity.candidate.service.AssessmentService;
+import com.integrity.candidate.service.CandidateConsentService;
+import com.integrity.candidate.service.CandidateDocumentService;
+import com.integrity.candidate.service.CandidateMapper;
+import com.integrity.candidate.service.CandidateNoteService;
+import com.integrity.candidate.service.CandidateProfileService;
+import com.integrity.candidate.service.CandidateService;
+import com.integrity.candidate.service.TagService;
+import com.integrity.candidate.web.AssessmentController;
+import com.integrity.candidate.web.CandidateConsentController;
+import com.integrity.candidate.web.CandidateController;
+import com.integrity.candidate.web.CandidateDocumentController;
+import com.integrity.candidate.web.CandidateNoteController;
+import com.integrity.candidate.web.CandidateProfileController;
+import com.integrity.candidate.web.CandidateTagController;
+import com.integrity.candidate.web.TagController;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/** Wires the REST controllers as beans and describes the OpenAPI surface of the service. */
+@Configuration
+public class ApiConfiguration {
+
+  /** Exposes the candidate controller. */
+  @Bean
+  public CandidateController candidateController(
+      CandidateService candidateService, CandidateMapper mapper) {
+    return new CandidateController(candidateService, mapper);
+  }
+
+  /** Exposes the candidate profile controller. */
+  @Bean
+  public CandidateProfileController candidateProfileController(
+      CandidateProfileService profileService, CandidateMapper mapper) {
+    return new CandidateProfileController(profileService, mapper);
+  }
+
+  /** Exposes the candidate document controller. */
+  @Bean
+  public CandidateDocumentController candidateDocumentController(
+      CandidateDocumentService documentService, CandidateMapper mapper) {
+    return new CandidateDocumentController(documentService, mapper);
+  }
+
+  /** Exposes the candidate note controller. */
+  @Bean
+  public CandidateNoteController candidateNoteController(
+      CandidateNoteService noteService, CandidateMapper mapper) {
+    return new CandidateNoteController(noteService, mapper);
+  }
+
+  /** Exposes the assessment controller. */
+  @Bean
+  public AssessmentController assessmentController(
+      AssessmentService assessmentService, CandidateMapper mapper) {
+    return new AssessmentController(assessmentService, mapper);
+  }
+
+  /** Exposes the candidate consent controller. */
+  @Bean
+  public CandidateConsentController candidateConsentController(
+      CandidateConsentService consentService, CandidateMapper mapper) {
+    return new CandidateConsentController(consentService, mapper);
+  }
+
+  /** Exposes the tag controller. */
+  @Bean
+  public TagController tagController(TagService tagService, CandidateMapper mapper) {
+    return new TagController(tagService, mapper);
+  }
+
+  /** Exposes the candidate tag controller. */
+  @Bean
+  public CandidateTagController candidateTagController(
+      TagService tagService, CandidateMapper mapper) {
+    return new CandidateTagController(tagService, mapper);
+  }
+
+  /** Describes the OpenAPI document for the candidate service. */
+  @Bean
+  public OpenAPI platformOpenApi() {
+    return new OpenAPI()
+        .info(
+            new Info()
+                .title("Candidate Service API")
+                .version("v1")
+                .description("Candidate profiles, documents, assessments, consents and tags"))
+        .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+        .components(
+            new Components()
+                .addSecuritySchemes(
+                    "bearerAuth",
+                    new SecurityScheme()
+                        .type(SecurityScheme.Type.HTTP)
+                        .scheme("bearer")
+                        .bearerFormat("JWT")));
+  }
+}

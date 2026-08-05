@@ -35,6 +35,7 @@ struct StateInner {
     interview: Option<InterviewContext>,
     remote_config: RemoteConfig,
     consent_granted: bool,
+    #[allow(dead_code)]
     browser: BrowserController,
     monitoring_handle: Option<tokio::task::JoinHandle<()>>,
     shutdown_tx: Option<mpsc::UnboundedSender<()>>,

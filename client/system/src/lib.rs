@@ -387,11 +387,9 @@ fn get_foreground_window_windows() -> (String, bool) {
     use std::os::windows::ffi::OsStringExt;
 
     type HWND = isize;
-    type DWORD = u32;
 
     extern "system" {
         fn GetForegroundWindow() -> HWND;
-        fn GetWindowThreadProcessId(hwnd: HWND, lpdw_process_id: *mut DWORD) -> DWORD;
         fn GetWindowTextW(hwnd: HWND, lp_string: *mut u16, n_max_count: i32) -> i32;
     }
 
@@ -566,7 +564,6 @@ impl TelemetryCollector for ClipboardCollector {
 fn check_clipboard_change() -> bool {
     #[cfg(target_os = "windows")]
     {
-        type BOOL = i32;
         extern "system" {
             fn GetClipboardSequenceNumber() -> u32;
         }
@@ -713,7 +710,6 @@ fn detect_fullscreen() -> Option<String> {
     {
         type HWND = isize;
         type BOOL = i32;
-        type LONG = i32;
         extern "system" {
             fn GetForegroundWindow() -> HWND;
             fn GetWindowRect(hwnd: HWND, rect: *mut RECT) -> BOOL;
@@ -778,11 +774,11 @@ impl TelemetryCollector for IdleDetectionCollector {
 fn get_idle_time() -> u64 {
     #[cfg(target_os = "windows")]
     {
-        type DWORD = u32;
         extern "system" {
             fn GetLastInputInfo(plii: *mut LASTINPUTINFO) -> i32;
         }
         #[repr(C)]
+        #[allow(non_snake_case)]
         struct LASTINPUTINFO {
             cbSize: u32,
             dwTime: u32,
@@ -790,7 +786,7 @@ fn get_idle_time() -> u64 {
         unsafe {
             let mut lii = LASTINPUTINFO { cbSize: std::mem::size_of::<LASTINPUTINFO>() as u32, dwTime: 0 };
             if GetLastInputInfo(&mut lii) != 0 {
-                extern "system" { fn GetTickCount() -> DWORD; }
+                extern "system" { fn GetTickCount() -> u32; }
                 let tick = GetTickCount();
                 ((tick.wrapping_sub(lii.dwTime)) / 1000) as u64
             } else {
@@ -837,7 +833,6 @@ impl TelemetryCollector for LockScreenCollector {
 fn is_session_locked() -> bool {
     #[cfg(target_os = "windows")]
     {
-        type HWND = isize;
         extern "system" {
             fn OpenInputDesktop(flags: u32, inherit: i32, desired_access: u32) -> isize;
             fn CloseDesktop(desktop: isize) -> i32;

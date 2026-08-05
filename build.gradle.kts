@@ -14,7 +14,7 @@ plugins {
 }
 
 allprojects {
-    group = "com.interviewintegrity"
+    group = "com.integrity"
     version = "0.1.0"
 }
 

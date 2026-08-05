@@ -1,0 +1,52 @@
+package com.integrity.analytics.config;
+
+import com.integrity.analytics.service.AnalyticsJobRunService;
+import com.integrity.analytics.service.AnalyticsMapper;
+import com.integrity.analytics.service.AnalyticsService;
+import com.integrity.analytics.web.AnalyticsController;
+import com.integrity.analytics.web.AnalyticsJobRunController;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/** Wires the REST controllers as beans and describes the OpenAPI surface of the service. */
+@Configuration
+public class ApiConfiguration {
+
+  /** Exposes the analytics controller. */
+  @Bean
+  public AnalyticsController analyticsController(AnalyticsService analyticsService) {
+    return new AnalyticsController(analyticsService);
+  }
+
+  /** Exposes the analytics job run controller. */
+  @Bean
+  public AnalyticsJobRunController analyticsJobRunController(
+      AnalyticsJobRunService jobRunService, AnalyticsMapper mapper) {
+    return new AnalyticsJobRunController(jobRunService, mapper);
+  }
+
+  /** Describes the OpenAPI document for the analytics service. */
+  @Bean
+  public OpenAPI platformOpenApi() {
+    return new OpenAPI()
+        .info(
+            new Info()
+                .title("Analytics Service API")
+                .version("v1")
+                .description("Pre-aggregated daily summaries and aggregation job runs"))
+        .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+        .components(
+            new Components()
+                .addSecuritySchemes(
+                    "bearerAuth",
+                    new SecurityScheme()
+                        .type(SecurityScheme.Type.HTTP)
+                        .scheme("bearer")
+                        .bearerFormat("JWT")));
+  }
+}

@@ -129,7 +129,7 @@ management:
 logging:
   level:
     root: INFO
-    com.interviewintegrity: INFO
+    com.integrity: INFO
 
 eureka:
   client:

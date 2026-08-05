@@ -66,4 +66,4 @@ management:
 logging:
   level:
     root: ${LOG_LEVEL_ROOT:INFO}
-    com.interviewintegrity: ${LOG_LEVEL_APP:DEBUG}
+    com.integrity: ${LOG_LEVEL_APP:DEBUG}

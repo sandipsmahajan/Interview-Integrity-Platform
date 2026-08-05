@@ -1,2 +1,2 @@
 org.springframework.boot.EnvironmentPostProcessor=\
-com.interviewintegrity.common.PlatformTimeZoneEnvironmentPostProcessor
+com.integrity.common.PlatformTimeZoneEnvironmentPostProcessor

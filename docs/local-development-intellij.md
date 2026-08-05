@@ -96,25 +96,25 @@ ports (their defaults are already configured).
 
 | Service | Port | Main class |
 | --- | --- | --- |
-| api-gateway | 8080 | `com.interviewintegrity.gateway.GatewayApplication` |
-| identity-service | 8081 | `com.interviewintegrity.identity.IdentityServiceApplication` |
-| organization-service | 8082 | `com.interviewintegrity.organization.OrganizationServiceApplication` |
-| recruiter-service | 8083 | `com.interviewintegrity.recruiter.RecruiterServiceApplication` |
-| candidate-service | 8084 | `com.interviewintegrity.candidate.CandidateServiceApplication` |
-| interview-service | 8085 | `com.interviewintegrity.interview.InterviewServiceApplication` |
-| desktop-client-service | 8086 | `com.interviewintegrity.desktopclient.DesktopClientServiceApplication` |
-| telemetry-service | 8087 | `com.interviewintegrity.telemetry.TelemetryServiceApplication` |
-| policy-engine-service | 8088 | `com.interviewintegrity.policy.PolicyEngineServiceApplication` |
-| report-service | 8089 | `com.interviewintegrity.report.ReportServiceApplication` |
-| notification-service | 8090 | `com.interviewintegrity.notification.NotificationServiceApplication` |
-| analytics-service | 8091 | `com.interviewintegrity.analytics.AnalyticsServiceApplication` |
-| audit-service | 8092 | `com.interviewintegrity.audit.AuditServiceApplication` |
-| storage-service | 8093 | `com.interviewintegrity.storage.StorageServiceApplication` |
-| feature-flag-service | 8094 | `com.interviewintegrity.featureflag.FeatureFlagServiceApplication` |
-| scheduler-service | 8095 | `com.interviewintegrity.scheduler.SchedulerServiceApplication` |
-| integration-service | 8096 | `com.interviewintegrity.integration.IntegrationServiceApplication` |
-| configuration-service | 8097 | `com.interviewintegrity.configuration.ConfigurationServiceApplication` |
-| discovery-service | 8761 | `com.interviewintegrity.discovery.DiscoveryServiceApplication` |
+| api-gateway | 8080 | `com.integrity.gateway.GatewayApplication` |
+| identity-service | 8081 | `com.integrity.identity.IdentityServiceApplication` |
+| organization-service | 8082 | `com.integrity.organization.OrganizationServiceApplication` |
+| recruiter-service | 8083 | `com.integrity.recruiter.RecruiterServiceApplication` |
+| candidate-service | 8084 | `com.integrity.candidate.CandidateServiceApplication` |
+| interview-service | 8085 | `com.integrity.interview.InterviewServiceApplication` |
+| desktop-client-service | 8086 | `com.integrity.desktopclient.DesktopClientServiceApplication` |
+| telemetry-service | 8087 | `com.integrity.telemetry.TelemetryServiceApplication` |
+| policy-engine-service | 8088 | `com.integrity.policy.PolicyEngineServiceApplication` |
+| report-service | 8089 | `com.integrity.report.ReportServiceApplication` |
+| notification-service | 8090 | `com.integrity.notification.NotificationServiceApplication` |
+| analytics-service | 8091 | `com.integrity.analytics.AnalyticsServiceApplication` |
+| audit-service | 8092 | `com.integrity.audit.AuditServiceApplication` |
+| storage-service | 8093 | `com.integrity.storage.StorageServiceApplication` |
+| feature-flag-service | 8094 | `com.integrity.featureflag.FeatureFlagServiceApplication` |
+| scheduler-service | 8095 | `com.integrity.scheduler.SchedulerServiceApplication` |
+| integration-service | 8096 | `com.integrity.integration.IntegrationServiceApplication` |
+| configuration-service | 8097 | `com.integrity.configuration.ConfigurationServiceApplication` |
+| discovery-service | 8761 | `com.integrity.discovery.DiscoveryServiceApplication` |
 
 Start each with the green Run button. A service is healthy when its log shows the port it is
 listening on and Flyway finished its migrations.
