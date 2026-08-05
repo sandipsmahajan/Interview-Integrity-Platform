@@ -4,6 +4,54 @@ use ipc::{IpcClient, IpcRequest, IpcResponse};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
+fn service_exe_name() -> &'static str {
+    #[cfg(target_os = "windows")]
+    {
+        "integrity-service.exe"
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        "integrity-service"
+    }
+}
+
+fn spawn_service() -> Result<(), String> {
+    let exe_dir = std::env::current_exe()
+        .map_err(|e| format!("cannot find current exe: {}", e))?
+        .parent()
+        .ok_or("no parent directory")?
+        .to_path_buf();
+    let service_path = exe_dir.join(service_exe_name());
+
+    if !service_path.exists() {
+        return Err(format!("service binary not found at {}", service_path.display()));
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        std::process::Command::new(&service_path)
+            .creation_flags(CREATE_NO_WINDOW)
+            .spawn()
+            .map_err(|e| format!("failed to start integrity-service: {}", e))?;
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        std::process::Command::new(&service_path)
+            .spawn()
+            .map_err(|e| format!("failed to start integrity-service: {}", e))?;
+    }
+
+    for _ in 0..30 {
+        if ipc::IpcServer::read_port_file().is_some() {
+            return Ok(());
+        }
+        std::thread::sleep(std::time::Duration::from_secs(1));
+    }
+    Err("integrity-service started but port file not written within 30s".into())
+}
+
 fn main() {
     tracing_subscriber::fmt()
         .with_env_filter(
@@ -230,7 +278,17 @@ fn main() {
             timer
         };
 
-        match try_connect().await {
+        let mut connection = try_connect().await;
+
+        if connection.is_err() {
+            if let Err(e) = spawn_service() {
+                tracing::warn!("auto-spawn service failed: {}", e);
+            } else {
+                connection = try_connect().await;
+            }
+        }
+
+        match connection {
             Ok(client) => {
                 *ipc_client.lock().unwrap() = Some(client);
                 if let Ok(IpcResponse::Ok(data)) = {

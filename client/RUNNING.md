@@ -10,8 +10,40 @@ integrity-service  (monitoring agent + IPC server)
        |  JSON-line protocol over local TCP (random port)
        |  Port written to ~/.local/share/.integrity-pro/.service-port
        |
-integrity-pro      (Slint UI, connects to service)
+integrity-pro      (Slint UI, auto-spawns service, connects)
 ```
+
+When run, `integrity-pro` automatically starts `integrity-service` in the background
+if it is not already running. No manual coordination needed.
+
+## Candidate Usage (Download & Run)
+
+1. Download and unzip the release package for your platform
+2. Run the launcher:
+   - **Windows**: Double-click `launch.bat`
+   - **Linux/macOS**: Run `./launch.sh`
+3. The UI opens and handles everything automatically
+
+The package contains just two binaries and a launcher script -- no installers, no admin rights required.
+
+## Building a Release Package
+
+From the workspace root:
+
+```bash
+cd client/scripts
+
+# Build for current platform
+./package-release.sh
+
+# Cross-compile for Windows from Linux
+./package-release.sh --target x86_64-pc-windows-gnu
+
+# Cross-compile for macOS from Linux
+./package-release.sh --target x86_64-apple-darwin
+```
+
+The zip is written to `client/dist/integrity-pro-<version>-<platform>.zip`.
 
 ## Prerequisites
 
