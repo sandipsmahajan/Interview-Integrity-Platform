@@ -4,9 +4,9 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
-import org.springframework.data.domain.Persistable;
 
 /** Failed MFA verification attempts for a single login challenge. */
 @Table("mfa_challenge_attempts")
@@ -55,8 +55,7 @@ public class MfaChallengeAttempt implements Persistable<String> {
     return lastAttemptAt;
   }
 
-  @Version
-  private long version = 1;
+  @Version private long version = 1;
 
   public long getVersion() {
     return version;

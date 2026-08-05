@@ -5,7 +5,8 @@ import java.util.List;
 import org.springframework.data.convert.ReadingConverter;
 
 @ReadingConverter
-final class JsonbReadingConverter implements org.springframework.core.convert.converter.Converter<Json, String> {
+final class JsonbReadingConverter
+    implements org.springframework.core.convert.converter.Converter<Json, String> {
 
   @Override
   public String convert(Json source) {

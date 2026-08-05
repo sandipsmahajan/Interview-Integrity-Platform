@@ -24,8 +24,8 @@ public interface JwtTokenService {
    *
    * @param token compact serialized JWT
    * @return the principal embedded in the token
-   * @throws com.integrity.exception.AuthenticationFailedException when the token is
-   *     malformed, expired, or fails signature/issuer/audience validation
+   * @throws com.integrity.exception.AuthenticationFailedException when the token is malformed,
+   *     expired, or fails signature/issuer/audience validation
    */
   PlatformPrincipal parseAccessToken(String token);
 
@@ -46,8 +46,8 @@ public interface JwtTokenService {
    * @param token compact serialized JWT
    * @param purpose expected purpose claim
    * @return the subject embedded in the token
-   * @throws com.integrity.exception.AuthenticationFailedException when the token is
-   *     invalid, expired, or carries a different purpose
+   * @throws com.integrity.exception.AuthenticationFailedException when the token is invalid,
+   *     expired, or carries a different purpose
    */
   UUID resolvePurposeToken(String token, String purpose);
 }

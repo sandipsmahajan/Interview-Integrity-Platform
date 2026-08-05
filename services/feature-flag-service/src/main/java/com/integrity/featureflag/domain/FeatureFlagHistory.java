@@ -5,9 +5,9 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
-import org.springframework.data.domain.Persistable;
 
 /** Snapshot of a feature flag configuration, populated by a database trigger. */
 @Table("feature_flags_history")
@@ -43,8 +43,7 @@ public class FeatureFlagHistory implements Persistable<Long> {
 
   private String variants;
   private String rules;
-  @Version
-  private long version;
+  @Version private long version;
 
   /** Creates a feature flag history snapshot. */
   public FeatureFlagHistory(

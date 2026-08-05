@@ -4,9 +4,9 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
-import org.springframework.data.domain.Persistable;
 
 /** A permission code from the global RBAC catalog. */
 @Table("permissions")
@@ -53,8 +53,7 @@ public class Permission implements Persistable<UUID> {
     return createdAt;
   }
 
-  @Version
-  private long version = 1;
+  @Version private long version = 1;
 
   public long getVersion() {
     return version;

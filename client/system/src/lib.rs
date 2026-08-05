@@ -469,7 +469,6 @@ fn detect_overlays_windows() -> Vec<serde_json::Value> {
     type HWND = isize;
     type BOOL = i32;
     type LONG = i32;
-    type DWORD = u32;
 
     extern "system" {
         fn EnumWindows(callback: unsafe extern "system" fn(HWND, isize) -> BOOL, lparam: isize) -> BOOL;

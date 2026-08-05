@@ -1,8 +1,8 @@
 package com.integrity.storage.config;
 
+import com.integrity.common.JsonbConverters;
 import com.integrity.storage.domain.StorageClass;
 import com.integrity.storage.domain.UrlPurpose;
-import com.integrity.common.JsonbConverters;
 import io.r2dbc.postgresql.PostgresqlConnectionFactoryProvider;
 import io.r2dbc.postgresql.codec.EnumCodec;
 import io.r2dbc.postgresql.codec.Json;
@@ -30,7 +30,8 @@ public class R2dbcConfiguration {
             List.of(
                 EnumCodec.builder()
                     .withEnum("storage_class", StorageClass.class)
-                    .withEnum("url_purpose", UrlPurpose.class)                    .build()));
+                    .withEnum("url_purpose", UrlPurpose.class)
+                    .build()));
   }
 
   @WritingConverter
@@ -41,7 +42,8 @@ public class R2dbcConfiguration {
 
   @Bean
   R2dbcCustomConversions r2dbcCustomConversions() {
-    SimpleTypeHolder simpleTypes = new SimpleTypeHolder(Set.of(Json.class), R2dbcSimpleTypeHolder.HOLDER);
+    SimpleTypeHolder simpleTypes =
+        new SimpleTypeHolder(Set.of(Json.class), R2dbcSimpleTypeHolder.HOLDER);
     List<Object> converters = new ArrayList<>(R2dbcCustomConversions.STORE_CONVERTERS);
     converters.add(new StorageClassWriteConverter());
     converters.add(new UrlPurposeWriteConverter());

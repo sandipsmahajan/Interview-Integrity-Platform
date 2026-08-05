@@ -4,9 +4,9 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
-import org.springframework.data.domain.Persistable;
 
 /** A single-use MFA recovery code, stored as a SHA-256 hash. */
 @Table("recovery_codes")
@@ -78,8 +78,7 @@ public class RecoveryCode implements Persistable<UUID> {
     this.id = id;
   }
 
-  @Version
-  private long version = 1;
+  @Version private long version = 1;
 
   public long getVersion() {
     return version;

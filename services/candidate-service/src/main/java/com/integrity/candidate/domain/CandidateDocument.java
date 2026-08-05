@@ -80,7 +80,8 @@ public class CandidateDocument implements Persistable<UUID> {
     this.deletedAt = Instant.now();
   }
 
-  @Override public UUID getId() {
+  @Override
+  public UUID getId() {
     return id;
   }
 

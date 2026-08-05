@@ -1,8 +1,8 @@
 package com.integrity.configuration.config;
 
+import com.integrity.common.JsonbConverters;
 import com.integrity.configuration.domain.ConfigScope;
 import com.integrity.configuration.domain.ConfigValueType;
-import com.integrity.common.JsonbConverters;
 import io.r2dbc.postgresql.PostgresqlConnectionFactoryProvider;
 import io.r2dbc.postgresql.codec.EnumCodec;
 import io.r2dbc.postgresql.codec.Json;
@@ -30,7 +30,8 @@ public class R2dbcConfiguration {
             List.of(
                 EnumCodec.builder()
                     .withEnum("config_scope", ConfigScope.class)
-                    .withEnum("config_value_type", ConfigValueType.class)                    .build()));
+                    .withEnum("config_value_type", ConfigValueType.class)
+                    .build()));
   }
 
   @WritingConverter
@@ -41,7 +42,8 @@ public class R2dbcConfiguration {
 
   @Bean
   R2dbcCustomConversions r2dbcCustomConversions() {
-    SimpleTypeHolder simpleTypes = new SimpleTypeHolder(Set.of(Json.class), R2dbcSimpleTypeHolder.HOLDER);
+    SimpleTypeHolder simpleTypes =
+        new SimpleTypeHolder(Set.of(Json.class), R2dbcSimpleTypeHolder.HOLDER);
     List<Object> converters = new ArrayList<>(R2dbcCustomConversions.STORE_CONVERTERS);
     converters.add(new ConfigScopeWriteConverter());
     converters.add(new ConfigValueTypeWriteConverter());

@@ -117,8 +117,7 @@ public final class UserService {
     }
     if (target == UserStatus.PENDING) {
       return Mono.error(
-          new com.integrity.exception.ValidationFailedException(
-              "Status cannot be set to PENDING"));
+          new com.integrity.exception.ValidationFailedException("Status cannot be set to PENDING"));
     }
     return requireOrgUser(organizationId, userId)
         .flatMap(

@@ -1,11 +1,11 @@
 package com.integrity.candidate.domain;
 
 import com.integrity.validation.Assert;
-import org.springframework.data.domain.Persistable;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -107,7 +107,8 @@ public class Candidate implements Persistable<UUID> {
     this.updatedAt = Instant.now();
   }
 
-  @Override public UUID getId() {
+  @Override
+  public UUID getId() {
     return id;
   }
 

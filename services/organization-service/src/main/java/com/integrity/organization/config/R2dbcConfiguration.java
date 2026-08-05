@@ -1,8 +1,8 @@
 package com.integrity.organization.config;
 
+import com.integrity.common.JsonbConverters;
 import com.integrity.organization.domain.OrganizationStatus;
 import com.integrity.organization.domain.SubscriptionStatus;
-import com.integrity.common.JsonbConverters;
 import io.r2dbc.postgresql.PostgresqlConnectionFactoryProvider;
 import io.r2dbc.postgresql.codec.EnumCodec;
 import io.r2dbc.postgresql.codec.Json;
@@ -30,18 +30,22 @@ public class R2dbcConfiguration {
             List.of(
                 EnumCodec.builder()
                     .withEnum("organization_status", OrganizationStatus.class)
-                    .withEnum("subscription_status", SubscriptionStatus.class)                    .build()));
+                    .withEnum("subscription_status", SubscriptionStatus.class)
+                    .build()));
   }
 
   @WritingConverter
-  static final class OrganizationStatusWriteConverter extends EnumWriteSupport<OrganizationStatus> {}
+  static final class OrganizationStatusWriteConverter
+      extends EnumWriteSupport<OrganizationStatus> {}
 
   @WritingConverter
-  static final class SubscriptionStatusWriteConverter extends EnumWriteSupport<SubscriptionStatus> {}
+  static final class SubscriptionStatusWriteConverter
+      extends EnumWriteSupport<SubscriptionStatus> {}
 
   @Bean
   R2dbcCustomConversions r2dbcCustomConversions() {
-    SimpleTypeHolder simpleTypes = new SimpleTypeHolder(Set.of(Json.class), R2dbcSimpleTypeHolder.HOLDER);
+    SimpleTypeHolder simpleTypes =
+        new SimpleTypeHolder(Set.of(Json.class), R2dbcSimpleTypeHolder.HOLDER);
     List<Object> converters = new ArrayList<>(R2dbcCustomConversions.STORE_CONVERTERS);
     converters.add(new OrganizationStatusWriteConverter());
     converters.add(new SubscriptionStatusWriteConverter());

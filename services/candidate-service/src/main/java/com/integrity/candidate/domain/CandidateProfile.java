@@ -109,7 +109,8 @@ public class CandidateProfile implements Persistable<UUID> {
     this.updatedAt = Instant.now();
   }
 
-  @Override public UUID getId() {
+  @Override
+  public UUID getId() {
     return id;
   }
 

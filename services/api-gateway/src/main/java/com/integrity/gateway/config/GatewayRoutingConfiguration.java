@@ -175,7 +175,6 @@ public class GatewayRoutingConfiguration {
       String circuitBreakerName) {
     return filter
         .requestRateLimiter(c -> c.setRateLimiter(rateLimiter).setKeyResolver(keyResolver))
-        .circuitBreaker(
-            c -> c.setName(circuitBreakerName).setFallbackUri("forward:/fallback"));
+        .circuitBreaker(c -> c.setName(circuitBreakerName).setFallbackUri("forward:/fallback"));
   }
 }

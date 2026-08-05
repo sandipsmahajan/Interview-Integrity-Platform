@@ -1,8 +1,8 @@
 package com.integrity.identity.config;
 
+import com.integrity.common.JsonbConverters;
 import com.integrity.identity.domain.SessionStatus;
 import com.integrity.identity.domain.UserStatus;
-import com.integrity.common.JsonbConverters;
 import io.r2dbc.postgresql.PostgresqlConnectionFactoryProvider;
 import io.r2dbc.postgresql.codec.EnumCodec;
 import io.r2dbc.postgresql.codec.Json;

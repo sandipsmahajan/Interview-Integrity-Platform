@@ -104,11 +104,9 @@ public class AnalyticsJobRun implements Persistable<Long> {
     return this.id == null;
   }
 
-  @Version
-  private long version = 1;
+  @Version private long version = 1;
 
   public long getVersion() {
     return version;
   }
-
 }

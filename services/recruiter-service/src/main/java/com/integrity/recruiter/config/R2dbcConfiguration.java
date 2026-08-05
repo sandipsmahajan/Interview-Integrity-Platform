@@ -1,8 +1,8 @@
 package com.integrity.recruiter.config;
 
-import com.integrity.recruiter.domain.RecruiterStatus;
-import com.integrity.recruiter.domain.PipelineStatus;
 import com.integrity.common.JsonbConverters;
+import com.integrity.recruiter.domain.PipelineStatus;
+import com.integrity.recruiter.domain.RecruiterStatus;
 import io.r2dbc.postgresql.PostgresqlConnectionFactoryProvider;
 import io.r2dbc.postgresql.codec.EnumCodec;
 import io.r2dbc.postgresql.codec.Json;
@@ -30,7 +30,8 @@ public class R2dbcConfiguration {
             List.of(
                 EnumCodec.builder()
                     .withEnum("recruiter_status", RecruiterStatus.class)
-                    .withEnum("pipeline_status", PipelineStatus.class)                    .build()));
+                    .withEnum("pipeline_status", PipelineStatus.class)
+                    .build()));
   }
 
   @WritingConverter
@@ -41,7 +42,8 @@ public class R2dbcConfiguration {
 
   @Bean
   R2dbcCustomConversions r2dbcCustomConversions() {
-    SimpleTypeHolder simpleTypes = new SimpleTypeHolder(Set.of(Json.class), R2dbcSimpleTypeHolder.HOLDER);
+    SimpleTypeHolder simpleTypes =
+        new SimpleTypeHolder(Set.of(Json.class), R2dbcSimpleTypeHolder.HOLDER);
     List<Object> converters = new ArrayList<>(R2dbcCustomConversions.STORE_CONVERTERS);
     converters.add(new RecruiterStatusWriteConverter());
     converters.add(new PipelineStatusWriteConverter());

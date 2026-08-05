@@ -1,13 +1,10 @@
 package com.integrity.interview.config;
 
-import com.integrity.interview.domain.InterviewStatus;
-import com.integrity.interview.domain.InterviewMode;
-import com.integrity.interview.domain.SessionStatus;
+import com.integrity.common.JsonbConverters;
 import com.integrity.interview.domain.FeedbackStatus;
 import com.integrity.interview.domain.InterviewMode;
 import com.integrity.interview.domain.InterviewStatus;
 import com.integrity.interview.domain.SessionStatus;
-import com.integrity.common.JsonbConverters;
 import io.r2dbc.postgresql.PostgresqlConnectionFactoryProvider;
 import io.r2dbc.postgresql.codec.EnumCodec;
 import io.r2dbc.postgresql.codec.Json;
@@ -37,7 +34,8 @@ public class R2dbcConfiguration {
                     .withEnum("interview_status", InterviewStatus.class)
                     .withEnum("interview_mode", InterviewMode.class)
                     .withEnum("session_status", SessionStatus.class)
-                    .withEnum("feedback_status", FeedbackStatus.class)                    .build()));
+                    .withEnum("feedback_status", FeedbackStatus.class)
+                    .build()));
   }
 
   @WritingConverter
@@ -54,7 +52,8 @@ public class R2dbcConfiguration {
 
   @Bean
   R2dbcCustomConversions r2dbcCustomConversions() {
-    SimpleTypeHolder simpleTypes = new SimpleTypeHolder(Set.of(Json.class), R2dbcSimpleTypeHolder.HOLDER);
+    SimpleTypeHolder simpleTypes =
+        new SimpleTypeHolder(Set.of(Json.class), R2dbcSimpleTypeHolder.HOLDER);
     List<Object> converters = new ArrayList<>(R2dbcCustomConversions.STORE_CONVERTERS);
     converters.add(new InterviewStatusWriteConverter());
     converters.add(new InterviewModeWriteConverter());

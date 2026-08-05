@@ -4,9 +4,9 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
-import org.springframework.data.domain.Persistable;
 
 /** A short-lived one-time passcode delivered by email for a specific purpose. */
 @Table("otp_codes")
@@ -128,8 +128,7 @@ public class OtpCode implements Persistable<UUID> {
     this.id = id;
   }
 
-  @Version
-  private long version = 1;
+  @Version private long version = 1;
 
   public long getVersion() {
     return version;

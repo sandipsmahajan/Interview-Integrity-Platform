@@ -23,9 +23,9 @@ import org.springframework.data.r2dbc.mapping.R2dbcSimpleTypeHolder;
 /**
  * Configures R2DBC support for PostgreSQL enum columns.
  *
- * <p>PostgreSQL rejects plain {@code varchar} bindings for {@code ENUM} columns,
- * so we register {@link EnumCodec} extensions and {@link EnumWriteSupport}
- * converters so writes use the enum type OID instead of plain strings.
+ * <p>PostgreSQL rejects plain {@code varchar} bindings for {@code ENUM} columns, so we register
+ * {@link EnumCodec} extensions and {@link EnumWriteSupport} converters so writes use the enum type
+ * OID instead of plain strings.
  */
 @Configuration
 public class R2dbcConfiguration {
@@ -54,7 +54,8 @@ public class R2dbcConfiguration {
 
   @Bean
   R2dbcCustomConversions r2dbcCustomConversions() {
-    SimpleTypeHolder simpleTypes = new SimpleTypeHolder(Set.of(Json.class), R2dbcSimpleTypeHolder.HOLDER);
+    SimpleTypeHolder simpleTypes =
+        new SimpleTypeHolder(Set.of(Json.class), R2dbcSimpleTypeHolder.HOLDER);
     List<Object> converters = new ArrayList<>(R2dbcCustomConversions.STORE_CONVERTERS);
     converters.add(new CandidateStatusWriteConverter());
     converters.add(new AssessmentStatusWriteConverter());
