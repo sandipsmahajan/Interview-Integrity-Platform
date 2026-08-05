@@ -93,7 +93,7 @@ public class ScheduledJob implements Persistable<UUID> {
     this.jobType = jobType;
     this.cronExpression = cronExpression;
     this.handler = handler;
-    this.payload = Json.of(payload);
+    this.payload = Json.of(payload == null ? "{}" : payload);
     this.maxRetries = maxRetries;
     this.timeoutSeconds = timeoutSeconds;
     this.retryCount = 0;
@@ -119,7 +119,7 @@ public class ScheduledJob implements Persistable<UUID> {
     Assert.isTrue(timeoutSeconds > 0, "timeoutSeconds must be positive");
     this.name = name;
     this.cronExpression = cronExpression;
-    this.payload = Json.of(payload);
+    this.payload = Json.of(payload == null ? "{}" : payload);
     this.maxRetries = maxRetries;
     this.timeoutSeconds = timeoutSeconds;
     this.updatedBy = updatedBy;
