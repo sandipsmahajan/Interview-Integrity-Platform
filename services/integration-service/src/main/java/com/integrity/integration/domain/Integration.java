@@ -66,7 +66,7 @@ public class Integration implements Persistable<UUID> {
     this.provider = provider;
     this.name = name;
     this.credentialsRef = credentialsRef;
-    this.config = Json.of(config);
+    this.config = config == null ? null : Json.of(config);
     this.createdBy = createdBy;
     this.status = IntegrationStatus.DISCONNECTED;
     Instant now = Instant.now();
@@ -80,7 +80,7 @@ public class Integration implements Persistable<UUID> {
   public void update(String name, String config, UUID updatedBy) {
     Assert.notBlank(name, "name");
     this.name = name;
-    this.config = Json.of(config);
+    this.config = config == null ? null : Json.of(config);
     this.updatedBy = updatedBy;
     this.updatedAt = Instant.now();
   }
