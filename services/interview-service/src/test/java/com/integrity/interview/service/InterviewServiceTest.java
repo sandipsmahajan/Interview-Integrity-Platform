@@ -53,7 +53,8 @@ class InterviewServiceTest {
               return Mono.just(interview);
             });
     when(eventPublisher.publishCreated(any(Interview.class))).thenReturn(Mono.empty());
-    when(eventPublisher.publishCandidateInvitation(any(Interview.class), eq(DOWNLOAD_URL)))
+    when(eventPublisher.publishCandidateInvitation(
+            any(Interview.class), eq("candidate@example.com"), eq("John Doe"), eq(DOWNLOAD_URL)))
         .thenReturn(Mono.empty());
 
     StepVerifier.create(
@@ -75,8 +76,6 @@ class InterviewServiceTest {
         .assertNext(
             interview -> {
               assertThat(interview.getOrganizationId()).isEqualTo(organizationId);
-              assertThat(interview.getCandidateEmail()).isEqualTo("candidate@example.com");
-              assertThat(interview.getCandidateName()).isEqualTo("John Doe");
               assertThat(interview.getStatus()).isEqualTo(InterviewStatus.SCHEDULED);
               assertThat(interview.getMode()).isEqualTo(InterviewMode.ONLINE);
               assertThat(interview.getMetadata()).isEqualTo("{}");
@@ -85,7 +84,9 @@ class InterviewServiceTest {
         .verifyComplete();
 
     verify(eventPublisher).publishCreated(any(Interview.class));
-    verify(eventPublisher).publishCandidateInvitation(any(Interview.class), eq(DOWNLOAD_URL));
+    verify(eventPublisher)
+        .publishCandidateInvitation(
+            any(Interview.class), eq("candidate@example.com"), eq("John Doe"), eq(DOWNLOAD_URL));
   }
 
   @Test
@@ -181,8 +182,6 @@ class InterviewServiceTest {
         new Interview(
             organizationId,
             candidateId,
-            "candidate@example.com",
-            "Test Candidate",
             recruiterId,
             1,
             "Phone screen",

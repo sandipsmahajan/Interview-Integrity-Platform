@@ -43,8 +43,11 @@ public interface InterviewEventPublisher {
    * Publishes a candidate invitation email event for the interview.
    *
    * @param interview the created interview
+   * @param candidateEmail candidate email address for the invitation
+   * @param candidateName candidate display name for the invitation
    * @param downloadUrl the URL where candidates can download the desktop client
    * @return completion signal of the publish attempt
    */
-  Mono<Void> publishCandidateInvitation(Interview interview, String downloadUrl);
+  Mono<Void> publishCandidateInvitation(
+      Interview interview, String candidateEmail, String candidateName, String downloadUrl);
 }

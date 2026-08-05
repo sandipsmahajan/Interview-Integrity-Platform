@@ -94,11 +94,11 @@ public final class KafkaInterviewEventPublisher implements InterviewEventPublish
   }
 
   @Override
-  public Mono<Void> publishCandidateInvitation(Interview interview, String downloadUrl) {
+  public Mono<Void> publishCandidateInvitation(
+      Interview interview, String candidateEmail, String candidateName, String downloadUrl) {
     Instant occurredAt = Instant.now();
     String tempPassword = generateTempPassword();
-    String candidateName =
-        interview.getCandidateName() != null ? interview.getCandidateName() : "Candidate";
+    String displayName = candidateName != null ? candidateName : "Candidate";
 
     DateTimeFormatter dateFmt =
         DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a")
@@ -108,13 +108,13 @@ public final class KafkaInterviewEventPublisher implements InterviewEventPublish
         new IdentityEmailEvent(
             interview.getCandidateId(),
             interview.getOrganizationId(),
-            interview.getCandidateEmail(),
-            candidateName,
+            candidateEmail,
+            displayName,
             "en",
             "interview-invitation",
             Map.of(
                 "candidateName",
-                candidateName,
+                displayName,
                 "interviewTitle",
                 interview.getTitle(),
                 "interviewDate",

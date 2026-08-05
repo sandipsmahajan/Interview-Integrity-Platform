@@ -50,8 +50,6 @@ public class InterviewService {
             new Interview(
                 organizationId,
                 candidateId,
-                candidateEmail,
-                candidateName,
                 recruiterId,
                 roundNumber,
                 title,
@@ -66,7 +64,9 @@ public class InterviewService {
             interview ->
                 eventPublisher
                     .publishCreated(interview)
-                    .then(eventPublisher.publishCandidateInvitation(interview, downloadUrl))
+                    .then(
+                        eventPublisher.publishCandidateInvitation(
+                            interview, candidateEmail, candidateName, downloadUrl))
                     .thenReturn(interview));
   }
 

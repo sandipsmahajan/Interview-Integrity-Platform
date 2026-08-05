@@ -149,8 +149,6 @@ class InterviewSessionServiceTest {
         new Interview(
             organizationId,
             UUID.randomUUID(),
-            "candidate@example.com",
-            "Test Candidate",
             UUID.randomUUID(),
             1,
             "Phone screen",

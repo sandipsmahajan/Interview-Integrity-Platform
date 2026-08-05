@@ -13,8 +13,8 @@ import java.util.UUID;
  * Request to create an interview.
  *
  * @param candidateId candidate identifier
- * @param candidateEmail candidate email address (for notification delivery)
- * @param candidateName candidate display name
+ * @param candidateEmail candidate email address (for notification delivery only, not persisted)
+ * @param candidateName candidate display name (for notification delivery only, not persisted)
  * @param recruiterId owning recruiter identifier
  * @param roundNumber interview round within the process
  * @param title interview title
