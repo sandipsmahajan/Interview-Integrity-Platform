@@ -129,7 +129,6 @@ class PlatformErrorWebExceptionHandlerIntegrationTest {
         .jsonPath("$.code")
         .isEqualTo("INTERNAL_ERROR")
         .jsonPath("$.message")
-        .isEqualTo(
-            "An unexpected internal error occurred. Contact support with the trace id.");
+        .isEqualTo("An unexpected internal error occurred. Contact support with the trace id.");
   }
 }
