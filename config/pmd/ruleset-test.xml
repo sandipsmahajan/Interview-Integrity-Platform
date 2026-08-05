@@ -6,6 +6,7 @@
   <description>Baseline rules for unit test sources.</description>
   <rule ref="category/java/bestpractices.xml">
     <exclude name="AvoidUsingHardCodedIP"/>
+    <exclude name="UnitTestShouldIncludeAssert"/>
   </rule>
   <rule ref="category/java/errorprone.xml">
     <exclude name="AvoidDuplicateLiterals"/>

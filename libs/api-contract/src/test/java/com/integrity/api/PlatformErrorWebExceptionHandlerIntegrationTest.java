@@ -1,7 +1,6 @@
 package com.integrity.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import com.integrity.exception.AuthenticationFailedException;
 import com.integrity.exception.ValidationFailedException;
@@ -78,65 +77,59 @@ class PlatformErrorWebExceptionHandlerIntegrationTest {
 
   @Test
   void authenticationFailureRenders401WithPlatformErrorBody() {
-    assertDoesNotThrow(
-        () ->
-            webTestClient
-                .get()
-                .uri("/fail-auth")
-                .exchange()
-                .expectStatus()
-                .isUnauthorized()
-                .expectBody()
-                .jsonPath("$.status")
-                .isEqualTo(401)
-                .jsonPath("$.code")
-                .isEqualTo("UNAUTHENTICATED")
-                .jsonPath("$.message")
-                .isEqualTo("Invalid credentials")
-                .jsonPath("$.timestamp")
-                .exists()
-                .jsonPath("$.violations")
-                .isArray());
+    webTestClient
+        .get()
+        .uri("/fail-auth")
+        .exchange()
+        .expectStatus()
+        .isUnauthorized()
+        .expectBody()
+        .jsonPath("$.status")
+        .isEqualTo(401)
+        .jsonPath("$.code")
+        .isEqualTo("UNAUTHENTICATED")
+        .jsonPath("$.message")
+        .isEqualTo("Invalid credentials")
+        .jsonPath("$.timestamp")
+        .exists()
+        .jsonPath("$.violations")
+        .isArray();
   }
 
   @Test
   void validationFailureRenders400WithViolations() {
-    assertDoesNotThrow(
-        () ->
-            webTestClient
-                .get()
-                .uri("/fail-validation")
-                .exchange()
-                .expectStatus()
-                .isBadRequest()
-                .expectBody()
-                .jsonPath("$.status")
-                .isEqualTo(400)
-                .jsonPath("$.code")
-                .isEqualTo("VALIDATION_FAILED")
-                .jsonPath("$.violations[0].field")
-                .isEqualTo("email")
-                .jsonPath("$.violations[0].message")
-                .isEqualTo("must not be blank"));
+    webTestClient
+        .get()
+        .uri("/fail-validation")
+        .exchange()
+        .expectStatus()
+        .isBadRequest()
+        .expectBody()
+        .jsonPath("$.status")
+        .isEqualTo(400)
+        .jsonPath("$.code")
+        .isEqualTo("VALIDATION_FAILED")
+        .jsonPath("$.violations[0].field")
+        .isEqualTo("email")
+        .jsonPath("$.violations[0].message")
+        .isEqualTo("must not be blank");
   }
 
   @Test
   void unhandledExceptionRenders500WithGenericMessage() {
-    assertDoesNotThrow(
-        () ->
-            webTestClient
-                .get()
-                .uri("/fail-internal")
-                .exchange()
-                .expectStatus()
-                .is5xxServerError()
-                .expectBody()
-                .jsonPath("$.status")
-                .isEqualTo(500)
-                .jsonPath("$.code")
-                .isEqualTo("INTERNAL_ERROR")
-                .jsonPath("$.message")
-                .isEqualTo(
-                    "An unexpected internal error occurred. Contact support with the trace id."));
+    webTestClient
+        .get()
+        .uri("/fail-internal")
+        .exchange()
+        .expectStatus()
+        .is5xxServerError()
+        .expectBody()
+        .jsonPath("$.status")
+        .isEqualTo(500)
+        .jsonPath("$.code")
+        .isEqualTo("INTERNAL_ERROR")
+        .jsonPath("$.message")
+        .isEqualTo(
+            "An unexpected internal error occurred. Contact support with the trace id.");
   }
 }
