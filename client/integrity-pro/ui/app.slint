@@ -1,0 +1,552 @@
+import { Button, LineEdit, CheckBox, VerticalBox, HorizontalBox, ScrollView, AboutSlint } from "std-widgets.slint";
+
+export global AppState {
+    in-out property <string> current-screen: "welcome";
+    in-out property <bool> loading;
+    in-out property <string> status-message;
+    in-out property <string> error-message;
+    in-out property <bool> connected;
+    in-out property <string> device-id;
+    in-out property <string> client-version: "0.1.0";
+    in-out property <string> product-name: "Integrity Pro";
+
+    in-out property <string> login-email;
+    in-out property <string> login-password;
+    in-out property <bool> login-error;
+
+    in-out property <string> interview-title;
+    in-out property <string> interview-date;
+    in-out property <string> interview-duration;
+    in-out property <string> interview-mode;
+    in-out property <string> meeting-url;
+    in-out property <string> interview-id;
+
+    in-out property <bool> consent-process;
+    in-out property <bool> consent-network;
+    in-out property <bool> consent-display;
+    in-out property <bool> consent-audio;
+    in-out property <bool> consent-camera;
+    in-out property <bool> consent-clipboard;
+    in-out property <bool> consent-browser;
+    in-out property <bool> consent-all;
+
+    in-out property <bool> monitoring-active;
+    in-out property <string> monitoring-start-time;
+    in-out property <string> monitoring-elapsed;
+    in-out property <int> monitoring-violations;
+    in-out property <int> monitoring-events;
+    in-out property <string> monitoring-connection-status;
+    in-out property <string> monitoring-last-event;
+
+    in-out property <int> integrity-score;
+    in-out property <string> session-id;
+    in-out property <string> session-duration;
+    in-out property <int> total-events;
+    in-out property <int> total-violations;
+    in-out property <string> completion-status;
+
+    callback login-triggered(string, string);
+    callback consent-accepted();
+    callback consent-declined();
+    callback start-interview();
+    callback end-session();
+    callback retry-connection();
+    callback close-app();
+    callback launch-meeting();
+}
+
+component WelcomeScreen {
+    VerticalBox {
+        alignment: center;
+        spacing: 24px;
+        padding: 40px;
+
+        Image {
+            source: @image-url("icons/icon-128.png");
+            width: 96px;
+            height: 96px;
+        }
+
+        Text {
+            text: AppState.product-name;
+            font-size: 28px;
+            font-weight: 700;
+            color: #60a5fa;
+        }
+
+        Text {
+            text: "Enterprise Interview Integrity Platform";
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        VerticalBox {
+            spacing: 12px;
+            alignment: center;
+
+            Text {
+                text: "Powered by Slint UI Framework";
+                font-size: 11px;
+                color: #475569;
+            }
+
+            Text {
+                text: "v" + AppState.client-version;
+                font-size: 11px;
+                color: #475569;
+            }
+        }
+
+        if AppState.loading : Rectangle {
+            height: 4px;
+            width: 200px;
+            background: #1e293b;
+            border-radius: 2px;
+            animate opacity { duration: 800ms; }
+            Rectangle {
+                height: 4px;
+                width: 60px;
+                background: #60a5fa;
+                border-radius: 2px;
+                animate x { duration: 1200ms; easing: ease-in-out; }
+            }
+        }
+    }
+}
+
+component LoginScreen {
+    VerticalBox {
+        alignment: center;
+        spacing: 20px;
+        padding: 40px;
+
+        Image {
+            source: @image-url("icons/icon-128.png");
+            width: 64px;
+            height: 64px;
+        }
+
+        Text {
+            text: "Sign In";
+            font-size: 22px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        Text {
+            text: "Enter your temporary interview credentials";
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        VerticalBox {
+            spacing: 12px;
+            min-width: 320px;
+            max-width: 400px;
+
+            Text {
+                text: "Email";
+                font-size: 12px;
+                color: #94a3b8;
+                font-weight: 500;
+            }
+            email-input := LineEdit {
+                placeholder-text: "candidate@company.com";
+                text <=> AppState.login-email;
+            }
+
+            Text {
+                text: "Password";
+                font-size: 12px;
+                color: #94a3b8;
+                font-weight: 500;
+            }
+            password-input := LineEdit {
+                placeholder-text: "Enter password";
+                input-type: password;
+                text <=> AppState.login-password;
+            }
+
+            if AppState.login-error : Text {
+                text: "Authentication failed. Please verify your credentials.";
+                color: #f87171;
+                font-size: 12px;
+                wrap: word-wrap;
+            }
+        }
+
+        Button {
+            text: "Authenticate";
+            primary: true;
+            clicked => {
+                AppState.login-triggered(AppState.login-email, AppState.login-password);
+            }
+        }
+    }
+}
+
+component ConsentScreen {
+    VerticalBox {
+        padding: 24px;
+        spacing: 16px;
+
+        Text {
+            text: "Monitoring Consent";
+            font-size: 20px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        Text {
+            text: "Integrity Pro monitors your device during the interview to ensure assessment fairness. Please review and accept each monitoring category below.";
+            font-size: 13px;
+            color: #94a3b8;
+            wrap: word-wrap;
+        }
+
+        Text {
+            text: "Interview: " + AppState.interview-title;
+            font-size: 12px;
+            color: #60a5fa;
+        }
+
+        ScrollView {
+            VerticalBox {
+                spacing: 8px;
+
+                consent-process-check := CheckBox {
+                    text: "Process Monitoring — Running applications and executable metadata";
+                    checked <=> AppState.consent-process;
+                }
+                consent-network-check := CheckBox {
+                    text: "Network Monitoring — Connection status and interface enumeration";
+                    checked <=> AppState.consent-network;
+                }
+                consent-display-check := CheckBox {
+                    text: "Display Monitoring — Screen configuration and monitor count";
+                    checked <=> AppState.consent-display;
+                }
+                consent-audio-check := CheckBox {
+                    text: "Audio Monitoring — Microphone and audio device detection";
+                    checked <=> AppState.consent-audio;
+                }
+                consent-camera-check := CheckBox {
+                    text: "Camera Monitoring — Camera and virtual camera detection";
+                    checked <=> AppState.consent-camera;
+                }
+                consent-clipboard-check := CheckBox {
+                    text: "Clipboard Monitoring — Clipboard content analysis (policy-driven)";
+                    checked <=> AppState.consent-clipboard;
+                }
+                consent-browser-check := CheckBox {
+                    text: "Browser Monitoring — Meeting platform validation";
+                    checked <=> AppState.consent-browser;
+                }
+            }
+        }
+
+        CheckBox {
+            text: "I understand and accept all monitoring categories";
+            checked <=> AppState.consent-all;
+        }
+
+        Text {
+            text: "Data is encrypted in transit and at rest. Monitoring stops when the interview ends. See privacy policy for details.";
+            font-size: 11px;
+            color: #475569;
+            wrap: word-wrap;
+        }
+
+        HorizontalBox {
+            spacing: 12px;
+            alignment: end;
+
+            Button {
+                text: "Decline";
+                clicked => { AppState.consent-declined(); }
+            }
+            Button {
+                text: "Accept & Continue";
+                primary: true;
+                enabled: AppState.consent-process && AppState.consent-network && AppState.consent-display && AppState.consent-audio && AppState.consent-camera && AppState.consent-browser && AppState.consent-all;
+                clicked => { AppState.consent-accepted(); }
+            }
+        }
+    }
+}
+
+component InterviewScreen {
+    VerticalBox {
+        padding: 24px;
+        spacing: 16px;
+
+        HorizontalBox {
+            spacing: 12px;
+            alignment: start;
+
+            Image {
+                source: @image-url("icons/icon-32.png");
+                width: 24px;
+                height: 24px;
+            }
+
+            Text {
+                text: "Interview in Progress";
+                font-size: 18px;
+                font-weight: 600;
+                color: #e2e8f0;
+            }
+        }
+
+        Text {
+            text: "Your meeting is open in your system browser. Integrity Pro is monitoring in the background.";
+            font-size: 13px;
+            color: #94a3b8;
+            wrap: word-wrap;
+        }
+
+        Rectangle {
+            height: 1px;
+            background: #1e293b;
+        }
+
+        GridLayout {
+            spacing: 12px;
+            padding: 8px;
+
+            status-label := Text {
+                text: "Status";
+                font-size: 12px;
+                color: #64748b;
+                col: 0;
+                row: 0;
+            }
+            status-value := Text {
+                text: AppState.monitoring-active ? "Active" : "Inactive";
+                font-size: 12px;
+                color: AppState.monitoring-active ? #4ade80 : #f87171;
+                font-weight: 600;
+                col: 1;
+                row: 0;
+            }
+
+            time-label := Text {
+                text: "Elapsed";
+                font-size: 12px;
+                color: #64748b;
+                col: 0;
+                row: 1;
+            }
+            time-value := Text {
+                text: AppState.monitoring-elapsed;
+                font-size: 14px;
+                color: #e2e8f0;
+                font-weight: 600;
+                col: 1;
+                row: 1;
+            }
+
+            events-label := Text {
+                text: "Events";
+                font-size: 12px;
+                color: #64748b;
+                col: 0;
+                row: 2;
+            }
+            events-value := Text {
+                text: AppState.monitoring-events;
+                font-size: 12px;
+                color: #e2e8f0;
+                col: 1;
+                row: 2;
+            }
+
+            violations-label := Text {
+                text: "Violations";
+                font-size: 12px;
+                color: #64748b;
+                col: 0;
+                row: 3;
+            }
+            violations-value := Text {
+                text: AppState.monitoring-violations;
+                font-size: 12px;
+                color: AppState.monitoring-violations > 0 ? #f87171 : #4ade80;
+                font-weight: 600;
+                col: 1;
+                row: 3;
+            }
+
+            conn-label := Text {
+                text: "Connection";
+                font-size: 12px;
+                color: #64748b;
+                col: 0;
+                row: 4;
+            }
+            conn-value := Text {
+                text: AppState.monitoring-connection-status;
+                font-size: 12px;
+                color: AppState.connected ? #4ade80 : #f87171;
+                col: 1;
+                row: 4;
+            }
+        }
+
+        Rectangle {
+            height: 1px;
+            background: #1e293b;
+        }
+
+        if AppState.monitoring-last-event != "" : VerticalBox {
+            spacing: 4px;
+
+            Text {
+                text: "Last Event";
+                font-size: 11px;
+                color: #475569;
+            }
+            Text {
+                text: AppState.monitoring-last-event;
+                font-size: 12px;
+                color: #94a3b8;
+                wrap: word-wrap;
+            }
+        }
+
+        Button {
+            text: "End Interview";
+            primary: true;
+            clicked => { AppState.end-session(); }
+        }
+    }
+}
+
+component SummaryScreen {
+    VerticalBox {
+        alignment: center;
+        spacing: 20px;
+        padding: 40px;
+
+        Text {
+            text: "Interview Complete";
+            font-size: 22px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        Text {
+            text: "Integrity Score";
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        Text {
+            text: AppState.integrity-score;
+            font-size: 48px;
+            font-weight: 800;
+            color: AppState.integrity-score >= 80 ? #4ade80 : (AppState.integrity-score >= 50 ? #fbbf24 : #f87171);
+        }
+
+        Text {
+            text: AppState.completion-status;
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        GridLayout {
+            spacing: 8px;
+            padding: 8px;
+
+            Text { text: "Session"; font-size: 12px; color: #64748b; col: 0; row: 0; }
+            Text { text: AppState.session-id; font-size: 12px; color: #e2e8f0; col: 1; row: 0; }
+
+            Text { text: "Duration"; font-size: 12px; color: #64748b; col: 0; row: 1; }
+            Text { text: AppState.session-duration; font-size: 12px; color: #e2e8f0; col: 1; row: 1; }
+
+            Text { text: "Events"; font-size: 12px; color: #64748b; col: 0; row: 2; }
+            Text { text: AppState.total-events; font-size: 12px; color: #e2e8f0; col: 1; row: 2; }
+
+            Text { text: "Violations"; font-size: 12px; color: #64748b; col: 0; row: 3; }
+            Text { text: AppState.total-violations; font-size: 12px; color: AppState.total-violations > 0 ? #f87171 : #4ade80; col: 1; row: 3; }
+        }
+
+        Button {
+            text: "Close";
+            primary: true;
+            clicked => { AppState.close-app(); }
+        }
+    }
+}
+
+component ErrorScreen {
+    VerticalBox {
+        alignment: center;
+        spacing: 20px;
+        padding: 40px;
+
+        Image {
+            source: @image-url("icons/icon-128.png");
+            width: 48px;
+            height: 48px;
+        }
+
+        Text {
+            text: "Connection Error";
+            font-size: 20px;
+            font-weight: 600;
+            color: #f87171;
+        }
+
+        Text {
+            text: AppState.error-message;
+            font-size: 14px;
+            color: #94a3b8;
+            wrap: word-wrap;
+            horizontal-alignment: center;
+        }
+
+        VerticalBox {
+            spacing: 4px;
+            alignment: center;
+
+            Text {
+                text: "Device: " + AppState.device-id;
+                font-size: 11px;
+                color: #475569;
+            }
+            Text {
+                text: "Client: v" + AppState.client-version;
+                font-size: 11px;
+                color: #475569;
+            }
+        }
+
+        Button {
+            text: "Retry Connection";
+            primary: true;
+            clicked => { AppState.retry-connection(); }
+        }
+
+        Button {
+            text: "Exit";
+            clicked => { AppState.close-app(); }
+        }
+    }
+}
+
+export component AppWindow inherits Window {
+    title: "Integrity Pro — Interview Integrity Platform";
+    preferred-width: 480px;
+    preferred-height: 680px;
+    min-width: 400px;
+    min-height: 560px;
+    background: #0f172a;
+
+    if AppState.current-screen == "welcome" : WelcomeScreen {}
+    if AppState.current-screen == "login" : LoginScreen {}
+    if AppState.current-screen == "consent" : ConsentScreen {}
+    if AppState.current-screen == "interview" : InterviewScreen {}
+    if AppState.current-screen == "summary" : SummaryScreen {}
+    if AppState.current-screen == "error" : ErrorScreen {}
+}

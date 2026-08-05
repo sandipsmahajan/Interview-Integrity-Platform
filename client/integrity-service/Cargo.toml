@@ -1,29 +1,33 @@
 [package]
-name = "desktop-app"
+name = "integrity-service"
 edition.workspace = true
 version.workspace = true
 license.workspace = true
 
+[[bin]]
+name = "integrity-service"
+path = "src/main.rs"
+
 [dependencies]
-logger = { path = "../logger" }
 agent = { path = "../agent" }
-anyhow.workspace = true
 browser = { path = "../browser" }
-chrono.workspace = true
+camera = { path = "../camera" }
 config = { path = "../config" }
-dirs.workspace = true
+ipc = { path = "../ipc" }
+logger = { path = "../logger" }
+microphone = { path = "../microphone" }
 network = { path = "../network" }
 policy = { path = "../policy" }
 security = { path = "../security" }
 storage = { path = "../storage" }
 system = { path = "../system" }
 telemetry = { path = "../telemetry" }
+anyhow.workspace = true
+chrono.workspace = true
+dirs.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-tauri = { version = "2", features = [] }
 tokio.workspace = true
 tracing.workspace = true
+tracing-subscriber.workspace = true
 uuid.workspace = true
-
-[build-dependencies]
-tauri-build = { version = "2", features = [] }

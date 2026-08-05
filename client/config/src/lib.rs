@@ -18,6 +18,13 @@ pub struct FeatureFlags {
     pub enable_window_focus_collector: bool,
     pub enable_system_health_collector: bool,
     pub enable_process_collector: bool,
+    pub enable_overlay_detection: bool,
+    pub enable_clipboard_monitoring: bool,
+    pub enable_fullscreen_detection: bool,
+    pub enable_idle_detection: bool,
+    pub enable_lock_screen_detection: bool,
+    pub enable_vpn_detection: bool,
+    pub enable_vm_detection: bool,
 }
 
 impl Default for FeatureFlags {
@@ -37,6 +44,13 @@ impl Default for FeatureFlags {
             enable_window_focus_collector: true,
             enable_system_health_collector: true,
             enable_process_collector: true,
+            enable_overlay_detection: true,
+            enable_clipboard_monitoring: true,
+            enable_fullscreen_detection: true,
+            enable_idle_detection: true,
+            enable_lock_screen_detection: true,
+            enable_vpn_detection: true,
+            enable_vm_detection: true,
         }
     }
 }
@@ -63,6 +77,15 @@ impl CollectorConfig {
             }
             "window_focus" => self.flags.enable_window_focus_collector,
             "process_collector" => self.flags.enable_process_collector,
+            "overlay_detection" => self.flags.enable_overlay_detection,
+            "clipboard" => self.flags.enable_clipboard_monitoring,
+            "audio_device" => self.flags.enable_audio_collector,
+            "camera_device" => self.flags.enable_video_collector,
+            "fullscreen_detection" => self.flags.enable_fullscreen_detection,
+            "idle_detection" => self.flags.enable_idle_detection,
+            "lock_screen" => self.flags.enable_lock_screen_detection,
+            "vpn_detection" => self.flags.enable_vpn_detection,
+            "vm_detection" => self.flags.enable_vm_detection,
             _ => self.flags.enable_diagnostics,
         }
     }

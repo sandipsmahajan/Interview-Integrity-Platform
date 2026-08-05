@@ -99,6 +99,55 @@ impl PolicyEngine {
                     self.push_if_enabled(&mut violations, "VM_DETECTED", "Virtual machine indicators were detected");
                 }
             }
+            TelemetryKind::OverlayDetection => {
+                if let Some(count) = event.payload.get("overlayCount").and_then(|v| v.as_u64()) {
+                    if count > 0 {
+                        self.push_if_enabled(&mut violations, "OVERLAY_DETECTED",
+                            &format!("{} suspicious overlay windows detected", count));
+                    }
+                }
+            }
+            TelemetryKind::Clipboard => {
+                if event.payload.get("clipboardChanged").and_then(|v| v.as_bool()) == Some(true) {
+                    self.push_if_enabled(&mut violations, "CLIPBOARD_ACCESS", "Clipboard content was modified during interview");
+                }
+            }
+            TelemetryKind::FullscreenDetection => {
+                if event.payload.get("isFullscreen").and_then(|v| v.as_bool()) == Some(true) {
+                    self.push_if_enabled(&mut violations, "FULLSCREEN_DETECTED", "Fullscreen window detected - possible screen takeover");
+                }
+            }
+            TelemetryKind::IdleDetection => {
+                if let Some(idle) = event.payload.get("idleSeconds").and_then(|v| v.as_u64()) {
+                    if idle > 600 {
+                        self.push_if_enabled(&mut violations, "EXTENDED_IDLE",
+                            &format!("User idle for {} seconds", idle));
+                    }
+                }
+            }
+            TelemetryKind::LockScreen => {
+                if event.payload.get("sessionLocked").and_then(|v| v.as_bool()) == Some(true) {
+                    self.push_if_enabled(&mut violations, "SESSION_LOCKED", "Workstation was locked during interview");
+                }
+            }
+            TelemetryKind::VpnDetection => {
+                if event.payload.get("vpnDetected").and_then(|v| v.as_bool()) == Some(true) {
+                    self.push_if_enabled(&mut violations, "VPN_DETECTED", "VPN or proxy connection detected");
+                }
+            }
+            TelemetryKind::CameraDevice => {
+                if event.payload.get("virtualCameraDetected").and_then(|v| v.as_bool()) == Some(true) {
+                    self.push_if_enabled(&mut violations, "VIRTUAL_CAMERA", "Virtual camera device detected");
+                }
+            }
+            TelemetryKind::AudioDevice => {
+                if let Some(count) = event.payload.get("deviceCount").and_then(|v| v.as_u64()) {
+                    if count > 3 {
+                        self.push_if_enabled(&mut violations, "MULTIPLE_AUDIO_DEVICES",
+                            "Unusually high number of audio devices detected");
+                    }
+                }
+            }
             _ => {}
         }
 
@@ -129,6 +178,14 @@ pub fn default_policy_set() -> PolicySet {
             rule("VM_DETECTED", Severity::High, true),
             rule("HIGH_CPU_USAGE", Severity::Info, true),
             rule("HIGH_MEMORY_USAGE", Severity::Info, true),
+            rule("OVERLAY_DETECTED", Severity::High, true),
+            rule("CLIPBOARD_ACCESS", Severity::High, true),
+            rule("FULLSCREEN_DETECTED", Severity::Medium, true),
+            rule("EXTENDED_IDLE", Severity::Low, true),
+            rule("SESSION_LOCKED", Severity::High, true),
+            rule("VPN_DETECTED", Severity::Medium, true),
+            rule("VIRTUAL_CAMERA", Severity::High, true),
+            rule("MULTIPLE_AUDIO_DEVICES", Severity::Low, true),
         ],
     }
 }

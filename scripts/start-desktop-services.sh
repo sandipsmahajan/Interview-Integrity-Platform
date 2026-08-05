@@ -123,40 +123,25 @@ cat <<'EOF'
 ║                                                                          ║
 ║  Prerequisites:                                                          ║
 ║    - Rust toolchain (rustup: https://rustup.rs)                          ║
-║    - Tauri v2 dependencies (see https://v2.tauri.app/start/prerequisites)║
-║    - Node.js >= 18                                                       ║
 ║                                                                          ║
 ║  Steps:                                                                  ║
 ║                                                                          ║
-║  1. Install frontend dependencies (one-time):                            ║
-║     cd client/desktop-app/web && npm install                             ║
+║  1. Build the desktop client binaries (from workspace root):             ║
+║     cd client && cargo build -p integrity-service -p integrity-pro       ║
 ║                                                                          ║
-║  2. Run the desktop client in dev mode (from workspace root):            ║
-║     cd client/desktop-app                                                ║
-║     cargo tauri dev                                                      ║
+║  2. Run the monitoring service (terminal 1):                             ║
+║     cd client && cargo run -p integrity-service                          ║
 ║                                                                          ║
-║     This starts the Vite dev server on :1420 and launches the Tauri      ║
-║     window. The client connects to the API gateway at localhost:8080.    ║
+║  3. Run the Slint UI (terminal 2):                                       ║
+║     cd client && cargo run -p integrity-pro                              ║
 ║                                                                          ║
-║  3. (Alternative) Build the production binary:                           ║
-║     cd client/desktop-app                                                ║
-║     cargo tauri build                                                    ║
-║                                                                          ║
-║  4. (Alternative) Run in headless dev mode (Vite only, no Tauri):        ║
-║     cd client/desktop-app/web && npm run dev                             ║
-║     → Opens http://localhost:1420 in a browser (no native features).     ║
+║  The service listens on a random local TCP port and writes it to         ║
+║  ~/.local/share/.integrity-pro/.service-port. The UI reads this file.    ║
 ║                                                                          ║
 ║  Environment variables:                                                  ║
-║    INTEGRITY_API_URL     Backend API base URL (default: http://localhost:8080)║
-║    RUST_LOG              Tracing level (default: info)                   ║
+║    RUST_LOG    Tracing level (default: info)                             ║
 ║                                                                          ║
-║  Tauri v2 system dependencies (Linux):                                   ║
-║    apt install libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev║
-║    librsvg2-dev libjavascriptcoregtk-4.1-dev libsoup-3.0-dev             ║
-║                                                                          ║
-║  Tauri v2 system dependencies (Windows):                                 ║
-║    - Microsoft Visual Studio C++ Build Tools                             ║
-║    - WebView2 runtime (preinstalled on Win 10+)                          ║
+║  See client/RUNNING.md for full documentation.                           ║
 ║                                                                          ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 EOF

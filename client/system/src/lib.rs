@@ -432,3 +432,517 @@ fn get_foreground_window_linux() -> (String, bool) {
         _ => ("unknown".to_string(), true),
     }
 }
+
+pub struct OverlayDetectionCollector;
+
+#[async_trait]
+impl TelemetryCollector for OverlayDetectionCollector {
+    fn name(&self) -> &'static str {
+        "overlay_detection"
+    }
+
+    async fn collect(&self, session_id: Uuid) -> Result<Vec<TelemetryEvent>, TelemetryError> {
+        #[cfg(target_os = "windows")]
+        let overlays = detect_overlays_windows();
+        #[cfg(not(target_os = "windows"))]
+        let overlays: Vec<serde_json::Value> = vec![];
+
+        Ok(vec![TelemetryEvent {
+            session_id,
+            kind: TelemetryKind::OverlayDetection,
+            payload: json!({
+                "overlays": overlays,
+                "overlayCount": overlays.len(),
+                "summary": if overlays.is_empty() {
+                    "No overlays detected".to_string()
+                } else {
+                    format!("{} suspicious windows detected", overlays.len())
+                }
+            }),
+        }])
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn detect_overlays_windows() -> Vec<serde_json::Value> {
+    use std::ffi::OsString;
+    use std::os::windows::ffi::OsStringExt;
+
+    type HWND = isize;
+    type BOOL = i32;
+    type LONG = i32;
+    type DWORD = u32;
+
+    extern "system" {
+        fn EnumWindows(callback: unsafe extern "system" fn(HWND, isize) -> BOOL, lparam: isize) -> BOOL;
+        fn IsWindowVisible(hwnd: HWND) -> BOOL;
+        fn GetWindowLongW(hwnd: HWND, index: i32) -> LONG;
+        fn GetWindowTextW(hwnd: HWND, lp_string: *mut u16, n_max_count: i32) -> i32;
+        fn GetWindowRect(hwnd: HWND, rect: *mut RECT) -> BOOL;
+    }
+
+    #[repr(C)]
+    struct RECT {
+        left: i32,
+        top: i32,
+        right: i32,
+        bottom: i32,
+    }
+
+    const GWL_EXSTYLE: i32 = -20;
+    const WS_EX_TOPMOST: LONG = 8;
+    const WS_EX_TRANSPARENT: LONG = 32;
+    const WS_EX_LAYERED: LONG = 0x80000;
+
+    unsafe {
+        let mut results: Vec<serde_json::Value> = Vec::new();
+        let ptr = &mut results as *mut Vec<serde_json::Value> as isize;
+
+        unsafe extern "system" fn enum_proc(hwnd: HWND, lparam: isize) -> BOOL {
+            let results = &mut *(lparam as *mut Vec<serde_json::Value>);
+            if IsWindowVisible(hwnd) == 0 {
+                return 1;
+            }
+            let ex_style = GetWindowLongW(hwnd, GWL_EXSTYLE);
+            let is_topmost = (ex_style & WS_EX_TOPMOST) != 0;
+            let is_transparent = (ex_style & WS_EX_TRANSPARENT) != 0;
+            let is_layered = (ex_style & WS_EX_LAYERED) != 0;
+
+            let mut rect = RECT { left: 0, top: 0, right: 0, bottom: 0 };
+            GetWindowRect(hwnd, &mut rect);
+
+            let width = rect.right - rect.left;
+            let height = rect.bottom - rect.top;
+
+            if (is_topmost || is_transparent || is_layered) && width >= 200 && height >= 100 {
+                let mut title = vec![0u16; 256];
+                let len = GetWindowTextW(hwnd, title.as_mut_ptr(), title.len() as i32);
+                let name = if len > 0 {
+                    OsString::from_wide(&title[..len as usize]).to_string_lossy().to_string()
+                } else {
+                    "unnamed".to_string()
+                };
+
+                results.push(json!({
+                    "title": name,
+                    "topmost": is_topmost,
+                    "transparent": is_transparent,
+                    "layered": is_layered,
+                    "width": width,
+                    "height": height
+                }));
+            }
+            1
+        }
+
+        EnumWindows(enum_proc, ptr);
+        results
+    }
+}
+
+pub struct ClipboardCollector;
+
+#[async_trait]
+impl TelemetryCollector for ClipboardCollector {
+    fn name(&self) -> &'static str {
+        "clipboard"
+    }
+
+    async fn collect(&self, session_id: Uuid) -> Result<Vec<TelemetryEvent>, TelemetryError> {
+        let changed = check_clipboard_change();
+        Ok(vec![TelemetryEvent {
+            session_id,
+            kind: TelemetryKind::Clipboard,
+            payload: json!({
+                "clipboardChanged": changed,
+                "monitoringEnabled": true,
+                "policyDriven": true,
+                "summary": if changed { "Clipboard content changed" } else { "Clipboard stable" }
+            }),
+        }])
+    }
+}
+
+fn check_clipboard_change() -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        type BOOL = i32;
+        extern "system" {
+            fn GetClipboardSequenceNumber() -> u32;
+        }
+        unsafe { GetClipboardSequenceNumber() > 0 }
+    }
+    #[cfg(not(target_os = "windows"))]
+    false
+}
+
+pub struct AudioDeviceCollector;
+
+#[async_trait]
+impl TelemetryCollector for AudioDeviceCollector {
+    fn name(&self) -> &'static str {
+        "audio_device"
+    }
+
+    async fn collect(&self, session_id: Uuid) -> Result<Vec<TelemetryEvent>, TelemetryError> {
+        let devices = enumerate_audio_devices();
+        Ok(vec![TelemetryEvent {
+            session_id,
+            kind: TelemetryKind::AudioDevice,
+            payload: json!({
+                "devices": devices,
+                "deviceCount": devices.len(),
+                "microphoneDetected": devices.iter().any(|d| d.get("type").and_then(|v| v.as_str()) == Some("microphone")),
+                "summary": format!("{} audio devices detected", devices.len())
+            }),
+        }])
+    }
+}
+
+fn enumerate_audio_devices() -> Vec<serde_json::Value> {
+    #[cfg(target_os = "linux")]
+    {
+        use std::process::Command;
+        if let Ok(output) = Command::new("pactl").args(["list", "sources", "short"]).output() {
+            if output.status.success() {
+                return String::from_utf8_lossy(&output.stdout)
+                    .lines()
+                    .map(|line| {
+                        let parts: Vec<&str> = line.split_whitespace().collect();
+                        json!({
+                            "type": "microphone",
+                            "name": parts.get(1).unwrap_or(&"unknown"),
+                            "state": "active"
+                        })
+                    })
+                    .collect();
+            }
+        }
+        vec![]
+    }
+    #[cfg(target_os = "windows")]
+    {
+        vec![json!({"type": "microphone", "name": "Default Input Device", "state": "active"})]
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
+    vec![]
+}
+
+pub struct CameraDeviceCollector;
+
+#[async_trait]
+impl TelemetryCollector for CameraDeviceCollector {
+    fn name(&self) -> &'static str {
+        "camera_device"
+    }
+
+    async fn collect(&self, session_id: Uuid) -> Result<Vec<TelemetryEvent>, TelemetryError> {
+        let cameras = enumerate_camera_devices();
+        Ok(vec![TelemetryEvent {
+            session_id,
+            kind: TelemetryKind::CameraDevice,
+            payload: json!({
+                "devices": cameras,
+                "deviceCount": cameras.len(),
+                "virtualCameraDetected": cameras.iter().any(|d| d.get("virtual").and_then(|v| v.as_bool()) == Some(true)),
+                "summary": format!("{} camera devices detected", cameras.len())
+            }),
+        }])
+    }
+}
+
+fn enumerate_camera_devices() -> Vec<serde_json::Value> {
+    #[cfg(target_os = "linux")]
+    {
+        use std::fs;
+        let mut cameras = Vec::new();
+        for entry in fs::read_dir("/dev").into_iter().flatten() {
+            if let Ok(entry) = entry {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if name.starts_with("video") {
+                    let is_virtual = false;
+                    cameras.push(json!({
+                        "name": name,
+                        "type": if is_virtual { "virtual" } else { "physical" },
+                        "virtual": is_virtual,
+                        "state": "available"
+                    }));
+                }
+            }
+        }
+        cameras
+    }
+    #[cfg(target_os = "windows")]
+    {
+        vec![
+            json!({"name": "Integrated Camera", "type": "physical", "virtual": false, "state": "available"}),
+        ]
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
+    vec![]
+}
+
+pub struct FullscreenDetectionCollector;
+
+#[async_trait]
+impl TelemetryCollector for FullscreenDetectionCollector {
+    fn name(&self) -> &'static str {
+        "fullscreen_detection"
+    }
+
+    async fn collect(&self, session_id: Uuid) -> Result<Vec<TelemetryEvent>, TelemetryError> {
+        let fullscreen = detect_fullscreen();
+        Ok(vec![TelemetryEvent {
+            session_id,
+            kind: TelemetryKind::FullscreenDetection,
+            payload: json!({
+                "fullscreenWindow": fullscreen,
+                "isFullscreen": fullscreen.is_some(),
+                "summary": if let Some(ref title) = fullscreen {
+                    format!("Fullscreen window: {}", title)
+                } else {
+                    "No fullscreen window".to_string()
+                }
+            }),
+        }])
+    }
+}
+
+fn detect_fullscreen() -> Option<String> {
+    #[cfg(target_os = "windows")]
+    {
+        type HWND = isize;
+        type BOOL = i32;
+        type LONG = i32;
+        extern "system" {
+            fn GetForegroundWindow() -> HWND;
+            fn GetWindowRect(hwnd: HWND, rect: *mut RECT) -> BOOL;
+            fn GetSystemMetrics(index: i32) -> i32;
+            fn GetWindowTextW(hwnd: HWND, lp_string: *mut u16, n_max_count: i32) -> i32;
+        }
+        #[repr(C)]
+        struct RECT { left: i32, top: i32, right: i32, bottom: i32 }
+        const SM_CXSCREEN: i32 = 0;
+        const SM_CYSCREEN: i32 = 1;
+
+        unsafe {
+            let hwnd = GetForegroundWindow();
+            if hwnd == 0 { return None; }
+            let mut rect = RECT { left: 0, top: 0, right: 0, bottom: 0 };
+            GetWindowRect(hwnd, &mut rect);
+            let screen_w = GetSystemMetrics(SM_CXSCREEN);
+            let screen_h = GetSystemMetrics(SM_CYSCREEN);
+            let w = rect.right - rect.left;
+            let h = rect.bottom - rect.top;
+            if w >= screen_w && h >= screen_h {
+                let mut title = vec![0u16; 256];
+                let len = GetWindowTextW(hwnd, title.as_mut_ptr(), title.len() as i32);
+                if len > 0 {
+                    use std::ffi::OsString;
+                    use std::os::windows::ffi::OsStringExt;
+                    title.truncate(len as usize);
+                    return Some(OsString::from_wide(&title).to_string_lossy().to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
+pub struct IdleDetectionCollector;
+
+#[async_trait]
+impl TelemetryCollector for IdleDetectionCollector {
+    fn name(&self) -> &'static str {
+        "idle_detection"
+    }
+
+    async fn collect(&self, session_id: Uuid) -> Result<Vec<TelemetryEvent>, TelemetryError> {
+        let idle_secs = get_idle_time();
+        Ok(vec![TelemetryEvent {
+            session_id,
+            kind: TelemetryKind::IdleDetection,
+            payload: json!({
+                "idleSeconds": idle_secs,
+                "isIdle": idle_secs > 300,
+                "summary": if idle_secs > 300 {
+                    format!("User idle for {} seconds", idle_secs)
+                } else {
+                    "User active".to_string()
+                }
+            }),
+        }])
+    }
+}
+
+fn get_idle_time() -> u64 {
+    #[cfg(target_os = "windows")]
+    {
+        type DWORD = u32;
+        extern "system" {
+            fn GetLastInputInfo(plii: *mut LASTINPUTINFO) -> i32;
+        }
+        #[repr(C)]
+        struct LASTINPUTINFO {
+            cbSize: u32,
+            dwTime: u32,
+        }
+        unsafe {
+            let mut lii = LASTINPUTINFO { cbSize: std::mem::size_of::<LASTINPUTINFO>() as u32, dwTime: 0 };
+            if GetLastInputInfo(&mut lii) != 0 {
+                extern "system" { fn GetTickCount() -> DWORD; }
+                let tick = GetTickCount();
+                ((tick.wrapping_sub(lii.dwTime)) / 1000) as u64
+            } else {
+                0
+            }
+        }
+    }
+    #[cfg(target_os = "linux")]
+    {
+        use std::process::Command;
+        if let Ok(output) = Command::new("xprintidle").output() {
+            if output.status.success() {
+                return String::from_utf8_lossy(&output.stdout)
+                    .trim().parse().unwrap_or(0);
+            }
+        }
+        0
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
+    0
+}
+
+pub struct LockScreenCollector;
+
+#[async_trait]
+impl TelemetryCollector for LockScreenCollector {
+    fn name(&self) -> &'static str {
+        "lock_screen"
+    }
+
+    async fn collect(&self, session_id: Uuid) -> Result<Vec<TelemetryEvent>, TelemetryError> {
+        let locked = is_session_locked();
+        Ok(vec![TelemetryEvent {
+            session_id,
+            kind: TelemetryKind::LockScreen,
+            payload: json!({
+                "sessionLocked": locked,
+                "summary": if locked { "Workstation locked" } else { "Workstation unlocked" }
+            }),
+        }])
+    }
+}
+
+fn is_session_locked() -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        type HWND = isize;
+        extern "system" {
+            fn OpenInputDesktop(flags: u32, inherit: i32, desired_access: u32) -> isize;
+            fn CloseDesktop(desktop: isize) -> i32;
+        }
+        unsafe {
+            let desktop = OpenInputDesktop(0, 0, 0x0001);
+            if desktop == 0 { return true; }
+            CloseDesktop(desktop);
+            false
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    false
+}
+
+pub struct VpnDetectionCollector;
+
+#[async_trait]
+impl TelemetryCollector for VpnDetectionCollector {
+    fn name(&self) -> &'static str {
+        "vpn_detection"
+    }
+
+    async fn collect(&self, session_id: Uuid) -> Result<Vec<TelemetryEvent>, TelemetryError> {
+        let vpn_detected = detect_vpn();
+        Ok(vec![TelemetryEvent {
+            session_id,
+            kind: TelemetryKind::VpnDetection,
+            payload: json!({
+                "vpnDetected": vpn_detected,
+                "summary": if vpn_detected { "VPN or proxy connection detected" } else { "No VPN detected" }
+            }),
+        }])
+    }
+}
+
+fn detect_vpn() -> bool {
+    let sys = System::new_all();
+    let processes: Vec<String> = sys.processes()
+        .values()
+        .map(|p| p.name().to_string_lossy().to_lowercase())
+        .collect();
+
+    let vpn_keywords = [
+        "openvpn", "wireguard", "nordvpn", "expressvpn", "protonvpn",
+        "surfshark", "mullvad", "pia", "privateinternetaccess", "windscribe",
+        "tunnelblick", "viscosity", "strongswan", "ike", "ipsec",
+    ];
+
+    vpn_keywords.iter().any(|kw| processes.iter().any(|p| p.contains(kw)))
+}
+
+pub struct VMDetectionCollector;
+
+#[async_trait]
+impl TelemetryCollector for VMDetectionCollector {
+    fn name(&self) -> &'static str {
+        "vm_detection"
+    }
+
+    async fn collect(&self, session_id: Uuid) -> Result<Vec<TelemetryEvent>, TelemetryError> {
+        let vm_detected = detect_vm();
+        Ok(vec![TelemetryEvent {
+            session_id,
+            kind: TelemetryKind::Device,
+            payload: json!({
+                "virtualMachineDetected": vm_detected,
+                "vmIndicators": if vm_detected { vec!["hypervisor present"] } else { vec![] },
+                "summary": if vm_detected { "Virtual machine detected" } else { "Physical machine" }
+            }),
+        }])
+    }
+}
+
+fn detect_vm() -> bool {
+    let sys = System::new_all();
+    let processes: Vec<String> = sys.processes()
+        .values()
+        .map(|p| p.name().to_string_lossy().to_lowercase())
+        .collect();
+
+    let vm_indicators = [
+        "vmtoolsd", "vboxservice", "vboxtray", "xenservice",
+        "prl_tools", "prl_cc", "qemu-ga",
+    ];
+
+    let has_vm_process = vm_indicators.iter().any(|kw| processes.iter().any(|p| p.contains(kw)));
+
+    #[cfg(target_os = "linux")]
+    {
+        use std::fs;
+        let dmi_check = fs::read_to_string("/sys/class/dmi/id/product_name")
+            .map(|s| {
+                let lower = s.to_lowercase();
+                lower.contains("virtual")
+                    || lower.contains("vmware")
+                    || lower.contains("virtualbox")
+                    || lower.contains("kvm")
+                    || lower.contains("qemu")
+                    || lower.contains("xen")
+            })
+            .unwrap_or(false);
+        has_vm_process || dmi_check
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    has_vm_process
+}

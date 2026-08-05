@@ -127,6 +127,14 @@ impl MonitoringAgent {
             telemetry::TelemetryKind::Audio => "microphone",
             telemetry::TelemetryKind::Video => "camera",
             telemetry::TelemetryKind::SystemHealth => "system_health",
+            telemetry::TelemetryKind::OverlayDetection => "overlay_detection",
+            telemetry::TelemetryKind::Clipboard => "clipboard",
+            telemetry::TelemetryKind::FullscreenDetection => "fullscreen_detection",
+            telemetry::TelemetryKind::IdleDetection => "idle_detection",
+            telemetry::TelemetryKind::LockScreen => "lock_screen",
+            telemetry::TelemetryKind::VpnDetection => "vpn_detection",
+            telemetry::TelemetryKind::CameraDevice => "camera_device",
+            telemetry::TelemetryKind::AudioDevice => "audio_device",
             _ => "lifecycle",
         }
     }
@@ -160,6 +168,33 @@ pub fn build_collector_registry(enabled: &CollectorConfig) -> CollectorRegistry 
     }
     if enabled.is_enabled("microphone") {
         registry.register(Box::new(microphone::MicrophoneConsentCollector));
+    }
+    if enabled.is_enabled("overlay_detection") {
+        registry.register(Box::new(system::OverlayDetectionCollector));
+    }
+    if enabled.is_enabled("clipboard") {
+        registry.register(Box::new(system::ClipboardCollector));
+    }
+    if enabled.is_enabled("audio_device") {
+        registry.register(Box::new(system::AudioDeviceCollector));
+    }
+    if enabled.is_enabled("camera_device") {
+        registry.register(Box::new(system::CameraDeviceCollector));
+    }
+    if enabled.is_enabled("fullscreen_detection") {
+        registry.register(Box::new(system::FullscreenDetectionCollector));
+    }
+    if enabled.is_enabled("idle_detection") {
+        registry.register(Box::new(system::IdleDetectionCollector));
+    }
+    if enabled.is_enabled("lock_screen") {
+        registry.register(Box::new(system::LockScreenCollector));
+    }
+    if enabled.is_enabled("vpn_detection") {
+        registry.register(Box::new(system::VpnDetectionCollector));
+    }
+    if enabled.is_enabled("vm_detection") {
+        registry.register(Box::new(system::VMDetectionCollector));
     }
     registry.register(Box::new(system::LifecycleCollector));
     registry

@@ -19,6 +19,14 @@ pub enum TelemetryKind {
     Crash,
     Lifecycle,
     SystemHealth,
+    Clipboard,
+    OverlayDetection,
+    FullscreenDetection,
+    IdleDetection,
+    LockScreen,
+    VpnDetection,
+    CameraDevice,
+    AudioDevice,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -107,6 +115,22 @@ impl TelemetryEvent {
                 .into(),
             TelemetryKind::Crash => "Application crash detected".into(),
             TelemetryKind::Process => "Process activity detected".into(),
+            TelemetryKind::Clipboard => self
+                .payload.get("summary").and_then(|v| v.as_str()).unwrap_or("Clipboard activity").into(),
+            TelemetryKind::OverlayDetection => self
+                .payload.get("summary").and_then(|v| v.as_str()).unwrap_or("Overlay detection").into(),
+            TelemetryKind::FullscreenDetection => self
+                .payload.get("summary").and_then(|v| v.as_str()).unwrap_or("Fullscreen detection").into(),
+            TelemetryKind::IdleDetection => self
+                .payload.get("summary").and_then(|v| v.as_str()).unwrap_or("Idle detection").into(),
+            TelemetryKind::LockScreen => self
+                .payload.get("summary").and_then(|v| v.as_str()).unwrap_or("Lock screen event").into(),
+            TelemetryKind::VpnDetection => self
+                .payload.get("summary").and_then(|v| v.as_str()).unwrap_or("VPN detection").into(),
+            TelemetryKind::CameraDevice => self
+                .payload.get("summary").and_then(|v| v.as_str()).unwrap_or("Camera device").into(),
+            TelemetryKind::AudioDevice => self
+                .payload.get("summary").and_then(|v| v.as_str()).unwrap_or("Audio device").into(),
         };
 
         let status = match self.kind {
