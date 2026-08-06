@@ -162,6 +162,8 @@ if [ "${NO_INFRA}" = false ]; then
   docker compose -f "${COMPOSE_FILE}" up -d postgres redis kafka minio
   log "Waiting for postgres health..."
   until docker compose -f "${COMPOSE_FILE}" exec -T postgres pg_isready -U integrity -d postgres >/dev/null 2>&1; do sleep 2; done
+  log "Creating per-service databases..."
+  docker compose -f "${COMPOSE_FILE}" exec -T postgres bash /docker-entrypoint-initdb.d/init-databases.sh 2>/dev/null || true
   log "Infrastructure is up."
 else
   log "Skipping infrastructure (--no-infra)."
