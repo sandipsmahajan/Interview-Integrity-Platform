@@ -2,6 +2,7 @@ package com.integrity.identity.service;
 
 import com.integrity.api.PageResponse;
 import com.integrity.api.PageResponses;
+import com.integrity.event.IdentityEmailEvent;
 import com.integrity.exception.ConflictException;
 import com.integrity.exception.ForbiddenException;
 import com.integrity.exception.NotFoundException;
@@ -15,7 +16,11 @@ import com.integrity.identity.web.dto.ChangeUserStatusRequest;
 import com.integrity.identity.web.dto.CreateUserRequest;
 import com.integrity.identity.web.dto.UpdateUserRequest;
 import com.integrity.identity.web.dto.UserResponse;
+import com.integrity.security.JwtTokenService;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -23,21 +28,37 @@ import reactor.core.publisher.Mono;
 /** User management within an organization: creation, lookup, updates, status and roles. */
 public final class UserService {
 
+  private static final Duration INVITATION_TOKEN_TTL = Duration.ofDays(7);
+  private static final String DEFAULT_LOCALE = "en";
+  private static final String PURPOSE_INVITATION = "invitation";
+
   private final UserRepository userRepository;
   private final UserRoleRepository userRoleRepository;
   private final RoleRepository roleRepository;
   private final UserResponseMapper responseMapper;
+  private final EmailEventPublisher emailEventPublisher;
+  private final JwtTokenService jwtTokenService;
+  private final String frontendBaseUrl;
+  private final String appName;
 
   /** Creates the user service with its collaborators. */
   public UserService(
       UserRepository userRepository,
       UserRoleRepository userRoleRepository,
       RoleRepository roleRepository,
-      UserResponseMapper responseMapper) {
+      UserResponseMapper responseMapper,
+      EmailEventPublisher emailEventPublisher,
+      JwtTokenService jwtTokenService,
+      String frontendBaseUrl,
+      String appName) {
     this.userRepository = userRepository;
     this.userRoleRepository = userRoleRepository;
     this.roleRepository = roleRepository;
     this.responseMapper = responseMapper;
+    this.emailEventPublisher = emailEventPublisher;
+    this.jwtTokenService = jwtTokenService;
+    this.frontendBaseUrl = frontendBaseUrl;
+    this.appName = appName;
   }
 
   /** Creates a pending user and assigns the requested roles. */
@@ -58,6 +79,7 @@ public final class UserService {
         .flatMap(
             user ->
                 assignRequestedRoles(organizationId, actorId, user, request.roleIds())
+                    .then(publishInvitation(user))
                     .thenReturn(user))
         .flatMap(responseMapper::map);
   }
@@ -198,5 +220,27 @@ public final class UserService {
               }
               return Mono.just(user);
             });
+  }
+
+  private Mono<Void> publishInvitation(User user) {
+    String token =
+        jwtTokenService.issuePurposeToken(PURPOSE_INVITATION, user.getId(), INVITATION_TOKEN_TTL);
+    String acceptUrl = frontendBaseUrl + "/accept-invitation?token=" + token;
+    return emailEventPublisher.publish(
+        new IdentityEmailEvent(
+            user.getId(),
+            user.getOrganizationId(),
+            user.getEmail(),
+            user.getDisplayName(),
+            DEFAULT_LOCALE,
+            "user-invitation",
+            Map.of(
+                "acceptUrl",
+                acceptUrl,
+                "expiresInDays",
+                String.valueOf(INVITATION_TOKEN_TTL.toDays()),
+                "appName",
+                appName),
+            Instant.now()));
   }
 }

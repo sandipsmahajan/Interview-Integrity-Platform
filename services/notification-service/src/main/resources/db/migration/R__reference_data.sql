@@ -61,7 +61,24 @@ FROM (VALUES
      || '<li>Close unnecessary applications</li>'
      || '<li>Find a quiet, well-lit space</li></ul>'
      || '<hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">'
-     || '<p style="color:#64748b;font-size:12px">This is an automated message from {{appName}}. If you have questions, please contact your recruiter.</p>'
+      || '<p style="color:#64748b;font-size:12px">This is an automated message from {{appName}}. If you have questions, please contact your recruiter.</p>'
+      || '</div></div>',
+      'en', TRUE),
+
+    (NULL, 'user-invitation', 'EMAIL'::notification_channel,
+     'You have been invited to {{appName}}',
+     '<div style="max-width:600px;font-family:Arial,sans-serif;color:#333">'
+     || '<div style="background:#0f172a;padding:20px;text-align:center">'
+     || '<h1 style="color:#fff;margin:0">{{appName}}</h1></div>'
+     || '<div style="padding:24px;background:#fff">'
+     || '<p>Hi {{name}},</p>'
+     || '<p>You have been invited to join {{appName}}. Click the button below to accept the invitation and set your password.</p>'
+     || '<p><a href="{{acceptUrl}}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold">Accept Invitation</a></p>'
+     || '<p>Or copy and paste this link into your browser:</p>'
+     || '<p>{{acceptUrl}}</p>'
+     || '<p>This invitation expires in {{expiresInDays}} days.</p>'
+     || '<hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">'
+     || '<p style="color:#64748b;font-size:12px">This is an automated message from {{appName}}. If you did not expect this invitation, you can safely ignore it.</p>'
      || '</div></div>',
      'en', TRUE)
 ) AS v(organization_id, code, channel, subject, body_template, locale, is_default)

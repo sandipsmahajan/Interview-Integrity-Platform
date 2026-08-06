@@ -1,6 +1,7 @@
 package com.integrity.identity.web;
 
 import com.integrity.identity.service.AuthService;
+import com.integrity.identity.web.dto.InvitationAcceptRequest;
 import com.integrity.identity.web.dto.LoginRequest;
 import com.integrity.identity.web.dto.LoginResult;
 import com.integrity.identity.web.dto.LogoutRequest;
@@ -93,6 +94,14 @@ public final class AuthController {
   @Operation(summary = "Complete password reset")
   public Mono<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
     return authService.resetPassword(request);
+  }
+
+  /** Accepts an invitation and sets the initial password for a PENDING user. */
+  @PostMapping("/accept-invitation")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(summary = "Accept invitation and set initial password")
+  public Mono<TokenResponse> acceptInvitation(@Valid @RequestBody InvitationAcceptRequest request) {
+    return authService.acceptInvitation(request);
   }
 
   private String resolveIp(String forwardedFor) {

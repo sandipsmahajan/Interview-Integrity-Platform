@@ -18,6 +18,7 @@ import com.integrity.identity.repository.RoleRepository;
 import com.integrity.identity.repository.UserRepository;
 import com.integrity.identity.repository.UserRoleRepository;
 import com.integrity.identity.repository.UserSessionRepository;
+import com.integrity.identity.web.dto.InvitationAcceptRequest;
 import com.integrity.identity.web.dto.LoginRequest;
 import com.integrity.identity.web.dto.LoginResult;
 import com.integrity.identity.web.dto.LogoutRequest;
@@ -52,6 +53,7 @@ public final class AuthService {
   private static final Duration RESET_TOKEN_TTL = Duration.ofMinutes(15);
   private static final String PURPOSE_RESET = "password-reset";
   private static final String PURPOSE_VERIFY = "email-verify";
+  private static final String PURPOSE_INVITATION = "invitation";
   private static final String DEFAULT_LOCALE = "en";
   private static final int MULTIPLE_ACCOUNTS = 1;
   private static final int SINGLE_ACCOUNT = 1;
@@ -425,6 +427,36 @@ public final class AuthService {
                         })
                     .then(sessionRepository.revokeAllActiveByUser(user.getId(), Instant.now()))
                     .then());
+  }
+
+  /** Accepts an invitation, sets the initial password, and activates the user. */
+  public Mono<TokenResponse> acceptInvitation(InvitationAcceptRequest request) {
+    return resolveUserByPurposeToken(request.token(), PURPOSE_INVITATION)
+        .flatMap(
+            user -> {
+              if (user.getStatus() != UserStatus.PENDING) {
+                return Mono.error(
+                    new com.integrity.exception.ValidationFailedException(
+                        "Invitation has already been accepted"));
+              }
+              return Mono.fromCallable(() -> passwordEncoder.encode(request.newPassword()))
+                  .subscribeOn(Schedulers.boundedElastic())
+                  .flatMap(
+                      newHash -> {
+                        user.changePassword(newHash, user.getId());
+                        user.activate();
+                        return userRepository.save(user);
+                      })
+                  .flatMap(
+                      activated ->
+                          tokenIssuer
+                              .issue(activated, null, null, null)
+                              .flatMap(
+                                  tokens ->
+                                      eventPublisher
+                                          .publishUserRegistered(activated)
+                                          .thenReturn(tokens)));
+            });
   }
 
   private Mono<User> resolveUserByPurposeToken(String token, String purpose) {

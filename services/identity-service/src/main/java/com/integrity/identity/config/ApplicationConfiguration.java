@@ -30,6 +30,7 @@ import com.integrity.identity.service.UserService;
 import com.integrity.security.JwtProperties;
 import com.integrity.security.JwtTokenService;
 import java.time.Duration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -77,8 +78,20 @@ public class ApplicationConfiguration {
       UserRepository userRepository,
       UserRoleRepository userRoleRepository,
       RoleRepository roleRepository,
-      UserResponseMapper responseMapper) {
-    return new UserService(userRepository, userRoleRepository, roleRepository, responseMapper);
+      UserResponseMapper responseMapper,
+      EmailEventPublisher emailEventPublisher,
+      JwtTokenService jwtTokenService,
+      @Value("${app.auth.frontend-base-url:http://localhost:5173}") String frontendBaseUrl,
+      @Value("${app.auth.app-name:Integrity Pro}") String appName) {
+    return new UserService(
+        userRepository,
+        userRoleRepository,
+        roleRepository,
+        responseMapper,
+        emailEventPublisher,
+        jwtTokenService,
+        frontendBaseUrl,
+        appName);
   }
 
   /** Provides the role management service. */
