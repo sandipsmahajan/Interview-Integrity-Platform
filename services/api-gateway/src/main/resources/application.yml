@@ -5,7 +5,8 @@ spring:
     name: api-gateway
   autoconfigure:
     exclude:
-      - org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration
+      - org.springframework.boot.r2dbc.autoconfigure.R2dbcAutoConfiguration
+      - org.springframework.boot.r2dbc.autoconfigure.health.ConnectionFactoryHealthContributorAutoConfiguration
   cloud:
     gateway:
       discovery:
