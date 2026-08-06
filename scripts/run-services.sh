@@ -233,7 +233,7 @@ for entry in "${SERVICES[@]}"; do
     discovery-service|api-gateway) continue ;;
   esac
   start_one "${name}" "${port}"
-  wait_for_health "${name}" "${port}" 60 || die "${name} did not become healthy (see ${LOG_DIR}/${name}.log)"
+  wait_for_health "${name}" "${port}" 120 || die "${name} did not become healthy (see ${LOG_DIR}/${name}.log)"
 done
 
 log ""
