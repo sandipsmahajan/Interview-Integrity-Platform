@@ -54,7 +54,8 @@ public class SecurityConfiguration {
                 exchange
                     .pathMatchers(permitAll.toArray(String[]::new))
                     .permitAll()
-                    .pathMatchers("/actuator/health/**", "/actuator/info/**", "/actuator/prometheus")
+                    .pathMatchers(
+                        "/actuator/health/**", "/actuator/info/**", "/actuator/prometheus")
                     .permitAll()
                     .pathMatchers(HttpMethod.GET, PATH_USERS)
                     .hasAuthority(AUTHORITY_READ_USERS)
