@@ -83,9 +83,11 @@ fi
 wait_for_health() {
   local name="$1" port="$2" timeout="${3:-120}"
   local deadline=$(( $(date +%s) + timeout ))
-  local url="http://localhost:${port}/actuator/health/liveness"
+  local url="http://127.0.0.1:${port}/actuator/health/liveness"
+  log "  Waiting for ${name} on port ${port} (up to ${timeout}s)..."
+  sleep 5
   until [ "$(date +%s)" -ge "${deadline}" ]; do
-    if curl -sf "${url}" 2>/dev/null | grep -q '"UP"'; then
+    if curl -sf --connect-timeout 3 "${url}" 2>/dev/null | grep -q '"UP"'; then
       log "${name} is UP (${url})"
       return 0
     fi
