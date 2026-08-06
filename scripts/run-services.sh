@@ -98,10 +98,15 @@ start_one() {
   local name="$1" port="$2" jar
   jar="${ROOT_DIR}/services/${name}/build/libs/${name}-0.1.0.jar"
   [ -f "${jar}" ] || die "Missing jar ${jar}; run with build step enabled."
+  local java_args=(
+    "-jar" "${jar}"
+    "-Dspring.profiles.active=local"
+    "-Dspring.config.additional-location=${ROOT_DIR}/infra/config/"
+  )
   if [ -n "${JAVA_BIN}" ]; then
-    nohup "${JAVA_BIN}" -jar "${jar}" >"${LOG_DIR}/${name}.log" 2>&1 &
+    nohup "${JAVA_BIN}" "${java_args[@]}" >"${LOG_DIR}/${name}.log" 2>&1 &
   else
-    nohup java -jar "${jar}" >"${LOG_DIR}/${name}.log" 2>&1 &
+    nohup java "${java_args[@]}" >"${LOG_DIR}/${name}.log" 2>&1 &
   fi
   echo "$!" > "${PID_DIR}/${name}.pid"
   log "Started ${name} (pid $(cat "${PID_DIR}/${name}.pid"), port ${port})"
