@@ -81,7 +81,7 @@ fi
 # Health check
 # ---------------------------------------------------------------------------
 wait_for_health() {
-  local name="$1" port="$2" timeout="${3:-120}"
+  local name="$1" port="$2" timeout="${3:-60}"
   local deadline=$(( $(date +%s) + timeout ))
   local url="http://127.0.0.1:${port}/actuator/health/liveness"
   log "  Waiting for ${name} on port ${port} (up to ${timeout}s)..."
@@ -223,7 +223,7 @@ for entry in "${SERVICES[@]}"; do
     discovery-service|api-gateway) continue ;;
   esac
   start_one "${name}" "${port}"
-  wait_for_health "${name}" "${port}" 180 || die "${name} did not become healthy (see ${LOG_DIR}/${name}.log)"
+  wait_for_health "${name}" "${port}" 60 || die "${name} did not become healthy (see ${LOG_DIR}/${name}.log)"
 done
 
 log ""
