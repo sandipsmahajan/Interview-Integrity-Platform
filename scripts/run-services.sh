@@ -83,7 +83,7 @@ fi
 wait_for_health() {
   local name="$1" port="$2" timeout="${3:-120}"
   local deadline=$(( $(date +%s) + timeout ))
-  local url="http://localhost:${port}/actuator/health"
+  local url="http://localhost:${port}/actuator/health/liveness"
   until [ "$(date +%s)" -ge "${deadline}" ]; do
     if curl -sf "${url}" 2>/dev/null | grep -q '"UP"'; then
       log "${name} is UP (${url})"
@@ -91,7 +91,8 @@ wait_for_health() {
     fi
     sleep 2
   done
-  die "${name} did not become healthy within ${timeout}s (see ${LOG_DIR}/${name}.log)"
+  log "${name} health check failed after ${timeout}s"
+  return 1
 }
 
 start_one() {
@@ -204,7 +205,7 @@ done
 for entry in "${BOOTSTRAP_SERVICES[@]}"; do
   name="${entry%%:*}"
   port="${entry##*:}"
-  wait_for_health "${name}" "${port}"
+  wait_for_health "${name}" "${port}" || die "${name} did not become healthy (see ${LOG_DIR}/${name}.log)"
 done
 
 # ---------------------------------------------------------------------------
