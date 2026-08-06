@@ -18,6 +18,7 @@ const OnboardingPage = lazy(() => import('./pages/OnboardingPage').then((m) => (
 const InterviewsPage = lazy(() => import('./pages/InterviewsPage').then((m) => ({ default: m.InterviewsPage })));
 const InterviewDetailPage = lazy(() => import('./pages/InterviewDetailPage').then((m) => ({ default: m.InterviewDetailPage })));
 const CandidatesPage = lazy(() => import('./pages/CandidatesPage').then((m) => ({ default: m.CandidatesPage })));
+const CandidateDetailPage = lazy(() => import('./pages/CandidateDetailPage').then((m) => ({ default: m.CandidateDetailPage })));
 const RecruitersPage = lazy(() => import('./pages/RecruitersPage').then((m) => ({ default: m.RecruitersPage })));
 const IntegrityPage = lazy(() => import('./pages/IntegrityPage').then((m) => ({ default: m.IntegrityPage })));
 const PoliciesPage = lazy(() => import('./pages/PoliciesPage').then((m) => ({ default: m.PoliciesPage })));
@@ -77,6 +78,7 @@ function AppRoutes() {
         <Route path="/interviews" element={<InterviewsPage />} />
         <Route path="/interviews/:id" element={<InterviewDetailPage />} />
         <Route path="/candidates" element={<CandidatesPage />} />
+        <Route path="/candidates/:id" element={<CandidateDetailPage />} />
         <Route path="/recruiters" element={<RecruitersPage />} />
         <Route path="/integrity" element={<IntegrityPage />} />
         <Route path="/policies" element={<PoliciesPage />} />

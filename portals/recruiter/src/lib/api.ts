@@ -2,7 +2,12 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { clearTokens, getAccessToken, getRefreshToken, setTokens, persistUser } from './session';
 import type {
   AuditEventResponse,
+  CandidateDocumentResponse,
+  CandidateNoteResponse,
+  CandidateProfileResponse,
   CandidateResponse,
+  CreateCandidateDocumentRequest,
+  CreateCandidateNoteRequest,
   CreateCandidateRequest,
   CreateInterviewRequest,
   CreatePolicyRequest,
@@ -25,6 +30,8 @@ import type {
   RoleResponse,
   SessionResponse,
   TokenResponse,
+  UpdateCandidateNoteRequest,
+  UpdateCandidateProfileRequest,
   UpdateOrganizationRequest,
   UserResponse,
   VerifyEmailRequest,
@@ -250,6 +257,40 @@ export const api = {
   async changeCandidateStatus(id: string, status: string): Promise<CandidateResponse> {
     const { data } = await http.post<CandidateResponse>(`/v1/candidates/${id}/status`, { status });
     return data;
+  },
+  async getCandidateProfile(candidateId: string): Promise<CandidateProfileResponse> {
+    const { data } = await http.get<CandidateProfileResponse>(`/v1/candidates/${candidateId}/profile`);
+    return data;
+  },
+  async updateCandidateProfile(candidateId: string, payload: UpdateCandidateProfileRequest): Promise<CandidateProfileResponse> {
+    const { data } = await http.put<CandidateProfileResponse>(`/v1/candidates/${candidateId}/profile`, payload);
+    return data;
+  },
+  async listCandidateDocuments(candidateId: string): Promise<CandidateDocumentResponse[]> {
+    const { data } = await http.get<CandidateDocumentResponse[]>(`/v1/candidates/${candidateId}/documents`);
+    return data;
+  },
+  async createCandidateDocument(candidateId: string, payload: CreateCandidateDocumentRequest): Promise<CandidateDocumentResponse> {
+    const { data } = await http.post<CandidateDocumentResponse>(`/v1/candidates/${candidateId}/documents`, payload);
+    return data;
+  },
+  async deleteCandidateDocument(candidateId: string, documentId: string): Promise<void> {
+    await http.delete(`/v1/candidates/${candidateId}/documents/${documentId}`);
+  },
+  async listCandidateNotes(candidateId: string): Promise<CandidateNoteResponse[]> {
+    const { data } = await http.get<CandidateNoteResponse[]>(`/v1/candidates/${candidateId}/notes`);
+    return data;
+  },
+  async createCandidateNote(candidateId: string, payload: CreateCandidateNoteRequest): Promise<CandidateNoteResponse> {
+    const { data } = await http.post<CandidateNoteResponse>(`/v1/candidates/${candidateId}/notes`, payload);
+    return data;
+  },
+  async updateCandidateNote(candidateId: string, noteId: string, payload: UpdateCandidateNoteRequest): Promise<CandidateNoteResponse> {
+    const { data } = await http.put<CandidateNoteResponse>(`/v1/candidates/${candidateId}/notes/${noteId}`, payload);
+    return data;
+  },
+  async deleteCandidateNote(candidateId: string, noteId: string): Promise<void> {
+    await http.delete(`/v1/candidates/${candidateId}/notes/${noteId}`);
   },
 
   // ---- Interviews ----

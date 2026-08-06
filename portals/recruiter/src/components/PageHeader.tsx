@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography';
 import type { ReactNode } from 'react';
 
 interface PageHeaderProps {
-  title: string;
+  title: ReactNode;
   subtitle?: string;
   actions?: ReactNode;
 }

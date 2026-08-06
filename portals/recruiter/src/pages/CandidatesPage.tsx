@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -83,7 +84,13 @@ export function CandidatesPage() {
                 .join('')}
             </Box>
             <Box>
-              <Box sx={{ fontWeight: 600 }}>{info.getValue<string>()}</Box>
+              <Box
+                component={Link}
+                to={`/candidates/${info.row.original.id}`}
+                sx={{ fontWeight: 600, color: 'text.primary', textDecoration: 'none', '&:hover': { color: 'primary.main' } }}
+              >
+                {info.getValue<string>()}
+              </Box>
               <Box sx={{ fontSize: 12, color: 'text.secondary' }}>{info.row.original.email}</Box>
             </Box>
           </Box>

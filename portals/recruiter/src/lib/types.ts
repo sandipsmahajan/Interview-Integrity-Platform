@@ -125,6 +125,72 @@ export interface CreateCandidateRequest {
   source?: string | null;
 }
 
+export interface CandidateProfileResponse {
+  id: string;
+  candidateId: string;
+  headline: string;
+  bio: string;
+  location: string;
+  timezone: string;
+  resumeSummary: string;
+  linkedinUrl: string;
+  githubUrl: string;
+  skills: string[];
+  experienceYears: number;
+  attributes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateCandidateProfileRequest {
+  headline?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  timezone?: string | null;
+  resumeSummary?: string | null;
+  linkedinUrl?: string | null;
+  githubUrl?: string | null;
+  skills?: string[] | null;
+  experienceYears?: number | null;
+  attributes?: string | null;
+}
+
+export interface CandidateDocumentResponse {
+  id: string;
+  candidateId: string;
+  storageObjectId: string;
+  name: string;
+  contentType: string;
+  sizeBytes: number;
+  uploadedBy: string;
+  uploadedAt: string;
+}
+
+export interface CreateCandidateDocumentRequest {
+  storageObjectId: string;
+  name: string;
+  contentType?: string | null;
+  sizeBytes: number;
+}
+
+export interface CandidateNoteResponse {
+  id: string;
+  candidateId: string;
+  authorId: string;
+  body: string;
+  pinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCandidateNoteRequest {
+  body: string;
+}
+
+export interface UpdateCandidateNoteRequest {
+  body: string;
+}
+
 export interface InterviewResponse {
   id: string;
   organizationId: string;
