@@ -211,7 +211,7 @@ for entry in "${BOOTSTRAP_SERVICES[@]}"; do
 done
 
 # ---------------------------------------------------------------------------
-# 4. Domain services (parallel)
+# 4. Domain services (sequential — start one, wait healthy, then next)
 # ---------------------------------------------------------------------------
 for entry in "${SERVICES[@]}"; do
   name="${entry%%:*}"
@@ -220,21 +220,8 @@ for entry in "${SERVICES[@]}"; do
     discovery-service|api-gateway) continue ;;
   esac
   start_one "${name}" "${port}"
+  wait_for_health "${name}" "${port}" 180 || die "${name} did not become healthy (see ${LOG_DIR}/${name}.log)"
 done
-
-log "All services launched. Waiting for them to become healthy..."
-FAILED=""
-for entry in "${SERVICES[@]}"; do
-  name="${entry%%:*}"
-  port="${entry##*:}"
-  if ! wait_for_health "${name}" "${port}" 180; then
-    FAILED="${FAILED} ${name}"
-  fi
-done
-
-if [ -n "${FAILED}" ]; then
-  die "The following services failed health checks:${FAILED}"
-fi
 
 log ""
 log "=========================================================================="
