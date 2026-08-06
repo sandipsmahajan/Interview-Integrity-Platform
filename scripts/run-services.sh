@@ -81,19 +81,29 @@ fi
 # Health check
 # ---------------------------------------------------------------------------
 wait_for_health() {
-  local name="$1" port="$2" timeout="${3:-60}"
+  local name="$1" port="$2" timeout="${3:-120}"
   local deadline=$(( $(date +%s) + timeout ))
   local url="http://127.0.0.1:${port}/actuator/health/liveness"
-  log "  Waiting for ${name} on port ${port} (up to ${timeout}s)..."
+  local attempt=0
   sleep 5
   until [ "$(date +%s)" -ge "${deadline}" ]; do
-    if curl -sf --connect-timeout 3 "${url}" 2>/dev/null | grep -q '"UP"'; then
+    attempt=$((attempt + 1))
+    local response
+    response=$(curl -s --connect-timeout 3 -w "\n%{http_code}" "${url}" 2>/dev/null) || true
+    local http_code
+    http_code=$(echo "${response}" | tail -1)
+    local body
+    body=$(echo "${response}" | sed '$d')
+    if [ "${http_code}" = "200" ] && echo "${body}" | grep -q '"UP"'; then
       log "${name} is UP (${url})"
       return 0
     fi
+    if [ "${attempt}" -le 3 ] || [ $((attempt % 10)) -eq 0 ]; then
+      log "  ${name} attempt ${attempt}: HTTP ${http_code:-N/A} body=${body:-N/A}"
+    fi
     sleep 2
   done
-  log "${name} health check failed after ${timeout}s"
+  log "${name} health check FAILED after ${attempt} attempts in ${timeout}s"
   return 1
 }
 
