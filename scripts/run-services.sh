@@ -7,7 +7,8 @@
 #   4. domain services    (ports 8081-8097, started in parallel)
 #
 # Each service is health-checked via /actuator/health before the next stage
-# proceeds. Logs go to build/logs/<service>.log.
+# proceeds. Bootstrap services start sequentially; domain services start in
+# parallel and are health-checked in parallel. Logs go to build/logs/<service>.log.
 #
 # Usage:
 #   scripts/run-services.sh              # full stack (builds jars if needed)
@@ -105,6 +106,19 @@ wait_for_health() {
   done
   log "${name} health check FAILED after ${attempt} attempts in ${timeout}s"
   return 1
+}
+
+# Runs a health check in a sub-shell, writing the result to a status file for
+# collection by the caller.
+check_health_in_bg() {
+  local name="$1" port="$2" timeout="$3" status_dir="$4"
+  (
+    if wait_for_health "${name}" "${port}" "${timeout}"; then
+      echo "OK" > "${status_dir}/${name}"
+    else
+      echo "FAIL" > "${status_dir}/${name}"
+    fi
+  ) &
 }
 
 start_one() {
@@ -224,17 +238,52 @@ for entry in "${BOOTSTRAP_SERVICES[@]}"; do
 done
 
 # ---------------------------------------------------------------------------
-# 4. Domain services (sequential — start one, wait healthy, then next)
+# 4. Domain services — start all in parallel, then health-check all in parallel
 # ---------------------------------------------------------------------------
+DOMAIN_ENTRIES=()
 for entry in "${SERVICES[@]}"; do
   name="${entry%%:*}"
-  port="${entry##*:}"
   case "${name}" in
     discovery-service|api-gateway) continue ;;
   esac
-  start_one "${name}" "${port}"
-  wait_for_health "${name}" "${port}" 120 || die "${name} did not become healthy (see ${LOG_DIR}/${name}.log)"
+  DOMAIN_ENTRIES+=("${entry}")
 done
+
+log "Starting ${#DOMAIN_ENTRIES[@]} domain services in parallel..."
+for entry in "${DOMAIN_ENTRIES[@]}"; do
+  name="${entry%%:*}"
+  port="${entry##*:}"
+  start_one "${name}" "${port}"
+done
+
+log "Waiting for all domain services to become healthy (parallel health checks)..."
+HEALTH_STATUS_DIR=$(mktemp -d)
+for entry in "${DOMAIN_ENTRIES[@]}"; do
+  name="${entry%%:*}"
+  port="${entry##*:}"
+  check_health_in_bg "${name}" "${port}" 180 "${HEALTH_STATUS_DIR}"
+done
+
+# Wait for all background health checks to finish
+wait
+
+# Collect failures
+FAILED=()
+for entry in "${DOMAIN_ENTRIES[@]}"; do
+  name="${entry%%:*}"
+  status_file="${HEALTH_STATUS_DIR}/${name}"
+  if [ ! -f "${status_file}" ] || [ "$(cat "${status_file}")" != "OK" ]; then
+    FAILED+=("${name}")
+  fi
+done
+rm -rf "${HEALTH_STATUS_DIR}"
+
+if [ ${#FAILED[@]} -gt 0 ]; then
+  for f in "${FAILED[@]}"; do
+    log "  ${f}: FAILED (see ${LOG_DIR}/${f}.log)"
+  done
+  die "${#FAILED[@]} service(s) did not become healthy"
+fi
 
 log ""
 log "=========================================================================="
